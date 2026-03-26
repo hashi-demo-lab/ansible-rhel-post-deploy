@@ -1,4 +1,4 @@
-# Managed by Ansible - ansible-install-nginx
+# Managed by Ansible - ansible-rhel-post-deploy
 # SSL configuration will be managed by vault-ansible-clm (cert_deploy role)
 
 user nginx;
@@ -28,7 +28,6 @@ http {
     include             /etc/nginx/mime.types;
     default_type        application/octet-stream;
 
-    # Load modular configuration files from the /etc/nginx/conf.d directory.
     include /etc/nginx/conf.d/*.conf;
 
     server {

@@ -1,0 +1,45 @@
+---
+- name: Check current subscription status
+  ansible.builtin.command:
+    cmd: subscription-manager status
+  register: rhsm_status
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Register with RHSM using credentials
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ rhsm_username }}"
+    password: "{{ rhsm_password }}"
+    auto_attach: "{{ rhsm_auto_attach }}"
+  when:
+    - rhsm_status.rc != 0
+    - rhsm_method == 'credentials'
+  no_log: true
+
+- name: Register with RHSM using activation key
+  community.general.redhat_subscription:
+    state: present
+    activationkey: "{{ rhsm_activation_key }}"
+    org_id: "{{ rhsm_org_id }}"
+  when:
+    - rhsm_status.rc != 0
+    - rhsm_method == 'activation_key'
+  no_log: true
+
+- name: Enable required repositories
+  community.general.rhsm_repository:
+    name: "{{ rhsm_repos_enable }}"
+    state: enabled
+  when: rhsm_repos_enable | length > 0
+
+- name: Verify repository access
+  ansible.builtin.command:
+    cmd: dnf repolist
+  register: repo_list
+  changed_when: false
+
+- name: Display available repositories
+  ansible.builtin.debug:
+    msg: "{{ repo_list.stdout_lines }}"

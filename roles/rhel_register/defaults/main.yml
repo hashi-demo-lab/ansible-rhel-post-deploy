@@ -1,0 +1,19 @@
+---
+# RHSM registration method: 'credentials' or 'activation_key'
+rhsm_method: credentials
+
+# For credentials method
+rhsm_username: "{{ lookup('env', 'RHN_USERNAME') }}"
+rhsm_password: "{{ lookup('env', 'RHN_PASSWORD') }}"
+
+# For activation_key method
+# rhsm_activation_key: ""
+# rhsm_org_id: ""
+
+# Auto-attach a subscription
+rhsm_auto_attach: true
+
+# Repositories to enable after registration
+rhsm_repos_enable:
+  - rhel-9-for-x86_64-baseos-rpms
+  - rhel-9-for-x86_64-appstream-rpms

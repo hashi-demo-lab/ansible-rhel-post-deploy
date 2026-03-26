@@ -1,0 +1,55 @@
+---
+- name: Install nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Create SSL directory
+  ansible.builtin.file:
+    path: "{{ nginx_ssl_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ nginx_ssl_dir_mode }}"
+
+- name: Deploy default nginx configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: Reload nginx
+
+- name: Ensure nginx is enabled and started
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: Configure firewall for HTTP
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    immediate: true
+    state: enabled
+  when: ansible_facts.services['firewalld.service'] is defined
+
+- name: Configure firewall for HTTPS
+  ansible.posix.firewalld:
+    service: https
+    permanent: true
+    immediate: true
+    state: enabled
+  when: ansible_facts.services['firewalld.service'] is defined
+
+- name: Verify nginx is running
+  ansible.builtin.uri:
+    url: "http://localhost"
+    status_code: [200, 301, 403]
+  register: nginx_check
+
+- name: Display nginx status
+  ansible.builtin.debug:
+    msg: "Nginx is running on {{ inventory_hostname }} - HTTP status: {{ nginx_check.status }}"

@@ -1,0 +1,8 @@
+---
+- name: Register RHEL with Red Hat Subscription Manager
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - rhel_register

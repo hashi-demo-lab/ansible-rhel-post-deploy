@@ -1,33 +1,31 @@
-# ansible-install-nginx
+# ansible-rhel-post-deploy
 
-Ansible playbook for installing and configuring Nginx on RHEL systems.
+Ansible playbooks and roles for post-deployment provisioning of RHEL systems. Used as part of the VM provisioning pipeline with HCP Terraform and Ansible Automation Platform (AAP).
 
-This is a provisioning dependency for the [vault-ansible-clm](https://github.com/hashi-demo-lab/vault-ansible-clm) certificate lifecycle management project.
+## Playbooks
 
-## Usage
+| Playbook | AAP Job Template | Purpose |
+|----------|-----------------|---------|
+| `playbooks/rhel-register.yml` | `rhel-register` | Register RHEL with Red Hat Subscription Manager |
+| `playbooks/install-nginx.yml` | `rhel-install-nginx` | Install and configure Nginx web server |
 
-### In AAP (Ansible Automation Platform)
-This playbook is designed to run as an AAP Job Template, typically triggered automatically by Terraform after VM provisioning.
+## Roles
 
-### Manual
-```bash
-ansible-playbook playbooks/install-nginx.yml -i <inventory>
-```
+### `rhel_register`
+Registers RHEL systems with RHSM. Supports two authentication methods:
+- **Credentials** (default): Uses `RHN_USERNAME` and `RHN_PASSWORD` environment variables
+- **Activation key**: Uses `rhsm_activation_key` and `rhsm_org_id` variables
 
-## What it does
-1. Installs nginx via `dnf`
-2. Creates SSL directory (`/etc/nginx/ssl/`) for certificate deployment
-3. Deploys a basic HTTP configuration
-4. Configures firewall rules (HTTP/HTTPS)
-5. Enables and starts the nginx service
+### `install_nginx`
+Installs Nginx, creates SSL directory structure, configures firewall, and starts the service. SSL certificate deployment is handled separately by [vault-ansible-clm](https://github.com/hashi-demo-lab/vault-ansible-clm).
 
-## Integration with vault-ansible-clm
-After nginx is installed, the [vault-ansible-clm](https://github.com/hashi-demo-lab/vault-ansible-clm) project's `cert_deploy` role handles:
-- Issuing certificates from HashiCorp Vault PKI
-- Deploying SSL certificates and keys
-- Configuring nginx SSL server blocks
-- Verifying TLS connectivity
+## Provisioning Flow
+1. HCP Terraform provisions VMs
+2. `rhel-register` — registers with RHSM (enables repos)
+3. `rhel-install-vault-agent` — installs HashiCorp Vault Agent (separate project)
+4. `rhel-install-nginx` — installs Nginx
+5. `clm_issue_deploy` — issues and deploys TLS certificates from Vault PKI (separate project)
 
 ## Requirements
 - RHEL 9 target hosts
-- Ansible collections: `ansible.posix >= 1.5.0`
+- Ansible collections: `ansible.posix >= 1.5.0`, `community.general >= 6.0.0`
