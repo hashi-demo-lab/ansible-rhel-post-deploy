@@ -18,12 +18,7 @@
   register: rhel_creds
   delegate_to: localhost
   become: false
-  no_log: false
-  when: rhsm_status.rc != 0
-
-- name: Debug - show secret keys returned from Vault
-  ansible.builtin.debug:
-    msg: "Secret keys: {{ rhel_creds.secret.keys() | list }}, username value length: {{ rhel_creds.secret.rhn_username | default('MISSING') | length }}"
+  no_log: true
   when: rhsm_status.rc != 0
 
 - name: Register with RHSM
@@ -33,7 +28,7 @@
     password: "{{ rhel_creds.secret.rhn_password }}"
     auto_attach: "{{ rhsm_auto_attach }}"
   when: rhsm_status.rc != 0
-  no_log: false
+  no_log: true
 
 - name: Enable required repositories
   community.general.rhsm_repository:

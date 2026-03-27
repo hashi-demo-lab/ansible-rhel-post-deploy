@@ -28,6 +28,9 @@
     enabled: true
     state: started
 
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
 - name: Configure firewall for HTTP
   ansible.posix.firewalld:
     service: http
