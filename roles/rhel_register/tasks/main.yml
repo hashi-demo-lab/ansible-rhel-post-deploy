@@ -17,6 +17,7 @@
     validate_certs: false
   register: rhel_creds
   delegate_to: localhost
+  become: false
   run_once: true
   no_log: false
   when: rhsm_status.rc != 0
