@@ -14,10 +14,11 @@
     secret_id: "{{ secret_id }}"
     engine_mount_point: "{{ vault_kv_mount }}"
     path: "{{ vault_rhel_secret_path }}"
+    validate_certs: false
   register: rhel_creds
   delegate_to: localhost
   run_once: true
-  no_log: true
+  no_log: false
   when: rhsm_status.rc != 0
 
 - name: Register with RHSM
