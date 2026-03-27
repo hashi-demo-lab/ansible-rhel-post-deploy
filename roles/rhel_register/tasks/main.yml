@@ -5,27 +5,28 @@
   register: rhsm_status
   changed_when: false
   failed_when: false
-  no_log: true
 
-- name: Register with RHSM using credentials
+- name: Read RHEL subscription credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_rhel_secret_path }}"
+  register: rhel_creds
+  delegate_to: localhost
+  run_once: true
+  no_log: true
+  when: rhsm_status.rc != 0
+
+- name: Register with RHSM
   community.general.redhat_subscription:
     state: present
-    username: "{{ rhsm_username }}"
-    password: "{{ rhsm_password }}"
+    username: "{{ rhel_creds.secret.rhn_username }}"
+    password: "{{ rhel_creds.secret.rhn_password }}"
     auto_attach: "{{ rhsm_auto_attach }}"
-  when:
-    - rhsm_status.rc != 0
-    - rhsm_method == 'credentials'
-  no_log: true
-
-- name: Register with RHSM using activation key
-  community.general.redhat_subscription:
-    state: present
-    activationkey: "{{ rhsm_activation_key }}"
-    org_id: "{{ rhsm_org_id }}"
-  when:
-    - rhsm_status.rc != 0
-    - rhsm_method == 'activation_key'
+  when: rhsm_status.rc != 0
   no_log: true
 
 - name: Enable required repositories
