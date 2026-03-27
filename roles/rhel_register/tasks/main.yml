@@ -21,6 +21,11 @@
   no_log: false
   when: rhsm_status.rc != 0
 
+- name: Debug - show secret keys returned from Vault
+  ansible.builtin.debug:
+    msg: "Secret keys: {{ rhel_creds.secret.keys() | list }}, username value length: {{ rhel_creds.secret.rhn_username | default('MISSING') | length }}"
+  when: rhsm_status.rc != 0
+
 - name: Register with RHSM
   community.general.redhat_subscription:
     state: present
