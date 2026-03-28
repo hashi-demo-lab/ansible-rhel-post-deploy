@@ -28,6 +28,15 @@
     enabled: true
     state: started
 
+- name: Deploy Better Together landing page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+
 - name: Gather service facts
   ansible.builtin.service_facts:
 
