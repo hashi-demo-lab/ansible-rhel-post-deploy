@@ -4,45 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Certificate Lifecycle Management — HashiCorp Vault + Red Hat Ansible</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
-
     /* ── Reset ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Design tokens ─────────────────────────────────── */
+    /* ── Design Tokens ────────────────────────────────── */
     :root {
-      --bg:             oklch(98% 0.005 50);
-      --surface:        oklch(95% 0.008 50);
-      --text:           oklch(18% 0.01 50);
-      --text-secondary: oklch(45% 0.01 50);
-      --border:         oklch(88% 0.008 50);
-      --vault-gold:     #FFD814;
-      --vault-dark:     #1A1A2E;
-      --redhat-red:     #EE0000;
+      --bg:          oklch(97.5% 0.005 55);
+      --bg-alt:      oklch(95% 0.008 55);
+      --bg-warm:     oklch(96% 0.015 80);
+      --bg-cool:     oklch(96.5% 0.008 240);
+      --bg-light:    oklch(98.5% 0.003 55);
+      --text:        oklch(18% 0.01 55);
+      --text-muted:  oklch(45% 0.01 55);
+      --text-faint:  oklch(65% 0.008 55);
+      --vault-gold:  #FFD814;
+      --vault-dark:  #1A1A2E;
+      --redhat-red:  #EE0000;
+      --accent:      oklch(55% 0.15 270);
+      --border:      oklch(88% 0.008 55);
 
-      /* 5-size type system */
       --step-0: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
       --step-1: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
       --step-2: clamp(1.75rem, 1.4rem + 1.75vw, 2.5rem);
       --step-3: clamp(2.5rem, 1.8rem + 3.5vw, 4rem);
       --step-4: clamp(3.5rem, 2.2rem + 6.5vw, 6.5rem);
+      --step-hero: clamp(3rem, 2rem + 5vw, 5.5rem);
 
-      /* Fluid spacing */
       --space-xs:  clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
       --space-s:   clamp(0.75rem, 0.6rem + 0.75vw, 1.25rem);
       --space-m:   clamp(1.5rem, 1rem + 2.5vw, 3rem);
       --space-l:   clamp(3rem, 2rem + 5vw, 6rem);
       --space-xl:  clamp(5rem, 3rem + 10vw, 10rem);
 
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
       --measure: 65ch;
     }
 
     /* ── Base ──────────────────────────────────────────── */
-    html {
-      scroll-behavior: smooth;
-      -webkit-text-size-adjust: 100%;
-    }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
     body {
       font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
@@ -55,17 +59,6 @@
       overflow-x: hidden;
     }
 
-    /* ── Utility ───────────────────────────────────────── */
-    .wrap {
-      width: min(90%, 72rem);
-      margin-inline: auto;
-      padding-inline: var(--space-s);
-    }
-
-    section {
-      padding-block: var(--space-xl);
-    }
-
     h1, h2, h3, h4 {
       font-family: 'Outfit', system-ui, -apple-system, sans-serif;
       line-height: 1.1;
@@ -74,12 +67,82 @@
 
     p { max-width: var(--measure); }
 
-    /* ── Scroll reveal ─────────────────────────────────── */
+    .wrap {
+      width: min(90%, 72rem);
+      margin-inline: auto;
+      padding-inline: var(--space-s);
+    }
+
+    /* ── Chapter Side Navigation ──────────────────────── */
+    .chapter-nav {
+      position: fixed;
+      right: clamp(1rem, 2vw, 2.5rem);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: flex-end;
+    }
+
+    .chapter-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-faint);
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-out-expo);
+    }
+
+    .chapter-nav a .chapter-label {
+      opacity: 0;
+      transform: translateX(0.5rem);
+      transition: opacity 0.25s ease, transform 0.25s var(--ease-out-expo);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .chapter-nav a:hover .chapter-label {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .chapter-nav a .chapter-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s ease, transform 0.3s var(--ease-out-expo);
+      flex-shrink: 0;
+    }
+
+    .chapter-nav a.active {
+      color: var(--text);
+    }
+
+    .chapter-nav a.active .chapter-dot {
+      background: var(--vault-gold);
+      transform: scale(1.5);
+    }
+
+    @media (max-width: 900px) {
+      .chapter-nav { display: none; }
+    }
+
+    /* ── Scroll Reveals ───────────────────────────────── */
     .reveal {
       opacity: 0;
-      transform: translateY(1.5rem);
-      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-                  transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translateY(2rem);
+      transition: opacity 0.7s var(--ease-out-expo),
+                  transform 0.7s var(--ease-out-expo);
+      transition-delay: calc(var(--i, 0) * 80ms);
     }
 
     .reveal.visible {
@@ -87,29 +150,89 @@
       transform: translateY(0);
     }
 
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-slide-left {
+      opacity: 0;
+      transform: translateX(-3rem);
+      transition: opacity 0.7s var(--ease-out-expo),
+                  transform 0.7s var(--ease-out-expo);
+      transition-delay: calc(var(--i, 0) * 80ms);
+    }
+
+    .reveal-slide-left.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
 
     @media (prefers-reduced-motion: reduce) {
-      .reveal {
+      .reveal, .reveal-slide-left {
         opacity: 1;
         transform: none;
         transition: none;
       }
+      .hero-word { opacity: 1 !important; transform: none !important; }
+      .hero-line-draw { transform: scaleX(1) !important; }
+      .logo-float { animation: none !important; }
+      .stat-mega { opacity: 1 !important; transform: none !important; }
+      .bridge-line { stroke-dashoffset: 0 !important; }
+      .svg-underline path { stroke-dashoffset: 0 !important; }
+      .lock-icon { transform: none !important; }
+      .typewriter-char { opacity: 1 !important; }
     }
 
-    /* ── HERO ──────────────────────────────────────────── */
+    /* ── Section Backgrounds (color transitions) ──────── */
+    .section-hero {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-warm) 100%);
+    }
+
+    .section-problem {
+      background: linear-gradient(180deg, var(--bg-warm) 0%, var(--bg-alt) 100%);
+    }
+
+    .section-together {
+      background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg-warm) 100%);
+    }
+
+    .section-capabilities {
+      background: linear-gradient(180deg, var(--bg-warm) 0%, var(--bg-cool) 50%, var(--bg-alt) 100%);
+    }
+
+    .section-outcomes {
+      background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg-light) 100%);
+    }
+
+    /* ── Chapter Watermarks ───────────────────────────── */
+    .chapter-watermark {
+      position: absolute;
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: clamp(8rem, 15vw, 22rem);
+      font-weight: 800;
+      color: var(--text-faint);
+      opacity: 0.06;
+      pointer-events: none;
+      line-height: 1;
+      user-select: none;
+      z-index: 0;
+      will-change: transform;
+    }
+
+    /* ── HERO ─────────────────────────────────────────── */
     .hero {
-      padding-block: var(--space-xl) var(--space-l);
-      min-height: 85vh;
+      position: relative;
+      min-height: 100vh;
       display: flex;
-      align-items: flex-end;
-      padding-bottom: var(--space-l);
+      align-items: center;
+      padding-block: var(--space-xl);
+      overflow: hidden;
+    }
+
+    .hero .chapter-watermark {
+      top: 10%;
+      right: -5%;
     }
 
     .hero-inner {
+      position: relative;
+      z-index: 1;
       display: grid;
       gap: var(--space-m);
     }
@@ -123,10 +246,12 @@
     .hero-logos .logo-hashi {
       width: clamp(3rem, 2.5rem + 2.5vw, 4.5rem);
       color: var(--vault-gold);
+      will-change: transform;
     }
 
     .hero-logos .logo-redhat {
       width: clamp(4.5rem, 3.5rem + 4vw, 7rem);
+      will-change: transform;
     }
 
     .hero-logos .logo-separator {
@@ -135,48 +260,95 @@
       background: var(--border);
     }
 
+    .logo-float {
+      animation: logoFloat 6s ease-in-out infinite;
+    }
+
+    .logo-float-delay {
+      animation: logoFloat 6s ease-in-out infinite;
+      animation-delay: -3s;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* Hero headline — word-by-word reveal */
     .hero h1 {
-      font-size: var(--step-3);
+      font-size: var(--step-hero);
       font-weight: 800;
       max-width: 18ch;
+      overflow: hidden;
+    }
+
+    .hero-word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(100%);
+      transition: opacity 0.6s var(--ease-out-expo),
+                  transform 0.6s var(--ease-out-expo);
+    }
+
+    .hero-word.word-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .hero-sub {
       font-size: var(--step-1);
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-weight: 400;
       max-width: 48ch;
       line-height: 1.45;
     }
 
-    .hero-rule {
-      width: clamp(4rem, 3rem + 5vw, 8rem);
+    /* Animated line divider */
+    .hero-line-draw {
+      width: clamp(4rem, 3rem + 8vw, 12rem);
       height: 3px;
       background: var(--vault-gold);
       border: none;
       margin-top: var(--space-s);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 1.2s var(--ease-out-expo);
+      transition-delay: 1.4s;
     }
 
-    /* ── PROBLEM ───────────────────────────────────────── */
+    .hero-line-draw.line-visible {
+      transform: scaleX(1);
+    }
+
+    /* ── PROBLEM ──────────────────────────────────────── */
     .problem {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      position: relative;
+      padding-block: var(--space-xl);
+      overflow: hidden;
     }
 
-    .problem-label {
+    .problem .chapter-watermark {
+      top: -5%;
+      left: -3%;
+    }
+
+    .section-label {
       font-family: 'Outfit', system-ui, sans-serif;
       font-size: var(--step-0);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       margin-bottom: var(--space-l);
+      position: relative;
+      z-index: 1;
     }
 
     .stat-list {
       display: grid;
       gap: var(--space-l);
+      position: relative;
+      z-index: 1;
     }
 
     .stat-item {
@@ -184,6 +356,36 @@
       grid-template-columns: auto 1fr;
       gap: var(--space-s) var(--space-m);
       align-items: baseline;
+      position: relative;
+    }
+
+    /* The mega stat — 40% layered behind text */
+    .stat-mega-wrap {
+      position: relative;
+    }
+
+    .stat-mega {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: clamp(6rem, 15vw, 18rem);
+      font-weight: 800;
+      line-height: 0.85;
+      color: var(--text);
+      opacity: 0.08;
+      position: absolute;
+      top: -0.2em;
+      left: -0.05em;
+      z-index: 0;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    .stat-mega.counter-visible {
+      animation: megaFadeIn 1s var(--ease-out-expo) forwards;
+    }
+
+    @keyframes megaFadeIn {
+      from { opacity: 0; transform: translateY(2rem) scale(0.95); }
+      to { opacity: 0.08; transform: translateY(0) scale(1); }
     }
 
     .stat-number {
@@ -192,10 +394,14 @@
       font-weight: 800;
       line-height: 1;
       color: var(--text);
+      position: relative;
+      z-index: 1;
     }
 
     .stat-body {
       padding-top: 0.35em;
+      position: relative;
+      z-index: 1;
     }
 
     .stat-desc {
@@ -207,57 +413,126 @@
 
     .stat-source {
       font-size: var(--step-0);
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-weight: 400;
     }
 
     @media (max-width: 640px) {
-      .stat-item {
-        grid-template-columns: 1fr;
-        gap: var(--space-xs);
-      }
+      .stat-item { grid-template-columns: 1fr; gap: var(--space-xs); }
+      .stat-mega { font-size: clamp(5rem, 30vw, 10rem); }
     }
 
-    /* ── BETTER TOGETHER ───────────────────────────────── */
-    .together-label {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-0);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-m);
+    /* ── SVG Underlines ───────────────────────────────── */
+    .svg-underline {
+      position: relative;
+      display: inline;
+      white-space: nowrap;
+    }
+
+    .svg-underline svg {
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      overflow: visible;
+    }
+
+    .svg-underline path {
+      fill: none;
+      stroke: var(--vault-gold);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      transition: stroke-dashoffset 0.8s var(--ease-out-expo);
+    }
+
+    .svg-underline.underline-visible path {
+      stroke-dashoffset: 0;
+    }
+
+    /* ── BETTER TOGETHER ──────────────────────────────── */
+    .together {
+      position: relative;
+      padding-block: var(--space-xl);
+      overflow: hidden;
+    }
+
+    .together .chapter-watermark {
+      top: 5%;
+      right: -5%;
     }
 
     .together-heading {
       font-size: var(--step-2);
       font-weight: 700;
       margin-bottom: var(--space-l);
-      max-width: 20ch;
+      max-width: 22ch;
     }
 
     .together-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: var(--space-l);
+      position: relative;
     }
 
     @media (min-width: 768px) {
       .together-grid {
-        grid-template-columns: 1.1fr 1px 1fr;
+        grid-template-columns: 1fr 80px 1fr;
         gap: var(--space-m);
+        align-items: start;
       }
     }
 
-    .together-divider {
-      background: var(--border);
+    /* SVG bridge connector */
+    .bridge-container {
       display: none;
+      align-items: center;
+      justify-content: center;
+      padding-top: 4rem;
     }
 
     @media (min-width: 768px) {
-      .together-divider {
-        display: block;
-      }
+      .bridge-container { display: flex; }
+    }
+
+    .bridge-svg {
+      width: 80px;
+      height: 200px;
+    }
+
+    .bridge-line {
+      fill: none;
+      stroke: var(--vault-gold);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 250;
+      stroke-dashoffset: 250;
+      transition: stroke-dashoffset 1.2s var(--ease-out-expo);
+    }
+
+    .bridge-line.bridge-drawn {
+      stroke-dashoffset: 0;
+    }
+
+    .bridge-pulse {
+      fill: none;
+      stroke: var(--vault-gold);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      opacity: 0;
+    }
+
+    .bridge-pulse.bridge-pulse-active {
+      animation: bridgePulse 2s ease-in-out infinite;
+      animation-delay: 1.3s;
+    }
+
+    @keyframes bridgePulse {
+      0%, 100% { opacity: 0; stroke-width: 2.5; }
+      50% { opacity: 0.4; stroke-width: 5; }
     }
 
     .engine-section .engine-logo {
@@ -282,7 +557,7 @@
 
     .engine-subtitle {
       font-size: var(--step-0);
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-weight: 500;
       margin-bottom: var(--space-m);
     }
@@ -297,6 +572,16 @@
       position: relative;
       padding-left: 1.4em;
       line-height: 1.55;
+      opacity: 0;
+      transform: translateY(1rem);
+      transition: opacity 0.5s var(--ease-out-expo),
+                  transform 0.5s var(--ease-out-expo);
+      transition-delay: calc(var(--i, 0) * 100ms);
+    }
+
+    .engine-list li.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .engine-list li::before {
@@ -309,29 +594,35 @@
       border-radius: 50%;
     }
 
-    .vault-col .engine-list li::before {
-      background: var(--vault-gold);
+    .vault-col .engine-list li::before { background: var(--vault-gold); }
+    .aap-col .engine-list li::before { background: var(--redhat-red); }
+
+    /* Card tilt hover effect */
+    .tilt-card {
+      transition: transform 0.3s var(--ease-out-expo);
+      transform-style: preserve-3d;
+      perspective: 1000px;
     }
 
-    .aap-col .engine-list li::before {
-      background: var(--redhat-red);
+    .tilt-card:hover {
+      transform: perspective(1000px) rotateX(1deg) rotateY(-1deg);
     }
 
-    /* ── CAPABILITIES ──────────────────────────────────── */
+    /* ── CAPABILITIES — Horizontal Scroll Gallery ─────── */
     .capabilities {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      position: relative;
+      padding-block: var(--space-xl);
+      overflow: hidden;
     }
 
-    .capabilities-label {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-0);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-m);
+    .capabilities .chapter-watermark {
+      top: 0;
+      left: -3%;
+    }
+
+    .cap-header {
+      position: relative;
+      z-index: 1;
     }
 
     .capabilities-heading {
@@ -341,78 +632,100 @@
       max-width: 22ch;
     }
 
-    .cap-list {
-      display: grid;
-      gap: 0;
+    .cap-scroll-container {
+      position: relative;
+      z-index: 1;
     }
 
-    .cap-item {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: var(--space-s) var(--space-m);
-      align-items: baseline;
-      padding-block: var(--space-m);
-      border-top: 1px solid var(--border);
+    .cap-track {
+      display: flex;
+      gap: var(--space-m);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: var(--space-m);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
     }
 
-    .cap-item:last-child {
-      border-bottom: 1px solid var(--border);
+    .cap-track::-webkit-scrollbar { height: 4px; }
+    .cap-track::-webkit-scrollbar-track { background: transparent; }
+    .cap-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .cap-card {
+      flex: 0 0 clamp(280px, 75vw, 420px);
+      scroll-snap-align: start;
+      padding: var(--space-m);
+      position: relative;
     }
 
-    .cap-marker {
+    .cap-card-number {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-1);
-      font-weight: 700;
-      width: 2.5rem;
-      height: 2.5rem;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: var(--vault-gold);
-      color: var(--vault-dark);
+      font-size: clamp(4rem, 8vw, 7rem);
+      font-weight: 800;
       line-height: 1;
-      flex-shrink: 0;
+      color: var(--vault-gold);
+      opacity: 0.2;
+      margin-bottom: var(--space-xs);
+      transition: opacity 0.4s ease;
     }
 
-    .cap-content {
-      padding-top: 0.15em;
+    .cap-card:hover .cap-card-number {
+      opacity: 0.5;
     }
 
-    .cap-name {
+    .cap-card-name {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-1);
+      font-size: var(--step-2);
       font-weight: 700;
       margin-bottom: var(--space-xs);
     }
 
-    .cap-desc {
-      color: var(--text-secondary);
+    .cap-card-desc {
+      color: var(--text-muted);
       line-height: 1.6;
+      max-width: 38ch;
     }
 
-    @media (max-width: 640px) {
-      .cap-item {
-        grid-template-columns: 1fr;
-        gap: var(--space-xs);
-      }
-    }
-
-    /* ── OUTCOMES ───────────────────────────────────────── */
-    .outcomes-label {
+    .cap-scroll-hint {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-faint);
+      font-size: 0.8125rem;
+      margin-top: var(--space-s);
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-0);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-m);
+      letter-spacing: 0.05em;
+    }
+
+    .cap-scroll-hint svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      animation: scrollHintBounce 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scrollHintBounce {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(6px); }
+    }
+
+    /* ── OUTCOMES ──────────────────────────────────────── */
+    .outcomes {
+      position: relative;
+      padding-block: var(--space-xl);
+      overflow: hidden;
+    }
+
+    .outcomes .chapter-watermark {
+      bottom: -5%;
+      right: -5%;
     }
 
     .outcomes-heading {
       font-size: var(--step-2);
       font-weight: 700;
       margin-bottom: var(--space-l);
-      max-width: 22ch;
+      max-width: 24ch;
     }
 
     .outcomes-list {
@@ -427,6 +740,10 @@
       }
     }
 
+    .outcome-item {
+      position: relative;
+    }
+
     .outcome-big {
       font-family: 'Outfit', system-ui, sans-serif;
       font-size: var(--step-2);
@@ -439,14 +756,15 @@
     .outcome-big .accent-red  { color: var(--redhat-red); }
 
     .outcome-text {
-      color: var(--text-secondary);
+      color: var(--text-muted);
       line-height: 1.6;
     }
 
-    /* ── FOOTER ─────────────────────────────────────────── */
+    /* ── FOOTER ────────────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border);
       padding-block: var(--space-m);
+      background: var(--bg-light);
     }
 
     .footer-inner {
@@ -462,7 +780,7 @@
       align-items: center;
       gap: var(--space-s);
       font-size: 0.875rem;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
 
     .footer-left .logo-hashi {
@@ -476,67 +794,155 @@
 
     .footer-right {
       font-size: 0.8125rem;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
 
     .footer-host {
       font-family: 'DM Sans', monospace;
       font-weight: 500;
     }
+
+    .typewriter-char {
+      opacity: 0;
+      transition: opacity 0.05s ease;
+    }
+
+    .typewriter-char.char-visible {
+      opacity: 1;
+    }
+
+    /* Lock icon animation */
+    .lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .lock-icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      position: relative;
+    }
+
+    .lock-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .lock-shackle {
+      transform-origin: center bottom;
+      transform: rotate(15deg);
+      transition: transform 0.4s var(--ease-out-expo);
+    }
+
+    .lock-icon.lock-closed .lock-shackle {
+      transform: rotate(0deg);
+    }
+
+    /* ── Parallax layer ───────────────────────────────── */
+    .parallax-layer {
+      will-change: transform;
+      transition: transform 0.1s linear;
+    }
   </style>
 </head>
 <body>
 
-  <!-- ════════════════ HERO ════════════════ -->
-  <section class="hero">
+  <!-- ═══════════════ Chapter Side Navigation ═══════════════ -->
+  <nav class="chapter-nav" aria-label="Page sections">
+    <a href="#hero" class="active" data-chapter="hero">
+      <span class="chapter-label">Intro</span>
+      <span class="chapter-dot"></span>
+    </a>
+    <a href="#problem" data-chapter="problem">
+      <span class="chapter-label">The Problem</span>
+      <span class="chapter-dot"></span>
+    </a>
+    <a href="#together" data-chapter="together">
+      <span class="chapter-label">Better Together</span>
+      <span class="chapter-dot"></span>
+    </a>
+    <a href="#capabilities" data-chapter="capabilities">
+      <span class="chapter-label">Lifecycle</span>
+      <span class="chapter-dot"></span>
+    </a>
+    <a href="#outcomes" data-chapter="outcomes">
+      <span class="chapter-label">Outcomes</span>
+      <span class="chapter-dot"></span>
+    </a>
+  </nav>
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero section-hero" id="hero" data-section="hero">
+    <span class="chapter-watermark parallax-layer" data-speed="0.03">01</span>
     <div class="wrap hero-inner">
-      <div class="hero-logos reveal">
-        <svg class="logo-hashi" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp">
+      <div class="hero-logos">
+        <svg class="logo-hashi logo-float logo-mouse-track" data-track-strength="5" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp">
           <path fill="currentColor" d="M107.77 0 0 62.21 0 62.26 0 211.54 40.47 234.95 40.47 85.56 107.77 46.71 107.77 0Z"/>
           <path fill="currentColor" d="M150.79 0 150.79 118.96 107.77 118.96 107.77 74.54 67.25 97.94 67.25 250.34 107.77 273.75 107.77 155.16 150.79 155.16 150.79 199.26 191.31 175.91 191.31 23.41 150.79 0Z"/>
           <path fill="currentColor" d="M150.79 273.8 258.56 211.64 258.56 211.59 258.56 62.31 218.09 38.91 218.09 188.24 150.79 227.09 150.79 273.8Z"/>
         </svg>
         <span class="logo-separator"></span>
-        <svg class="logo-redhat" viewBox="0 0 193 146" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
+        <svg class="logo-redhat logo-float-delay logo-mouse-track" data-track-strength="5" viewBox="0 0 193 146" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
           <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 0 0-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16a6.43 6.43 0 0 0-.22 1.94c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49z" fill="#EE0000"/>
           <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 0 1 .22-1.94l-4.86 13.65c-.09.28-3.18 1.93-3.18 5.08 0 13.81 68.84 37.24 92.76 37.24s27-3.87 27-8.18c0-1.63-.78-3.74-.78-3.74-2.07 5.34-14.71 7.34-26.22 7.34" fill="#6c1d1d"/>
         </svg>
       </div>
 
-      <h1 class="reveal reveal-delay-1">Eliminate Certificate Risk at Scale</h1>
+      <h1>
+        <span class="hero-word" style="--word-i:0">Eliminate</span>
+        <span class="hero-word" style="--word-i:1">Certificate</span>
+        <span class="hero-word" style="--word-i:2">Risk</span>
+        <span class="hero-word" style="--word-i:3">at</span>
+        <span class="hero-word" style="--word-i:4">Scale</span>
+      </h1>
 
-      <p class="hero-sub reveal reveal-delay-2">HashiCorp Vault and Red Hat Ansible Automation Platform&thinsp;&mdash;&thinsp;automated certificate lifecycle management for the modern enterprise.</p>
+      <p class="hero-sub reveal" style="--i:0">HashiCorp Vault and Red Hat Ansible Automation Platform&thinsp;&mdash;&thinsp;automated certificate lifecycle management for the modern enterprise.</p>
 
-      <hr class="hero-rule reveal reveal-delay-3">
+      <hr class="hero-line-draw">
     </div>
   </section>
 
-  <!-- ════════════════ THE PROBLEM ════════════════ -->
-  <section class="problem">
+  <!-- ═══════════════ THE PROBLEM ═══════════════ -->
+  <section class="problem section-problem" id="problem" data-section="problem">
+    <span class="chapter-watermark parallax-layer" data-speed="0.05">02</span>
     <div class="wrap">
-      <p class="problem-label reveal">The Problem</p>
+      <p class="section-label reveal" style="--i:0">The Problem</p>
 
       <div class="stat-list">
-        <div class="stat-item reveal">
-          <span class="stat-number">40%</span>
-          <div class="stat-body">
-            <p class="stat-desc">of enterprises face certificate-related outage risk each year</p>
-            <p class="stat-source">CSC Research, 2024</p>
+        <!-- First stat — mega layered number -->
+        <div class="stat-mega-wrap">
+          <span class="stat-mega" data-counter-target="40" data-counter-suffix="%">40%</span>
+          <div class="stat-item reveal" style="--i:0">
+            <span class="stat-number"><span class="counter" data-target="40" data-suffix="%">0%</span></span>
+            <div class="stat-body">
+              <p class="stat-desc">of enterprises face
+                <span class="svg-underline">certificate-related outage risk
+                  <svg viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M2 5 C50 2, 80 7, 120 4 S170 2, 198 5"/></svg>
+                </span>
+                each year</p>
+              <p class="stat-source">CSC Research, 2024</p>
+            </div>
           </div>
         </div>
 
-        <div class="stat-item reveal reveal-delay-1">
-          <span class="stat-number">7,700+</span>
+        <div class="stat-item reveal" style="--i:1">
+          <span class="stat-number"><span class="counter" data-target="7700" data-suffix="+" data-separator=",">0</span></span>
           <div class="stat-body">
             <p class="stat-desc">annual renewal operations per 1,000 certificates projected by 2029</p>
             <p class="stat-source">Certificate lifecycle complexity is accelerating</p>
           </div>
         </div>
 
-        <div class="stat-item reveal reveal-delay-2">
-          <span class="stat-number">6 hours</span>
+        <div class="stat-item reveal" style="--i:2">
+          <span class="stat-number"><span class="counter" data-target="6" data-suffix=" hours">0</span></span>
           <div class="stat-body">
-            <p class="stat-desc">Australian Parliament taken offline by a single expired certificate</p>
+            <p class="stat-desc">Australian Parliament taken offline by a single
+              <span class="svg-underline">expired certificate
+                <svg viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M2 5 C50 2, 80 7, 120 4 S170 2, 198 5"/></svg>
+              </span>
+            </p>
             <p class="stat-source">One overlooked renewal, nationwide impact</p>
           </div>
         </div>
@@ -544,15 +950,20 @@
     </div>
   </section>
 
-  <!-- ════════════════ BETTER TOGETHER ════════════════ -->
-  <section class="together">
+  <!-- ═══════════════ BETTER TOGETHER ═══════════════ -->
+  <section class="together section-together" id="together" data-section="together">
+    <span class="chapter-watermark parallax-layer" data-speed="0.04">03</span>
     <div class="wrap">
-      <p class="together-label reveal">Better Together</p>
-      <h2 class="together-heading reveal reveal-delay-1">Two platforms, one automated workflow</h2>
+      <p class="section-label reveal" style="--i:0">Better Together</p>
+      <h2 class="together-heading reveal" style="--i:1">Two platforms, one
+        <span class="svg-underline">automated workflow
+          <svg viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M2 5 C50 2, 80 7, 120 4 S170 2, 198 5"/></svg>
+        </span>
+      </h2>
 
       <div class="together-grid">
         <!-- Vault column -->
-        <div class="engine-section vault-col reveal reveal-delay-2">
+        <div class="engine-section vault-col tilt-card reveal" style="--i:2">
           <div class="engine-logo">
             <svg class="logo-hashi" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp Vault">
               <path fill="currentColor" d="M107.77 0 0 62.21 0 62.26 0 211.54 40.47 234.95 40.47 85.56 107.77 46.71 107.77 0Z"/>
@@ -562,19 +973,25 @@
           </div>
           <h3 class="engine-title">Vault</h3>
           <p class="engine-subtitle">The Trust Engine</p>
-          <ul class="engine-list">
-            <li>Built-in PKI secrets engine with full CA hierarchy</li>
-            <li>Automated certificate issuance with configurable TTLs</li>
-            <li>Centralized policy enforcement and audit logging</li>
-            <li>Dynamic secrets eliminate long-lived credentials</li>
-            <li>API-first design for seamless automation</li>
+          <ul class="engine-list" data-stagger-list>
+            <li style="--i:0">Built-in PKI secrets engine with full CA hierarchy</li>
+            <li style="--i:1">Automated certificate issuance with configurable TTLs</li>
+            <li style="--i:2">Centralized policy enforcement and audit logging</li>
+            <li style="--i:3">Dynamic secrets eliminate long-lived credentials</li>
+            <li style="--i:4">API-first design for seamless automation</li>
           </ul>
         </div>
 
-        <div class="together-divider"></div>
+        <!-- Bridge SVG connector -->
+        <div class="bridge-container" data-bridge>
+          <svg class="bridge-svg" viewBox="0 0 80 200">
+            <path class="bridge-line" d="M 5 20 C 40 20, 40 100, 40 100 S 40 180, 75 180"/>
+            <path class="bridge-pulse" d="M 5 20 C 40 20, 40 100, 40 100 S 40 180, 75 180"/>
+          </svg>
+        </div>
 
         <!-- AAP column -->
-        <div class="engine-section aap-col reveal reveal-delay-3">
+        <div class="engine-section aap-col tilt-card reveal" style="--i:3">
           <div class="engine-logo">
             <svg class="logo-redhat" viewBox="0 0 193 146" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat Ansible">
               <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 0 0-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16a6.43 6.43 0 0 0-.22 1.94c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49z" fill="#EE0000"/>
@@ -583,91 +1000,95 @@
           </div>
           <h3 class="engine-title">Ansible Automation Platform</h3>
           <p class="engine-subtitle">The Automation Engine</p>
-          <ul class="engine-list">
-            <li>Agentless push-based execution across any infrastructure</li>
-            <li>Declarative playbooks for repeatable certificate workflows</li>
-            <li>Role-based access control with approval workflows</li>
-            <li>Scheduled jobs for proactive certificate monitoring</li>
-            <li>Event-driven automation for real-time response</li>
+          <ul class="engine-list" data-stagger-list>
+            <li style="--i:0">Agentless push-based execution across any infrastructure</li>
+            <li style="--i:1">Declarative playbooks for repeatable certificate workflows</li>
+            <li style="--i:2">Role-based access control with approval workflows</li>
+            <li style="--i:3">Scheduled jobs for proactive certificate monitoring</li>
+            <li style="--i:4">Event-driven automation for real-time response</li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ════════════════ FIVE CAPABILITIES ════════════════ -->
-  <section class="capabilities">
+  <!-- ═══════════════ FIVE CAPABILITIES ═══════════════ -->
+  <section class="capabilities section-capabilities" id="capabilities" data-section="capabilities">
+    <span class="chapter-watermark parallax-layer" data-speed="0.03">04</span>
     <div class="wrap">
-      <p class="capabilities-label reveal">Lifecycle</p>
-      <h2 class="capabilities-heading reveal reveal-delay-1">Five capabilities, fully automated</h2>
+      <div class="cap-header">
+        <p class="section-label reveal" style="--i:0">Lifecycle</p>
+        <h2 class="capabilities-heading reveal" style="--i:1">Five capabilities, fully automated</h2>
+      </div>
 
-      <div class="cap-list">
-        <div class="cap-item reveal">
-          <span class="cap-marker">1</span>
-          <div class="cap-content">
-            <p class="cap-name">Issue</p>
-            <p class="cap-desc">Vault's PKI engine generates certificates on demand with enforced policies, delivering them to any endpoint through Ansible playbooks.</p>
+      <div class="cap-scroll-container">
+        <div class="cap-track">
+          <div class="cap-card reveal" style="--i:0">
+            <div class="cap-card-number">01</div>
+            <p class="cap-card-name">Issue</p>
+            <p class="cap-card-desc">Vault's PKI engine generates certificates on demand with enforced policies, delivering them to any endpoint through Ansible playbooks.</p>
+          </div>
+
+          <div class="cap-card reveal" style="--i:1">
+            <div class="cap-card-number">02</div>
+            <p class="cap-card-name">Monitor</p>
+            <p class="cap-card-desc">Scheduled Ansible jobs continuously scan certificate expiration dates and surface renewal windows before they become emergencies.</p>
+          </div>
+
+          <div class="cap-card reveal" style="--i:2">
+            <div class="cap-card-number">03</div>
+            <p class="cap-card-name">Renew</p>
+            <p class="cap-card-desc">When certificates approach expiration, automation requests fresh certificates from Vault and deploys them with zero manual intervention.</p>
+          </div>
+
+          <div class="cap-card reveal" style="--i:3">
+            <div class="cap-card-number">04</div>
+            <p class="cap-card-name">Revoke</p>
+            <p class="cap-card-desc">Compromised or decommissioned certificates are immediately revoked in Vault and purged from every endpoint in a single workflow.</p>
+          </div>
+
+          <div class="cap-card reveal" style="--i:4">
+            <div class="cap-card-number">05</div>
+            <p class="cap-card-name">Rollback</p>
+            <p class="cap-card-desc">If a new certificate causes issues, Ansible restores the previous certificate from backup and triggers re-issuance, keeping services online.</p>
           </div>
         </div>
 
-        <div class="cap-item reveal reveal-delay-1">
-          <span class="cap-marker">2</span>
-          <div class="cap-content">
-            <p class="cap-name">Monitor</p>
-            <p class="cap-desc">Scheduled Ansible jobs continuously scan certificate expiration dates and surface renewal windows before they become emergencies.</p>
-          </div>
-        </div>
-
-        <div class="cap-item reveal reveal-delay-2">
-          <span class="cap-marker">3</span>
-          <div class="cap-content">
-            <p class="cap-name">Renew</p>
-            <p class="cap-desc">When certificates approach expiration, automation requests fresh certificates from Vault and deploys them with zero manual intervention.</p>
-          </div>
-        </div>
-
-        <div class="cap-item reveal reveal-delay-3">
-          <span class="cap-marker">4</span>
-          <div class="cap-content">
-            <p class="cap-name">Revoke</p>
-            <p class="cap-desc">Compromised or decommissioned certificates are immediately revoked in Vault and purged from every endpoint in a single workflow.</p>
-          </div>
-        </div>
-
-        <div class="cap-item reveal reveal-delay-4">
-          <span class="cap-marker">5</span>
-          <div class="cap-content">
-            <p class="cap-name">Rollback</p>
-            <p class="cap-desc">If a new certificate causes issues, Ansible restores the previous certificate from backup and triggers re-issuance, keeping services online.</p>
-          </div>
+        <div class="cap-scroll-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+          <span>Scroll to explore</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ════════════════ BUSINESS OUTCOMES ════════════════ -->
-  <section class="outcomes">
+  <!-- ═══════════════ BUSINESS OUTCOMES ═══════════════ -->
+  <section class="outcomes section-outcomes" id="outcomes" data-section="outcomes">
+    <span class="chapter-watermark parallax-layer" data-speed="0.04">05</span>
     <div class="wrap">
-      <p class="outcomes-label reveal">Outcomes</p>
-      <h2 class="outcomes-heading reveal reveal-delay-1">What changes when certificates manage themselves</h2>
+      <p class="section-label reveal" style="--i:0">Outcomes</p>
+      <h2 class="outcomes-heading reveal" style="--i:1">What changes when certificates manage themselves</h2>
 
       <div class="outcomes-list">
-        <div class="outcome-item reveal">
+        <div class="outcome-item tilt-card reveal" style="--i:0">
           <p class="outcome-big">Zero unplanned <span class="accent-gold">outages</span></p>
           <p class="outcome-text">Proactive monitoring and automated renewal eliminate the forgotten-certificate failure mode entirely.</p>
         </div>
 
-        <div class="outcome-item reveal reveal-delay-1">
+        <div class="outcome-item tilt-card reveal" style="--i:1">
           <p class="outcome-big">Minutes, not <span class="accent-red">weeks</span></p>
           <p class="outcome-text">Certificate operations that took days of ticket queues now execute in minutes through self-service automation.</p>
         </div>
 
-        <div class="outcome-item reveal reveal-delay-2">
+        <div class="outcome-item tilt-card reveal" style="--i:2">
           <p class="outcome-big">Audit-ready <span class="accent-gold">always</span></p>
           <p class="outcome-text">Every issuance, renewal, and revocation is logged in Vault with a complete chain of custody for compliance.</p>
         </div>
 
-        <div class="outcome-item reveal reveal-delay-3">
+        <div class="outcome-item tilt-card reveal" style="--i:3">
           <p class="outcome-big">Scale without <span class="accent-red">headcount</span></p>
           <p class="outcome-text">Manage thousands of certificates with the same team. Automation absorbs growth that would otherwise demand hiring.</p>
         </div>
@@ -675,8 +1096,8 @@
     </div>
   </section>
 
-  <!-- ════════════════ FOOTER ════════════════ -->
-  <footer>
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <footer data-section="footer">
     <div class="wrap footer-inner">
       <div class="footer-left">
         <svg class="logo-hashi" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp">
@@ -688,9 +1109,17 @@
           <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 0 0-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16a6.43 6.43 0 0 0-.22 1.94c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49z" fill="#EE0000"/>
           <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 0 1 .22-1.94l-4.86 13.65c-.09.28-3.18 1.93-3.18 5.08 0 13.81 68.84 37.24 92.76 37.24s27-3.87 27-8.18c0-1.63-.78-3.74-.78-3.74-2.07 5.34-14.71 7.34-26.22 7.34" fill="#6c1d1d"/>
         </svg>
-        <span>Secured by HashiCorp Vault PKI</span>
+        <span class="lock-badge" data-lock-badge>
+          <span class="lock-icon" data-lock-icon>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </span>
+          Secured by Vault PKI
+        </span>
         <span>&middot;</span>
-        <span class="footer-host">{{ inventory_hostname }}</span>
+        <span class="footer-host" data-typewriter>{{ inventory_hostname }}</span>
       </div>
       <div class="footer-right">
         &copy; 2026 HashiCorp &amp; Red Hat. All rights reserved.
@@ -704,31 +1133,327 @@
 
       var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      if (prefersReduced) {
-        document.querySelectorAll('.reveal').forEach(function (el) {
-          el.classList.add('visible');
-        });
-        return;
+      // ── Utility: IntersectionObserver factory ──────────
+      function createObserver(callback, options) {
+        return new IntersectionObserver(callback, options);
       }
 
-      var observer = new IntersectionObserver(
-        function (entries) {
+      // ── 1. Hero word-by-word reveal ───────────────────
+      (function heroReveal() {
+        var words = document.querySelectorAll('.hero-word');
+        var line = document.querySelector('.hero-line-draw');
+        var heroSub = document.querySelector('.hero-sub');
+
+        if (prefersReduced) {
+          words.forEach(function (w) { w.classList.add('word-visible'); });
+          if (line) line.classList.add('line-visible');
+          if (heroSub) heroSub.classList.add('visible');
+          return;
+        }
+
+        words.forEach(function (word, i) {
+          setTimeout(function () {
+            word.classList.add('word-visible');
+          }, 300 + i * 150);
+        });
+
+        setTimeout(function () {
+          if (heroSub) heroSub.classList.add('visible');
+        }, 300 + words.length * 150 + 200);
+
+        setTimeout(function () {
+          if (line) line.classList.add('line-visible');
+        }, 300 + words.length * 150 + 100);
+      })();
+
+      // ── 2. Scroll reveal observer ─────────────────────
+      if (!prefersReduced) {
+        var revealObs = createObserver(function (entries) {
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
               entry.target.classList.add('visible');
-              observer.unobserve(entry.target);
+              revealObs.unobserve(entry.target);
             }
           });
-        },
-        {
-          threshold: 0.15,
-          rootMargin: '0px 0px -40px 0px'
-        }
-      );
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-      document.querySelectorAll('.reveal').forEach(function (el) {
-        observer.observe(el);
-      });
+        document.querySelectorAll('.reveal, .reveal-slide-left').forEach(function (el) {
+          revealObs.observe(el);
+        });
+      } else {
+        document.querySelectorAll('.reveal, .reveal-slide-left').forEach(function (el) {
+          el.classList.add('visible');
+        });
+      }
+
+      // ── 3. Animated counters ──────────────────────────
+      (function animateCounters() {
+        var counters = document.querySelectorAll('.counter');
+        if (prefersReduced) {
+          counters.forEach(function (c) {
+            var t = parseInt(c.getAttribute('data-target'), 10);
+            var s = c.getAttribute('data-suffix') || '';
+            var sep = c.getAttribute('data-separator');
+            c.textContent = (sep ? t.toLocaleString() : t) + s;
+          });
+          return;
+        }
+
+        var counterObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var el = entry.target;
+            counterObs.unobserve(el);
+            var target = parseInt(el.getAttribute('data-target'), 10);
+            var suffix = el.getAttribute('data-suffix') || '';
+            var sep = el.getAttribute('data-separator');
+            var start = 0;
+            var duration = 1500;
+            var startTime = null;
+
+            function step(timestamp) {
+              if (!startTime) startTime = timestamp;
+              var progress = Math.min((timestamp - startTime) / duration, 1);
+              var eased = 1 - Math.pow(1 - progress, 4);
+              var current = Math.round(start + (target - start) * eased);
+              el.textContent = (sep ? current.toLocaleString() : current) + suffix;
+              if (progress < 1) requestAnimationFrame(step);
+            }
+
+            requestAnimationFrame(step);
+          });
+        }, { threshold: 0.3 });
+
+        counters.forEach(function (c) { counterObs.observe(c); });
+
+        // Mega stat animation
+        var megaStats = document.querySelectorAll('.stat-mega');
+        var megaObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('counter-visible');
+              megaObs.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.2 });
+
+        megaStats.forEach(function (m) { megaObs.observe(m); });
+      })();
+
+      // ── 4. SVG underline reveal ───────────────────────
+      (function svgUnderlines() {
+        var underlines = document.querySelectorAll('.svg-underline');
+        if (prefersReduced) {
+          underlines.forEach(function (u) { u.classList.add('underline-visible'); });
+          return;
+        }
+
+        var underlineObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('underline-visible');
+              underlineObs.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+
+        underlines.forEach(function (u) { underlineObs.observe(u); });
+      })();
+
+      // ── 5. Bridge line draw ───────────────────────────
+      (function bridgeDraw() {
+        var bridges = document.querySelectorAll('[data-bridge]');
+        if (prefersReduced) {
+          bridges.forEach(function (b) {
+            b.querySelector('.bridge-line').classList.add('bridge-drawn');
+          });
+          return;
+        }
+
+        var bridgeObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var line = entry.target.querySelector('.bridge-line');
+            var pulse = entry.target.querySelector('.bridge-pulse');
+            if (line) line.classList.add('bridge-drawn');
+            if (pulse) pulse.classList.add('bridge-pulse-active');
+            bridgeObs.unobserve(entry.target);
+          });
+        }, { threshold: 0.3 });
+
+        bridges.forEach(function (b) { bridgeObs.observe(b); });
+      })();
+
+      // ── 6. Staggered list items ───────────────────────
+      (function staggerLists() {
+        var lists = document.querySelectorAll('[data-stagger-list]');
+        if (prefersReduced) {
+          lists.forEach(function (l) {
+            l.querySelectorAll('li').forEach(function (li) { li.classList.add('visible'); });
+          });
+          return;
+        }
+
+        var listObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var items = entry.target.querySelectorAll('li');
+            items.forEach(function (li, i) {
+              setTimeout(function () { li.classList.add('visible'); }, i * 120);
+            });
+            listObs.unobserve(entry.target);
+          });
+        }, { threshold: 0.2 });
+
+        lists.forEach(function (l) { listObs.observe(l); });
+      })();
+
+      // ── 7. Chapter nav highlighting ───────────────────
+      (function chapterNav() {
+        var sections = document.querySelectorAll('[data-section]');
+        var navLinks = document.querySelectorAll('.chapter-nav a');
+        if (!navLinks.length) return;
+
+        var navObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var id = entry.target.getAttribute('data-section');
+              navLinks.forEach(function (link) {
+                link.classList.toggle('active', link.getAttribute('data-chapter') === id);
+              });
+            }
+          });
+        }, { threshold: 0, rootMargin: '-40% 0px -55% 0px' });
+
+        sections.forEach(function (s) { navObs.observe(s); });
+      })();
+
+      // ── 8. Parallax scroll ────────────────────────────
+      (function parallaxScroll() {
+        if (prefersReduced) return;
+
+        var layers = document.querySelectorAll('.parallax-layer');
+        if (!layers.length) return;
+
+        var ticking = false;
+
+        function updateParallax() {
+          var scrollY = window.pageYOffset;
+          layers.forEach(function (layer) {
+            var speed = parseFloat(layer.getAttribute('data-speed')) || 0.03;
+            var rect = layer.parentElement.getBoundingClientRect();
+            var offset = (rect.top + window.pageYOffset) - scrollY;
+            layer.style.transform = 'translateY(' + (offset * speed) + 'px)';
+          });
+          ticking = false;
+        }
+
+        window.addEventListener('scroll', function () {
+          if (!ticking) {
+            requestAnimationFrame(updateParallax);
+            ticking = true;
+          }
+        }, { passive: true });
+      })();
+
+      // ── 9. Mouse-responsive logos ─────────────────────
+      (function mouseTrack() {
+        if (prefersReduced) return;
+
+        var tracked = document.querySelectorAll('.logo-mouse-track');
+        if (!tracked.length) return;
+
+        var centerX = window.innerWidth / 2;
+        var centerY = window.innerHeight / 2;
+        var ticking = false;
+        var mouseX = centerX;
+        var mouseY = centerY;
+
+        window.addEventListener('resize', function () {
+          centerX = window.innerWidth / 2;
+          centerY = window.innerHeight / 2;
+        });
+
+        document.addEventListener('mousemove', function (e) {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+
+          if (!ticking) {
+            requestAnimationFrame(function () {
+              tracked.forEach(function (el) {
+                var strength = parseFloat(el.getAttribute('data-track-strength')) || 5;
+                var dx = ((mouseX - centerX) / centerX) * strength;
+                var dy = ((mouseY - centerY) / centerY) * strength;
+                el.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+              });
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+      })();
+
+      // ── 10. Footer lock animation ─────────────────────
+      (function lockAnimation() {
+        var lockIcon = document.querySelector('[data-lock-icon]');
+        if (!lockIcon) return;
+
+        if (prefersReduced) {
+          lockIcon.classList.add('lock-closed');
+          return;
+        }
+
+        var lockObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              setTimeout(function () {
+                lockIcon.classList.add('lock-closed');
+              }, 400);
+              lockObs.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+
+        lockObs.observe(lockIcon);
+      })();
+
+      // ── 11. Footer hostname typewriter ────────────────
+      (function typewriter() {
+        var el = document.querySelector('[data-typewriter]');
+        if (!el) return;
+
+        var text = el.textContent.trim();
+        el.textContent = '';
+
+        var chars = [];
+        for (var i = 0; i < text.length; i++) {
+          var span = document.createElement('span');
+          span.className = 'typewriter-char';
+          span.textContent = text[i];
+          el.appendChild(span);
+          chars.push(span);
+        }
+
+        if (prefersReduced) {
+          chars.forEach(function (c) { c.classList.add('char-visible'); });
+          return;
+        }
+
+        var typeObs = createObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            chars.forEach(function (c, idx) {
+              setTimeout(function () {
+                c.classList.add('char-visible');
+              }, 600 + idx * 60);
+            });
+            typeObs.unobserve(entry.target);
+          });
+        }, { threshold: 0.5 });
+
+        typeObs.observe(el);
+      })();
+
     })();
   </script>
 </body>
