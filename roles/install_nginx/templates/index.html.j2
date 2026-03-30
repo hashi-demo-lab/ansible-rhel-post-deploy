@@ -931,6 +931,279 @@
         height: 300px;
       }
     }
+
+    /* ── Animation: Hero Signature Load Sequence ────── */
+    .hero-logos {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.5s var(--ease-out-expo), transform 0.5s var(--ease-out-expo);
+    }
+    .hero-logos.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .hero-logos svg:first-child {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.5s var(--ease-out-expo) 0.1s, transform 0.5s var(--ease-out-expo) 0.1s;
+    }
+    .hero-logos.show svg:first-child {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .hero-logos .logo-divider {
+      opacity: 0;
+      transform: scaleY(0);
+      transition: opacity 0.3s var(--ease-out-expo) 0.3s, transform 0.3s var(--ease-out-expo) 0.3s;
+    }
+    .hero-logos.show .logo-divider {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    .hero-logos svg:last-of-type {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.5s var(--ease-out-expo) 0.4s, transform 0.5s var(--ease-out-expo) 0.4s;
+    }
+    .hero-logos.show svg:last-of-type {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .hero-subtitle {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+    .hero-subtitle.hero-sub-show {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+    }
+    .scroll-hint {
+      opacity: 0;
+    }
+    .scroll-hint.hero-hint-show {
+      opacity: 1;
+      transition: opacity 0.6s var(--ease-out-expo);
+    }
+
+    /* ── Animation: Card Hover Effects ───────────────── */
+    .shift-stat-block,
+    .resilience-card,
+    .cta-card,
+    .engine-card,
+    .incident-card,
+    .benefit-card,
+    .lifecycle-step {
+      transition: transform 0.3s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart);
+    }
+    .shift-stat-block:hover,
+    .resilience-card:hover,
+    .cta-card:hover,
+    .engine-card:hover,
+    .incident-card:hover,
+    .benefit-card:hover,
+    .lifecycle-step:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px oklch(0% 0 0 / 0.08);
+    }
+
+    /* ── Animation: Progress Bar Gradient & Glow ──── */
+    #progressBar {
+      background: linear-gradient(90deg, var(--vault-gold), var(--accent));
+      box-shadow: 0 0 8px oklch(55% 0.15 270 / 0.4);
+    }
+
+    /* ── Animation: Chapter Nav Progress Rings ──────── */
+    .chapter-nav .dot {
+      position: relative;
+    }
+    .chapter-nav .dot svg {
+      position: absolute;
+      inset: -4px;
+      width: calc(100% + 8px);
+      height: calc(100% + 8px);
+    }
+    .chapter-nav .dot svg circle.progress {
+      stroke-dasharray: 44;
+      stroke-dashoffset: 44;
+      transition: stroke-dashoffset 0.3s var(--ease-out-quart);
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+
+    /* ── Animation: Lifecycle Wheel Enhancements ───── */
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 0px currentColor); }
+      50% { filter: drop-shadow(0 0 8px currentColor); }
+    }
+    .lifecycle-node.active {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes flowDash {
+      to { stroke-dashoffset: -20; }
+    }
+    #arcs path {
+      animation: flowDash 2s linear infinite;
+    }
+
+    @keyframes hubSpin {
+      to { transform: rotate(360deg); }
+    }
+    #lifecycleHub {
+      transform-origin: 250px 250px;
+      animation: hubSpin 60s linear infinite;
+    }
+
+    /* ── Animation: Staggered List Item Reveals ────── */
+    .engine-card li,
+    .lifecycle-detail-panel li {
+      opacity: 0;
+      transform: translateX(-12px);
+      transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+    }
+    .engine-card.visible li,
+    .lifecycle-detail-panel.active li {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .engine-card li,
+    .lifecycle-detail-panel li {
+      transition-delay: calc(var(--li-i, 0) * 80ms);
+    }
+
+    /* ── Animation: Section Background Color Blending ── */
+    .slide::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, var(--next-bg, transparent));
+      pointer-events: none;
+      z-index: 1;
+    }
+    .slide--hero::after   { --next-bg: var(--bg-warm); }
+    .slide--risk::after    { --next-bg: var(--bg-warm); }
+    .slide--shift::after   { --next-bg: var(--bg); }
+    .slide--together::after { --next-bg: var(--bg-alt); }
+    .slide--lifecycle::after { --next-bg: var(--bg-cool); }
+    .slide--resilience::after { --next-bg: var(--bg); }
+    .slide--outcomes::after { --next-bg: var(--bg-warm); }
+    .slide--benefits::after { --next-bg: var(--bg-alt); }
+    .slide--cta::after { --next-bg: transparent; }
+
+    /* ── Animation: Bridge Connector Line Draw ──────── */
+    .bridge-connector svg line {
+      stroke-dasharray: 180;
+      stroke-dashoffset: 180;
+      transition: stroke-dashoffset 0.8s var(--ease-out-expo);
+    }
+    .bridge-connector.visible svg line {
+      stroke-dashoffset: 0;
+    }
+    .bridge-connector svg circle {
+      opacity: 0;
+      transform-origin: center;
+      transform: scale(0);
+      transition: opacity 0.4s var(--ease-out-expo) 0.8s, transform 0.4s var(--ease-out-expo) 0.8s;
+    }
+    .bridge-connector.visible svg circle {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .bridge-connector svg circle:nth-child(3) {
+      transition-delay: 0.6s;
+    }
+    .bridge-connector svg circle:nth-child(4) {
+      transition-delay: 1s;
+    }
+    @keyframes bridgePulse {
+      0%, 100% { filter: drop-shadow(0 0 0px var(--accent)); }
+      50% { filter: drop-shadow(0 0 6px var(--accent)); }
+    }
+    .bridge-connector.visible svg circle:nth-child(3) {
+      animation: bridgePulse 2s ease-in-out infinite 1.2s;
+    }
+
+    /* ── Animation: Timeline Activation ────────────── */
+    .timeline-step .marker {
+      transform: scale(1);
+    }
+    .timeline.visible .timeline-step .marker {
+      animation: markerPulse 0.4s var(--ease-out-expo) forwards;
+    }
+    .timeline.visible .timeline-step:nth-child(1) .marker { animation-delay: 0s; }
+    .timeline.visible .timeline-step:nth-child(2) .marker { animation-delay: 0.2s; }
+    .timeline.visible .timeline-step:nth-child(3) .marker { animation-delay: 0.4s; }
+    .timeline.visible .timeline-step:nth-child(4) .marker { animation-delay: 0.6s; }
+    @keyframes markerPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.6); }
+      100% { transform: scale(1.3); }
+    }
+
+    /* ── Animation: Outcome Values Parallax ──────────── */
+    .outcome-value {
+      will-change: transform;
+      transition: transform 0.1s linear;
+    }
+
+    /* ── Animation: prefers-reduced-motion overrides ── */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-logos,
+      .hero-logos svg,
+      .hero-logos .logo-divider,
+      .hero-subtitle,
+      .scroll-hint {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+      }
+      .shift-stat-block,
+      .resilience-card,
+      .cta-card,
+      .engine-card,
+      .incident-card,
+      .benefit-card,
+      .lifecycle-step {
+        transition: none !important;
+      }
+      .shift-stat-block:hover,
+      .resilience-card:hover,
+      .cta-card:hover,
+      .engine-card:hover,
+      .incident-card:hover,
+      .benefit-card:hover,
+      .lifecycle-step:hover {
+        transform: none !important;
+      }
+      .lifecycle-node.active { animation: none !important; }
+      #arcs path { animation: none !important; }
+      #lifecycleHub { animation: none !important; }
+      .engine-card li,
+      .lifecycle-detail-panel li {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+      .slide::after { display: none !important; }
+      .bridge-connector svg line,
+      .bridge-connector svg circle {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        stroke-dashoffset: 0 !important;
+        animation: none !important;
+      }
+      .timeline.visible .timeline-step .marker { animation: none !important; }
+      .chapter-nav .dot svg circle.progress { transition: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -940,15 +1213,15 @@
 
 <!-- Chapter Navigation -->
 <nav class="chapter-nav" id="chapterNav" aria-label="Chapter navigation">
-  <a href="#hero" data-chapter="0"><span class="label">Hero</span><span class="dot"></span></a>
-  <a href="#risk" data-chapter="1"><span class="label">Risk</span><span class="dot"></span></a>
-  <a href="#shift" data-chapter="2"><span class="label">47 Days</span><span class="dot"></span></a>
-  <a href="#together" data-chapter="3"><span class="label">Together</span><span class="dot"></span></a>
-  <a href="#lifecycle" data-chapter="4"><span class="label">Lifecycle</span><span class="dot"></span></a>
-  <a href="#resilience" data-chapter="5"><span class="label">Resilience</span><span class="dot"></span></a>
-  <a href="#outcomes" data-chapter="6"><span class="label">Outcomes</span><span class="dot"></span></a>
-  <a href="#benefits" data-chapter="7"><span class="label">Benefits</span><span class="dot"></span></a>
-  <a href="#cta" data-chapter="8"><span class="label">Close</span><span class="dot"></span></a>
+  <a href="#hero" data-chapter="0"><span class="label">Hero</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#risk" data-chapter="1"><span class="label">Risk</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#shift" data-chapter="2"><span class="label">47 Days</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#together" data-chapter="3"><span class="label">Together</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#lifecycle" data-chapter="4"><span class="label">Lifecycle</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#resilience" data-chapter="5"><span class="label">Resilience</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#outcomes" data-chapter="6"><span class="label">Outcomes</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#benefits" data-chapter="7"><span class="label">Benefits</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#cta" data-chapter="8"><span class="label">Close</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
 </nav>
 
 <!-- Keyboard Hint -->
@@ -1145,10 +1418,12 @@
           </g>
 
           <!-- Center hub -->
-          <circle cx="250" cy="250" r="58" fill="oklch(95% 0.008 55)" stroke="oklch(88% 0.008 55)" stroke-width="1.5"/>
-          <text x="250" y="242" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">Vault PKI</text>
-          <text x="250" y="258" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="oklch(45% 0.01 55)">+</text>
-          <text x="250" y="274" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">AAP</text>
+          <g id="lifecycleHub">
+            <circle cx="250" cy="250" r="58" fill="oklch(95% 0.008 55)" stroke="oklch(88% 0.008 55)" stroke-width="1.5"/>
+            <text x="250" y="242" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">Vault PKI</text>
+            <text x="250" y="258" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="oklch(45% 0.01 55)">+</text>
+            <text x="250" y="274" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">AAP</text>
+          </g>
 
           <!-- Nodes will be created by JS for cleaner interactivity -->
         </svg>
@@ -1359,20 +1634,47 @@
   var totalChapters = slides.length;
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── Word-by-word hero reveal ───────────────────────
-  function revealHeroWords() {
+  // ── Hero Signature Load Sequence (choreographed) ──
+  function revealHeroSequence() {
+    var logos = document.querySelector('.hero-logos');
     var words = document.querySelectorAll('.hero-word');
+    var subtitle = document.querySelector('.hero-subtitle');
+    var scrollHint = document.querySelector('.scroll-hint');
+
+    // Phase 1: Logos scale in (0-500ms)
+    setTimeout(function () {
+      if (logos) logos.classList.add('show');
+    }, 100);
+
+    // Phase 2: Words reveal one by one (600ms-1500ms)
     words.forEach(function (word, i) {
       setTimeout(function () {
         word.classList.add('show');
-      }, 200 + i * 180);
+      }, 600 + i * 180);
     });
+
+    // Phase 3: Subtitle slides up after headline completes (~1600ms)
+    var subtitleDelay = 600 + words.length * 180 + 100;
+    setTimeout(function () {
+      if (subtitle) subtitle.classList.add('hero-sub-show');
+    }, subtitleDelay);
+
+    // Phase 4: Scroll hint fades in last (~2000ms)
+    setTimeout(function () {
+      if (scrollHint) scrollHint.classList.add('hero-hint-show');
+    }, subtitleDelay + 400);
   }
 
   if (reducedMotion) {
     document.querySelectorAll('.hero-word').forEach(function (w) { w.classList.add('show'); });
+    var logos = document.querySelector('.hero-logos');
+    if (logos) logos.classList.add('show');
+    var sub = document.querySelector('.hero-subtitle');
+    if (sub) sub.classList.add('hero-sub-show');
+    var hint = document.querySelector('.scroll-hint');
+    if (hint) hint.classList.add('hero-hint-show');
   } else {
-    revealHeroWords();
+    revealHeroSequence();
   }
 
   // ── IntersectionObserver for reveals ───────────────
@@ -1417,8 +1719,6 @@
     var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
     progressBar.style.width = progress + '%';
   }
-
-  window.addEventListener('scroll', updateProgress, { passive: true });
 
   // ── Keyboard navigation ────────────────────────────
   function navigateTo(idx) {
@@ -1525,9 +1825,136 @@
     }
   }
 
+  // ── Staggered list item reveals ────────────────────
+  function assignListItemDelays() {
+    var selectors = ['.engine-card ul', '.lifecycle-detail-panel ul'];
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(ul) {
+        var items = ul.querySelectorAll('li');
+        items.forEach(function(li, i) {
+          li.style.setProperty('--li-i', i);
+        });
+      });
+    });
+  }
+  assignListItemDelays();
+
+  // ── Engine card visibility for staggered list reveals ──
+  var engineCardObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.engine-card').forEach(function (el) {
+    engineCardObserver.observe(el);
+  });
+
+  // ── Bridge connector draw animation ──────────────
+  var bridgeObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.bridge-connector').forEach(function (el) {
+    bridgeObserver.observe(el);
+  });
+
+  // ── Timeline activation sequence ──────────────────
+  var timelineObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting && !entry.target.dataset.animated) {
+        entry.target.dataset.animated = 'true';
+        entry.target.classList.add('visible');
+        // Animate timeline numbers counting down from 398
+        if (!reducedMotion) {
+          var steps = entry.target.querySelectorAll('.timeline-step');
+          steps.forEach(function(step, i) {
+            var daysEl = step.querySelector('.timeline-days');
+            var targetVal = parseInt(daysEl.textContent, 10);
+            var startVal = 398;
+            var duration = 800;
+            var delay = i * 200;
+            setTimeout(function() {
+              var startTime = null;
+              daysEl.textContent = startVal;
+              function animateDay(ts) {
+                if (!startTime) startTime = ts;
+                var progress = Math.min((ts - startTime) / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var current = Math.round(startVal + (targetVal - startVal) * eased);
+                daysEl.textContent = current;
+                if (progress < 1) requestAnimationFrame(animateDay);
+              }
+              requestAnimationFrame(animateDay);
+            }, delay);
+          });
+        }
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.timeline').forEach(function (el) {
+    timelineObserver.observe(el);
+  });
+
+  // ── Scroll progress rings on chapter nav ──────────
+  function updateProgressRings() {
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    var windowH = window.innerHeight;
+    navLinks.forEach(function(link, i) {
+      var section = slides[i];
+      if (!section) return;
+      var rect = section.getBoundingClientRect();
+      var sectionTop = rect.top + scrollTop;
+      var sectionH = section.offsetHeight;
+      var progressCircle = link.querySelector('.dot svg circle.progress');
+      if (!progressCircle) return;
+
+      // Calculate how far through this section we've scrolled
+      var sectionProgress = 0;
+      if (scrollTop + windowH > sectionTop && scrollTop < sectionTop + sectionH) {
+        sectionProgress = Math.min(Math.max((scrollTop - sectionTop + windowH * 0.5) / sectionH, 0), 1);
+      } else if (scrollTop >= sectionTop + sectionH) {
+        sectionProgress = 1;
+      }
+      // 44 = 2 * PI * 7 (circumference)
+      var dashOffset = 44 * (1 - sectionProgress);
+      progressCircle.style.strokeDashoffset = dashOffset;
+    });
+  }
+
+  window.addEventListener('scroll', function() {
+    updateProgress();
+    updateProgressRings();
+  }, { passive: true });
+
+  // ── Outcome values subtle parallax ────────────────
+  if (!reducedMotion) {
+    var outcomeValues = document.querySelectorAll('.outcome-value');
+    function updateOutcomeParallax() {
+      outcomeValues.forEach(function(el) {
+        var rect = el.getBoundingClientRect();
+        var windowH = window.innerHeight;
+        if (rect.top < windowH && rect.bottom > 0) {
+          var center = rect.top + rect.height / 2;
+          var offset = (center - windowH / 2) * 0.08;
+          el.style.transform = 'translateY(' + offset + 'px)';
+        }
+      });
+    }
+    window.addEventListener('scroll', updateOutcomeParallax, { passive: true });
+  }
+
   // ── Initialize ─────────────────────────────────────
   updateNav(0);
   updateProgress();
+  updateProgressRings();
 
 })();
 
