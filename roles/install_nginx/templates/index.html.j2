@@ -455,6 +455,40 @@
       max-width: var(--measure);
     }
 
+    .shift-callout {
+      margin: var(--space-m) 0;
+      padding: var(--space-m) var(--space-m) var(--space-m) var(--space-m);
+      border-left: 4px solid var(--accent);
+      background: oklch(93% 0.015 270 / 0.3);
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .shift-callout .callout-label {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-xs);
+    }
+
+    .shift-callout .callout-text {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-2);
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .shift-callout .callout-sub {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: var(--step-0);
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+      max-width: var(--measure);
+    }
+
     .shift-source {
       font-size: 0.75rem;
       color: var(--text-faint);
@@ -1334,11 +1368,14 @@
     <div class="shift-stats">
       <div class="shift-stat-block reveal reveal-delay-4">
         <div class="big-number"><span class="counter-value" data-target="7700" data-suffix="+">0</span></div>
-        <p>Annual renewals per 1,000 certificates at 47-day lifetimes</p>
+        <p>Annual renewals per 1,000 certificates at 47-day lifetimes &mdash; up from ~1,000 today. That's an 8&times; increase in operational overhead.</p>
       </div>
-      <div class="shift-stat-block reveal reveal-delay-5">
-        <p class="shift-insight" style="margin: 0;">Public CA standard today &mdash; internal CA best practice tomorrow</p>
-      </div>
+    </div>
+
+    <div class="shift-callout reveal reveal-delay-5">
+      <div class="callout-label">Key Insight</div>
+      <div class="callout-text">Public CA standard today &mdash; internal CA best practice tomorrow.</div>
+      <div class="callout-sub">This isn't just about public-facing certificates. When the industry standardises on short-lived certificates, the same expectation follows for internal systems — your private CA, your service mesh, your internal APIs. Organisations adopting this now gain the security benefits ahead of the curve.</div>
     </div>
 
     <p class="shift-insight reveal reveal-delay-6">
