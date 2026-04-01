@@ -47,10 +47,9 @@
 
     /* ── Base ──────────────────────────────────────────── */
     html {
-      scroll-behavior: smooth;
       -webkit-text-size-adjust: 100%;
-      scroll-snap-type: y mandatory;
-      overflow-y: scroll;
+      overflow: hidden;
+      height: 100%;
     }
 
     body {
@@ -61,7 +60,8 @@
       color: var(--text);
       background: var(--bg);
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      overflow: hidden;
+      height: 100%;
     }
 
     h1, h2, h3, h4 {
@@ -72,40 +72,51 @@
 
     p { max-width: var(--measure); }
 
-    /* ── Progress Bar ─────────────────────────────────── */
+    /* ── Horizontal Slide Track ─────────────────────────── */
+    .slide-track {
+      display: flex;
+      height: 100vh;
+      width: calc(9 * 100vw);
+      transition: transform 0.7s var(--ease-out-expo);
+      will-change: transform;
+    }
+
+    /* ── Progress Bar (top, horizontal) ─────────────────── */
     .progress-bar {
       position: fixed;
       top: 0;
       left: 0;
       height: 3px;
-      background: var(--accent);
+      background: linear-gradient(90deg, var(--vault-gold), var(--accent));
+      box-shadow: 0 0 8px oklch(55% 0.15 270 / 0.4);
       z-index: 200;
       width: 0%;
-      transition: width 0.15s linear;
+      transition: width 0.4s var(--ease-out-expo);
       will-change: width;
     }
 
-    /* ── Chapter Side Navigation ──────────────────────── */
+    /* ── Chapter Bottom Navigation ──────────────────────── */
     .chapter-nav {
       position: fixed;
-      right: clamp(1rem, 2vw, 2.5rem);
-      top: 50%;
-      transform: translateY(-50%);
+      bottom: clamp(1.2rem, 2vh, 2rem);
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 100;
       display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      align-items: flex-end;
+      flex-direction: row;
+      gap: 1.5rem;
+      align-items: center;
     }
 
     .chapter-nav a {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      flex-direction: column;
+      gap: 0.4rem;
       text-decoration: none;
       color: var(--text-faint);
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.75rem;
+      font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.05em;
       transition: color 0.3s var(--ease-out-expo);
@@ -118,11 +129,29 @@
       background: var(--border);
       transition: background 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .chapter-nav a .dot svg {
+      position: absolute;
+      inset: -4px;
+      width: calc(100% + 8px);
+      height: calc(100% + 8px);
+    }
+    .chapter-nav .dot svg circle.progress {
+      stroke-dasharray: 44;
+      stroke-dashoffset: 44;
+      transition: stroke-dashoffset 0.3s var(--ease-out-quart);
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2;
+      transform: rotate(-90deg);
+      transform-origin: center;
     }
 
     .chapter-nav a .label {
       opacity: 0;
-      transform: translateX(8px);
+      transform: translateY(4px);
       transition: opacity 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
       white-space: nowrap;
       text-transform: uppercase;
@@ -131,7 +160,7 @@
     .chapter-nav a:hover .label,
     .chapter-nav a.active .label {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateY(0);
     }
 
     .chapter-nav a:hover .dot { background: var(--text-muted); }
@@ -142,19 +171,22 @@
     .chapter-nav a.active { color: var(--text); }
 
     @media (max-width: 768px) {
-      .chapter-nav { display: none; }
+      .chapter-nav .label { display: none; }
+      .chapter-nav { gap: 1rem; }
     }
 
     /* ── Slide (full-viewport section) ────────────────── */
     .slide {
-      min-height: 100vh;
-      scroll-snap-align: start;
+      width: 100vw;
+      height: 100vh;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       justify-content: center;
       padding: var(--space-l) 0;
       position: relative;
       overflow: hidden;
+      overflow-y: auto;
     }
 
     .wrap {
@@ -166,13 +198,13 @@
     /* ── Reveal Animations ────────────────────────────── */
     .reveal {
       opacity: 0;
-      transform: translateY(2rem);
+      transform: translateX(3rem);
       transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
     }
 
     .reveal.visible {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
     }
 
     .reveal-delay-1 { transition-delay: 0.1s; }
@@ -190,7 +222,6 @@
         transform: none;
         transition: none;
       }
-      html { scroll-snap-type: none; scroll-behavior: auto; }
       .hero-word { opacity: 1 !important; transform: none !important; }
       .scroll-hint { animation: none !important; }
       .counter { transition: none !important; }
@@ -262,12 +293,12 @@
 
     .scroll-hint .arrow {
       display: inline-block;
-      animation: bounce-down 2s var(--ease-out-expo) infinite;
+      animation: bounce-right 2s var(--ease-out-expo) infinite;
     }
 
-    @keyframes bounce-down {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(6px); }
+    @keyframes bounce-right {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(6px); }
     }
 
     /* ── Section Headers ──────────────────────────────── */
@@ -288,55 +319,87 @@
       max-width: 20ch;
     }
 
-    /* ── Risk Section ─────────────────────────────────── */
-    .incident-block {
-      background: var(--bg-light);
-      border-left: 4px solid var(--redhat-red);
-      padding: var(--space-m);
+    /* ── Risk Section (Chapter 2) ─────────────────────── */
+    .risk-hero-quote {
+      position: relative;
+      padding: var(--space-l) var(--space-l) var(--space-m);
       margin-bottom: var(--space-m);
-      border-radius: 0 0.5rem 0.5rem 0;
+      background: linear-gradient(135deg, oklch(16% 0.02 25), oklch(22% 0.03 25));
+      border-radius: 1rem;
+      overflow: hidden;
     }
 
-    .incident-block blockquote {
-      font-size: var(--step-0);
-      line-height: 1.7;
-      color: var(--text);
-      font-style: italic;
-      max-width: var(--measure);
+    .risk-hero-quote::before {
+      content: '\201C';
+      position: absolute;
+      top: -0.2em;
+      left: 0.6rem;
+      font-family: 'Outfit', serif;
+      font-size: clamp(8rem, 15vw, 14rem);
+      font-weight: 800;
+      color: var(--redhat-red);
+      opacity: 0.15;
+      line-height: 1;
+      pointer-events: none;
     }
 
-    .incident-source {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
+    .risk-hero-quote::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: var(--redhat-red);
+    }
+
+    .risk-hero-quote blockquote {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: clamp(1.15rem, 1rem + 0.8vw, 1.6rem);
+      font-weight: 600;
+      line-height: 1.5;
+      color: oklch(95% 0.005 55);
+      font-style: normal;
+      max-width: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .risk-hero-quote .incident-source {
+      font-size: 0.9rem;
+      color: oklch(70% 0.02 25);
       font-weight: 600;
       margin-top: var(--space-s);
       font-style: normal;
+      position: relative;
+      z-index: 1;
     }
 
     .incident-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-      gap: var(--space-s);
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-xs);
       margin-bottom: var(--space-m);
     }
 
     .incident-card {
       background: var(--bg-light);
-      padding: var(--space-s) var(--space-m);
+      padding: var(--space-s) var(--space-s);
       border-radius: 0.5rem;
       border: 1px solid var(--border);
+      border-top: 3px solid var(--redhat-red);
     }
 
     .incident-card strong {
       display: block;
       font-family: 'Outfit', system-ui, sans-serif;
       font-weight: 700;
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       margin-bottom: 0.25rem;
     }
 
     .incident-card span {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       color: var(--text-muted);
     }
 
@@ -589,254 +652,6 @@
     }
 
     /* ── Lifecycle (Chapter 5) ────────────────────────── */
-    .lifecycle-track {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: var(--space-s);
-      margin-top: var(--space-m);
-    }
-
-    @media (max-width: 900px) {
-      .lifecycle-track {
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-      }
-    }
-
-    .lifecycle-step {
-      padding: var(--space-m) var(--space-s);
-      border-radius: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--bg-light);
-      text-align: center;
-      position: relative;
-    }
-
-    .lifecycle-step .step-number {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-3);
-      font-weight: 800;
-      color: var(--accent);
-      opacity: 0.25;
-      line-height: 1;
-      margin-bottom: var(--space-xs);
-    }
-
-    .lifecycle-step h3 {
-      font-size: var(--step-1);
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .lifecycle-step p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      max-width: none;
-    }
-
-    /* ── Resilience (Chapter 6) ───────────────────────── */
-    .resilience-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-      gap: var(--space-m);
-      margin-top: var(--space-m);
-    }
-
-    .resilience-card {
-      padding: var(--space-m);
-      border-radius: 0.75rem;
-      background: var(--bg-light);
-      border: 1px solid var(--border);
-    }
-
-    .resilience-card h3 {
-      font-size: var(--step-1);
-      font-weight: 700;
-      margin-bottom: var(--space-xs);
-    }
-
-    .resilience-card p {
-      font-size: 0.9375rem;
-      color: var(--text-muted);
-    }
-
-    .resilience-motto {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-2);
-      font-weight: 800;
-      margin-top: var(--space-m);
-      color: var(--accent);
-    }
-
-    /* ── Outcomes (Chapter 7) ─────────────────────────── */
-    .outcomes-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-      gap: var(--space-m);
-      margin-top: var(--space-m);
-    }
-
-    .outcome-item {
-      text-align: left;
-    }
-
-    .outcome-item .outcome-value {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-3);
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
-
-    .outcome-item .outcome-label {
-      font-size: 0.9375rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    /* ── Who Benefits (Chapter 8) ─────────────────────── */
-    .benefits-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-      gap: var(--space-m);
-      margin-top: var(--space-m);
-    }
-
-    .benefit-card {
-      padding: var(--space-m);
-      border-radius: 0.75rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .benefit-card--security {
-      background: oklch(96% 0.015 270);
-      border: 1px solid oklch(90% 0.02 270);
-    }
-
-    .benefit-card--platform {
-      background: oklch(96% 0.015 160);
-      border: 1px solid oklch(90% 0.02 160);
-    }
-
-    .benefit-card--leadership {
-      background: oklch(96% 0.015 55);
-      border: 1px solid oklch(90% 0.02 55);
-    }
-
-    .benefit-card h3 {
-      font-size: var(--step-1);
-      font-weight: 700;
-      margin-bottom: var(--space-xs);
-    }
-
-    .benefit-card ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .benefit-card ul li {
-      padding: 0.35rem 0;
-      font-size: 0.9375rem;
-      color: var(--text-muted);
-      padding-left: 1rem;
-      position: relative;
-    }
-
-    .benefit-card ul li::before {
-      content: '\2022';
-      position: absolute;
-      left: 0;
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    /* ── CTA (Chapter 9) ──────────────────────────────── */
-    .cta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-      gap: var(--space-m);
-      margin: var(--space-m) 0;
-    }
-
-    .cta-card {
-      padding: var(--space-m);
-      border-radius: 0.75rem;
-      background: var(--bg-light);
-      border: 1px solid var(--border);
-    }
-
-    .cta-card h3 {
-      font-size: var(--step-1);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 0.5rem;
-    }
-
-    .cta-card p {
-      font-size: 0.9375rem;
-      color: var(--text-muted);
-    }
-
-    .cta-footer {
-      display: flex;
-      align-items: center;
-      gap: var(--space-m);
-      margin-top: var(--space-l);
-      flex-wrap: wrap;
-    }
-
-    .cta-footer svg { height: 2rem; }
-    .cta-footer .hashicorp-logo { color: var(--text); }
-
-    .cta-hostname {
-      font-family: 'DM Sans', monospace;
-      font-size: 0.875rem;
-      color: oklch(55% 0.008 55);
-      margin-top: var(--space-m);
-    }
-
-    .cta-hostname .typed {
-      border-right: 2px solid var(--vault-gold);
-      padding-right: 2px;
-      animation: blink 1s step-end infinite;
-    }
-
-    @keyframes blink {
-      50% { border-color: transparent; }
-    }
-
-    /* ── Keyboard Hint ────────────────────────────────── */
-    .key-hint {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.75rem;
-      color: var(--text-faint);
-      background: var(--bg-light);
-      border: 1px solid var(--border);
-      padding: 0.35rem 1rem;
-      border-radius: 2rem;
-      z-index: 100;
-      opacity: 0.7;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-
-    .key-hint kbd {
-      display: inline-block;
-      background: var(--bg-alt);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 0.1rem 0.4rem;
-      font-family: inherit;
-      font-size: 0.6875rem;
-      margin: 0 0.1rem;
-    }
-
-    /* ── Lifecycle Wheel ────────────────────────────── */
     .lifecycle-container {
       display: flex;
       align-items: center;
@@ -879,6 +694,30 @@
       opacity: 0.15;
     }
 
+    /* Connector lines from center to nodes */
+    .connector-line {
+      stroke: oklch(80% 0.008 55);
+      stroke-width: 1.5;
+      transition: stroke 0.4s var(--ease-out-expo), stroke-width 0.4s var(--ease-out-expo), filter 0.4s var(--ease-out-expo);
+      filter: none;
+    }
+
+    .connector-line.active,
+    .connector-line.hovered {
+      stroke-width: 3;
+      filter: drop-shadow(0 0 6px var(--line-color, oklch(55% 0.15 270)));
+    }
+
+    .connector-particle {
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .connector-particle.active,
+    .connector-particle.hovered {
+      opacity: 1;
+    }
+
     .lifecycle-detail {
       flex: 1;
       min-width: 0;
@@ -887,19 +726,19 @@
     .lifecycle-detail-panel {
       display: none;
       opacity: 0;
-      transform: translateY(1rem);
+      transform: translateX(1rem);
     }
 
     .lifecycle-detail-panel.active {
       display: block;
       opacity: 1;
-      transform: translateY(0);
-      animation: fadeSlideUp 0.4s var(--ease-out-expo);
+      transform: translateX(0);
+      animation: fadeSlideIn 0.4s var(--ease-out-expo);
     }
 
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(1rem); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateX(1rem); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .lifecycle-detail-panel h3 {
@@ -964,6 +803,397 @@
         width: 300px;
         height: 300px;
       }
+      .incident-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Resilience (Chapter 6) — Stacked Shield Layers ── */
+    .resilience-stack {
+      position: relative;
+      margin-top: var(--space-m);
+      perspective: 800px;
+    }
+
+    .shield-layer {
+      position: relative;
+      padding: var(--space-m) var(--space-l);
+      border-radius: 1rem;
+      margin-bottom: -1.5rem;
+      transition: transform 0.5s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
+    }
+
+    .shield-layer:hover {
+      transform: translateY(-6px) scale(1.01);
+    }
+
+    .shield-layer:nth-child(1) {
+      background: linear-gradient(135deg, oklch(94% 0.02 240), oklch(96% 0.015 240));
+      border: 1px solid oklch(88% 0.03 240);
+      box-shadow: 0 8px 32px oklch(55% 0.05 240 / 0.12);
+      z-index: 3;
+    }
+
+    .shield-layer:nth-child(2) {
+      background: linear-gradient(135deg, oklch(93% 0.02 270), oklch(95.5% 0.015 270));
+      border: 1px solid oklch(87% 0.03 270);
+      box-shadow: 0 12px 40px oklch(55% 0.05 270 / 0.1);
+      z-index: 2;
+      margin-left: 2rem;
+      margin-right: -2rem;
+    }
+
+    .shield-layer:nth-child(3) {
+      background: linear-gradient(135deg, oklch(92% 0.02 160), oklch(95% 0.015 160));
+      border: 1px solid oklch(86% 0.03 160);
+      box-shadow: 0 16px 48px oklch(55% 0.05 160 / 0.08);
+      z-index: 1;
+      margin-left: 4rem;
+      margin-right: -4rem;
+      margin-bottom: 0;
+    }
+
+    .shield-layer .shield-icon {
+      font-size: 1.75rem;
+      margin-bottom: var(--space-xs);
+      display: block;
+    }
+
+    .shield-layer .shield-num {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 0.25rem;
+    }
+
+    .shield-layer h3 {
+      font-size: var(--step-2);
+      font-weight: 800;
+      margin-bottom: var(--space-xs);
+    }
+
+    .shield-layer p {
+      font-size: var(--step-0);
+      color: var(--text-muted);
+      max-width: 50ch;
+    }
+
+    .resilience-motto {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-3);
+      font-weight: 800;
+      margin-top: calc(var(--space-l) + 1.5rem);
+      background: linear-gradient(135deg, oklch(45% 0.12 240), oklch(50% 0.15 270));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Outcomes (Chapter 7) ─────────────────────────── */
+    .outcomes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+      gap: var(--space-m);
+      margin-top: var(--space-m);
+    }
+
+    .outcome-item {
+      text-align: left;
+    }
+
+    .outcome-item .outcome-value {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-3);
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .outcome-item .outcome-label {
+      font-size: 0.9375rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ── Who Benefits (Chapter 8) — Staggered Spotlight ── */
+    .benefits-spotlight {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      grid-template-rows: auto auto;
+      gap: var(--space-m);
+      margin-top: var(--space-m);
+      align-items: start;
+    }
+
+    .spotlight-card {
+      padding: var(--space-m) var(--space-l);
+      border-radius: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .spotlight-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+    }
+
+    .spotlight-card--security {
+      grid-row: 1 / 3;
+      background: oklch(16% 0.03 270);
+      color: oklch(92% 0.01 270);
+    }
+
+    .spotlight-card--security::before {
+      background: linear-gradient(90deg, oklch(55% 0.15 270), oklch(65% 0.12 300));
+    }
+
+    .spotlight-card--security h3 { color: oklch(85% 0.08 270); }
+    .spotlight-card--security li { color: oklch(78% 0.02 270); }
+    .spotlight-card--security .persona-tag { color: oklch(70% 0.12 270); }
+
+    .spotlight-card--platform {
+      background: linear-gradient(145deg, oklch(95% 0.02 170), oklch(97% 0.01 170));
+      border: 1px solid oklch(88% 0.03 170);
+    }
+
+    .spotlight-card--platform::before {
+      background: linear-gradient(90deg, oklch(55% 0.12 170), oklch(60% 0.1 190));
+    }
+
+    .spotlight-card--leadership {
+      background: linear-gradient(145deg, oklch(95% 0.02 80), oklch(97% 0.015 70));
+      border: 1px solid oklch(88% 0.03 70);
+    }
+
+    .spotlight-card--leadership::before {
+      background: linear-gradient(90deg, oklch(65% 0.12 80), oklch(70% 0.1 55));
+    }
+
+    .spotlight-card .persona-tag {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: var(--space-xs);
+    }
+
+    .spotlight-card h3 {
+      font-size: var(--step-2);
+      font-weight: 800;
+      margin-bottom: var(--space-s);
+    }
+
+    .spotlight-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .spotlight-card ul li {
+      padding: 0.4rem 0;
+      font-size: var(--step-0);
+      color: var(--text-muted);
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .spotlight-card ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.7rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .spotlight-card--security ul li::before { background: oklch(70% 0.12 270); }
+    .spotlight-card--platform ul li::before { background: oklch(55% 0.12 170); }
+    .spotlight-card--leadership ul li::before { background: oklch(65% 0.12 80); }
+
+    @media (max-width: 768px) {
+      .benefits-spotlight {
+        grid-template-columns: 1fr;
+      }
+      .spotlight-card--security {
+        grid-row: auto;
+      }
+    }
+
+    /* ── CTA (Chapter 9) — Journey Path ─────────────── */
+    .cta-journey {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin: var(--space-m) 0;
+      position: relative;
+    }
+
+    .cta-journey::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), oklch(55% 0.12 270), oklch(60% 0.1 240));
+      transform: translateY(-50%);
+      z-index: 0;
+    }
+
+    .journey-step {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 var(--space-s);
+    }
+
+    .journey-milestone {
+      width: clamp(3.5rem, 6vw, 5rem);
+      height: clamp(3.5rem, 6vw, 5rem);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-s);
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-2);
+      font-weight: 800;
+      color: white;
+      position: relative;
+      transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s var(--ease-out-expo);
+    }
+
+    .journey-milestone:hover {
+      transform: scale(1.1);
+    }
+
+    .journey-step:nth-child(1) .journey-milestone {
+      background: linear-gradient(135deg, oklch(50% 0.15 270), oklch(55% 0.12 290));
+      box-shadow: 0 6px 24px oklch(50% 0.15 270 / 0.3);
+    }
+
+    .journey-step:nth-child(2) .journey-milestone {
+      background: linear-gradient(135deg, oklch(50% 0.12 240), oklch(55% 0.15 260));
+      box-shadow: 0 6px 24px oklch(50% 0.12 240 / 0.3);
+    }
+
+    .journey-step:nth-child(3) .journey-milestone {
+      background: linear-gradient(135deg, oklch(50% 0.12 200), oklch(55% 0.1 220));
+      box-shadow: 0 6px 24px oklch(50% 0.12 200 / 0.3);
+    }
+
+    .journey-arrow {
+      position: absolute;
+      top: 50%;
+      right: -0.75rem;
+      transform: translateY(-50%);
+      width: 1.5rem;
+      height: 1.5rem;
+      z-index: 2;
+      color: var(--accent);
+    }
+
+    .journey-step:last-child .journey-arrow {
+      display: none;
+    }
+
+    .journey-step h3 {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-1);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .journey-step p {
+      font-size: 0.9375rem;
+      color: var(--text-muted);
+      max-width: 28ch;
+      margin-inline: auto;
+    }
+
+    @media (max-width: 768px) {
+      .cta-journey {
+        flex-direction: column;
+        gap: var(--space-m);
+      }
+      .cta-journey::before {
+        width: 3px;
+        height: 100%;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .journey-arrow { display: none !important; }
+    }
+
+    .cta-footer {
+      display: flex;
+      align-items: center;
+      gap: var(--space-m);
+      margin-top: var(--space-l);
+      flex-wrap: wrap;
+    }
+
+    .cta-footer svg { height: 2rem; }
+    .cta-footer .hashicorp-logo { color: var(--text); }
+
+    .cta-hostname {
+      font-family: 'DM Sans', monospace;
+      font-size: 0.875rem;
+      color: oklch(55% 0.008 55);
+      margin-top: var(--space-m);
+    }
+
+    .cta-hostname .typed {
+      border-right: 2px solid var(--vault-gold);
+      padding-right: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    /* ── Keyboard Hint ────────────────────────────────── */
+    .key-hint {
+      position: fixed;
+      bottom: 4.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      padding: 0.35rem 1rem;
+      border-radius: 2rem;
+      z-index: 100;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .key-hint kbd {
+      display: inline-block;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+      font-family: inherit;
+      font-size: 0.6875rem;
+      margin: 0 0.1rem;
     }
 
     /* ── Animation: Hero Signature Load Sequence ────── */
@@ -1005,11 +1235,11 @@
     }
     .hero-subtitle {
       opacity: 0;
-      transform: translateY(1.5rem);
+      transform: translateX(1.5rem);
     }
     .hero-subtitle.hero-sub-show {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
       transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
     }
     .scroll-hint {
@@ -1022,50 +1252,15 @@
 
     /* ── Animation: Card Hover Effects ───────────────── */
     .shift-stat-block,
-    .resilience-card,
-    .cta-card,
-    .engine-card,
     .incident-card,
-    .benefit-card,
-    .lifecycle-step {
+    .engine-card {
       transition: transform 0.3s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart);
     }
     .shift-stat-block:hover,
-    .resilience-card:hover,
-    .cta-card:hover,
-    .engine-card:hover,
     .incident-card:hover,
-    .benefit-card:hover,
-    .lifecycle-step:hover {
+    .engine-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 12px 32px oklch(0% 0 0 / 0.08);
-    }
-
-    /* ── Animation: Progress Bar Gradient & Glow ──── */
-    #progressBar {
-      background: linear-gradient(90deg, var(--vault-gold), var(--accent));
-      box-shadow: 0 0 8px oklch(55% 0.15 270 / 0.4);
-    }
-
-    /* ── Animation: Chapter Nav Progress Rings ──────── */
-    .chapter-nav .dot {
-      position: relative;
-    }
-    .chapter-nav .dot svg {
-      position: absolute;
-      inset: -4px;
-      width: calc(100% + 8px);
-      height: calc(100% + 8px);
-    }
-    .chapter-nav .dot svg circle.progress {
-      stroke-dasharray: 44;
-      stroke-dashoffset: 44;
-      transition: stroke-dashoffset 0.3s var(--ease-out-quart);
-      stroke: var(--accent);
-      fill: none;
-      stroke-width: 2;
-      transform: rotate(-90deg);
-      transform-origin: center;
     }
 
     /* ── Animation: Lifecycle Wheel Enhancements ───── */
@@ -1084,12 +1279,12 @@
       animation: flowDash 2s linear infinite;
     }
 
-    @keyframes hubSpin {
-      to { transform: rotate(360deg); }
-    }
-    #lifecycleHub {
-      transform-origin: 250px 250px;
-      animation: hubSpin 60s linear infinite;
+    /* Particle flow animation along connectors */
+    @keyframes particleFlow {
+      0% { offset-distance: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
     }
 
     /* ── Animation: Staggered List Item Reveals ────── */
@@ -1108,28 +1303,6 @@
     .lifecycle-detail-panel li {
       transition-delay: calc(var(--li-i, 0) * 80ms);
     }
-
-    /* ── Animation: Section Background Color Blending ── */
-    .slide::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 120px;
-      background: linear-gradient(to bottom, transparent, var(--next-bg, transparent));
-      pointer-events: none;
-      z-index: 1;
-    }
-    .slide--hero::after   { --next-bg: var(--bg-warm); }
-    .slide--risk::after    { --next-bg: var(--bg-warm); }
-    .slide--shift::after   { --next-bg: var(--bg); }
-    .slide--together::after { --next-bg: var(--bg-alt); }
-    .slide--lifecycle::after { --next-bg: var(--bg-cool); }
-    .slide--resilience::after { --next-bg: var(--bg); }
-    .slide--outcomes::after { --next-bg: var(--bg-warm); }
-    .slide--benefits::after { --next-bg: var(--bg-alt); }
-    .slide--cta::after { --next-bg: transparent; }
 
     /* ── Animation: Bridge Connector Line Draw ──────── */
     .bridge-connector svg line {
@@ -1187,6 +1360,39 @@
       transition: transform 0.1s linear;
     }
 
+    /* ── Animation: Shield layer stagger ──────────────── */
+    .shield-layer {
+      opacity: 0;
+      transform: translateX(2rem);
+      transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
+    }
+    .shield-layer.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .shield-layer:nth-child(1) { transition-delay: 0s; }
+    .shield-layer:nth-child(2) { transition-delay: 0.15s; }
+    .shield-layer:nth-child(3) { transition-delay: 0.3s; }
+
+    /* ── Animation: Spotlight card reveals ────────────── */
+    .spotlight-card {
+      transition: transform 0.3s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart);
+    }
+    .spotlight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px oklch(0% 0 0 / 0.1);
+    }
+
+    /* ── Animation: Journey milestone pulse ───────────── */
+    .journey-step.visible .journey-milestone {
+      animation: milestonePop 0.5s var(--ease-out-expo) forwards;
+    }
+    @keyframes milestonePop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
     /* ── Animation: prefers-reduced-motion overrides ── */
     @media (prefers-reduced-motion: reduce) {
       .hero-logos,
@@ -1200,33 +1406,29 @@
         animation: none !important;
       }
       .shift-stat-block,
-      .resilience-card,
-      .cta-card,
-      .engine-card,
       .incident-card,
-      .benefit-card,
-      .lifecycle-step {
+      .engine-card,
+      .spotlight-card,
+      .shield-layer {
         transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
       }
       .shift-stat-block:hover,
-      .resilience-card:hover,
-      .cta-card:hover,
-      .engine-card:hover,
       .incident-card:hover,
-      .benefit-card:hover,
-      .lifecycle-step:hover {
+      .engine-card:hover,
+      .spotlight-card:hover,
+      .shield-layer:hover {
         transform: none !important;
       }
       .lifecycle-node.active { animation: none !important; }
       #arcs path { animation: none !important; }
-      #lifecycleHub { animation: none !important; }
       .engine-card li,
       .lifecycle-detail-panel li {
         opacity: 1 !important;
         transform: none !important;
         transition: none !important;
       }
-      .slide::after { display: none !important; }
       .bridge-connector svg line,
       .bridge-connector svg circle {
         opacity: 1 !important;
@@ -1237,6 +1439,8 @@
       }
       .timeline.visible .timeline-step .marker { animation: none !important; }
       .chapter-nav .dot svg circle.progress { transition: none !important; }
+      .slide-track { transition: none !important; }
+      .journey-step.visible .journey-milestone { animation: none !important; opacity: 1 !important; }
     }
   </style>
 </head>
@@ -1245,23 +1449,26 @@
 <!-- Progress Bar -->
 <div class="progress-bar" id="progressBar"></div>
 
-<!-- Chapter Navigation -->
+<!-- Chapter Navigation (bottom) -->
 <nav class="chapter-nav" id="chapterNav" aria-label="Chapter navigation">
-  <a href="#hero" data-chapter="0"><span class="label">Hero</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#risk" data-chapter="1"><span class="label">Risk</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#shift" data-chapter="2"><span class="label">47 Days</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#together" data-chapter="3"><span class="label">Together</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#lifecycle" data-chapter="4"><span class="label">Lifecycle</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#resilience" data-chapter="5"><span class="label">Resilience</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#outcomes" data-chapter="6"><span class="label">Outcomes</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#benefits" data-chapter="7"><span class="label">Benefits</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
-  <a href="#cta" data-chapter="8"><span class="label">Close</span><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span></a>
+  <a href="#hero" data-chapter="0"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Hero</span></a>
+  <a href="#risk" data-chapter="1"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Risk</span></a>
+  <a href="#shift" data-chapter="2"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">47 Days</span></a>
+  <a href="#together" data-chapter="3"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Together</span></a>
+  <a href="#lifecycle" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
+  <a href="#resilience" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
+  <a href="#outcomes" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
+  <a href="#benefits" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#cta" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
 
 <!-- Keyboard Hint -->
 <div class="key-hint" id="keyHint">
   <kbd>&larr;</kbd> <kbd>&rarr;</kbd> navigate &middot; <kbd>Space</kbd> advance
 </div>
+
+<!-- ━━━ Horizontal Slide Track ━━━ -->
+<div class="slide-track" id="slideTrack">
 
 <!-- ━━━ CHAPTER 1: Hero ━━━ -->
 <section class="slide slide--hero" id="hero">
@@ -1292,7 +1499,7 @@
     </p>
 
     <div class="scroll-hint reveal reveal-delay-6">
-      Scroll or press <kbd>&rarr;</kbd> to begin <span class="arrow">&darr;</span>
+      Press <kbd>&rarr;</kbd> to begin <span class="arrow">&rarr;</span>
     </div>
   </div>
 </section>
@@ -1303,7 +1510,7 @@
     <p class="section-label reveal">Chapter 2</p>
     <h2 class="section-title reveal reveal-delay-1">The Risk Is Real</h2>
 
-    <div class="incident-block reveal reveal-delay-2">
+    <div class="risk-hero-quote reveal reveal-delay-2">
       <blockquote>
         An expired security certificate caused a six-hour outage to the Dynamic Red senate tracker &mdash; the real-time service used by parliamentarians, media, and the public to monitor daily Senate proceedings. The Department of Parliamentary Services revealed the certificate &ldquo;was issued from a different certificate authority, which wasn&rsquo;t documented and wasn&rsquo;t consistent with standard practices.&rdquo;
       </blockquote>
@@ -1448,17 +1655,19 @@
   <div class="wrap">
     <p class="section-label reveal">Chapter 5</p>
     <h2 class="section-title reveal reveal-delay-1">The Complete Lifecycle</h2>
-    <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s);">Click any capability to explore</p>
+    <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.9rem;">Click any capability to explore</p>
 
     <div class="lifecycle-container reveal reveal-delay-2">
       <div class="lifecycle-wheel-wrap">
         <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="lifecycleWheel">
+          <!-- Connector lines from center to nodes (drawn by JS) -->
+          <g id="connectorLines"></g>
+
           <!-- Dashed arc connectors -->
           <g id="arcs" stroke-dasharray="6 4" stroke-width="1.5" fill="none" opacity="0.3">
-            <!-- Arcs will be drawn by JS between nodes -->
           </g>
 
-          <!-- Center hub -->
+          <!-- Center hub (static, no spin) -->
           <g id="lifecycleHub">
             <circle cx="250" cy="250" r="58" fill="oklch(95% 0.008 55)" stroke="oklch(88% 0.008 55)" stroke-width="1.5"/>
             <text x="250" y="242" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">Vault PKI</text>
@@ -1466,7 +1675,7 @@
             <text x="250" y="274" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">AAP</text>
           </g>
 
-          <!-- Nodes will be created by JS for cleaner interactivity -->
+          <!-- Nodes will be created by JS -->
         </svg>
       </div>
 
@@ -1541,16 +1750,19 @@
     <p class="section-label reveal">Chapter 6</p>
     <h2 class="section-title reveal reveal-delay-1">Built-In Resilience</h2>
 
-    <div class="resilience-grid">
-      <div class="resilience-card reveal reveal-delay-2">
+    <div class="resilience-stack">
+      <div class="shield-layer">
+        <span class="shield-num">Layer 01</span>
         <h3>Blast Radius Control</h3>
         <p>Canary deployments and rolling updates limit the impact of any certificate issue to a small subset of hosts before fleet-wide rollout.</p>
       </div>
-      <div class="resilience-card reveal reveal-delay-3">
+      <div class="shield-layer">
+        <span class="shield-num">Layer 02</span>
         <h3>Automatic Rollback</h3>
         <p>Health checks validate every deployment. On failure, Ansible restores the previous certificate automatically &mdash; no human intervention needed.</p>
       </div>
-      <div class="resilience-card reveal reveal-delay-4">
+      <div class="shield-layer">
+        <span class="shield-num">Layer 03</span>
         <h3>Separation of Concerns</h3>
         <p>Vault owns trust and policy. AAP owns execution and orchestration. Neither can exceed its authority. Security and operations stay cleanly separated.</p>
       </div>
@@ -1593,8 +1805,9 @@
     <p class="section-label reveal">Chapter 8</p>
     <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
 
-    <div class="benefits-grid">
-      <div class="benefit-card benefit-card--security reveal reveal-delay-2">
+    <div class="benefits-spotlight">
+      <div class="spotlight-card spotlight-card--security reveal reveal-delay-2">
+        <div class="persona-tag">Primary Stakeholder</div>
         <h3>Security &amp; Compliance</h3>
         <ul>
           <li>Enforced short-lived certificates eliminate long-exposure risk</li>
@@ -1603,7 +1816,8 @@
           <li>Instant revocation capability for incident response</li>
         </ul>
       </div>
-      <div class="benefit-card benefit-card--platform reveal reveal-delay-3">
+      <div class="spotlight-card spotlight-card--platform reveal reveal-delay-3">
+        <div class="persona-tag">Day-to-Day Operators</div>
         <h3>Platform &amp; Operations</h3>
         <ul>
           <li>Zero-touch certificate renewals across thousands of hosts</li>
@@ -1612,7 +1826,8 @@
           <li>Self-service workflows reduce ticket volume</li>
         </ul>
       </div>
-      <div class="benefit-card benefit-card--leadership reveal reveal-delay-4">
+      <div class="spotlight-card spotlight-card--leadership reveal reveal-delay-4">
+        <div class="persona-tag">Decision Makers</div>
         <h3>Leadership</h3>
         <ul>
           <li>Reduce operational risk that directly impacts revenue</li>
@@ -1631,16 +1846,21 @@
     <p class="section-label reveal">Chapter 9</p>
     <h2 class="section-title reveal reveal-delay-1" style="max-width: 18ch;">Close the Gap</h2>
 
-    <div class="cta-grid">
-      <div class="cta-card reveal reveal-delay-2">
+    <div class="cta-journey reveal reveal-delay-2">
+      <div class="journey-step">
+        <div class="journey-milestone">1</div>
         <h3>See It Live</h3>
         <p>Joint demo &mdash; Vault issuing certificates, AAP deploying them fleet-wide in real time.</p>
+        <svg class="journey-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </div>
-      <div class="cta-card reveal reveal-delay-3">
+      <div class="journey-step">
+        <div class="journey-milestone">2</div>
         <h3>Prove It Yourself</h3>
         <p>Guided proof-of-concept in your environment. Your CAs, your hosts, your policies.</p>
+        <svg class="journey-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </div>
-      <div class="cta-card reveal reveal-delay-4">
+      <div class="journey-step">
+        <div class="journey-milestone">3</div>
         <h3>Scale It</h3>
         <p>Production architecture review. We help you design the rollout across your entire fleet.</p>
       </div>
@@ -1664,16 +1884,118 @@
   </div>
 </section>
 
+</div><!-- end slide-track -->
+
 <script>
 (function () {
   'use strict';
 
+  var slideTrack = document.getElementById('slideTrack');
   var slides = document.querySelectorAll('.slide');
   var navLinks = document.querySelectorAll('.chapter-nav a');
   var progressBar = document.getElementById('progressBar');
   var currentChapter = 0;
   var totalChapters = slides.length;
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isAnimating = false;
+
+  // ── Horizontal navigation ──────────────────────────
+  function navigateTo(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= totalChapters) idx = totalChapters - 1;
+    if (idx === currentChapter && isAnimating) return;
+
+    currentChapter = idx;
+    isAnimating = true;
+    slideTrack.style.transform = 'translateX(' + (-idx * 100) + 'vw)';
+    updateNav(idx);
+    updateProgress();
+    triggerReveals(idx);
+
+    setTimeout(function() { isAnimating = false; }, 700);
+  }
+
+  function updateNav(idx) {
+    navLinks.forEach(function (link, i) {
+      link.classList.remove('active');
+      // Fill progress rings for visited slides
+      var circle = link.querySelector('.dot svg circle.progress');
+      if (circle) {
+        circle.style.strokeDashoffset = i <= idx ? '0' : '44';
+      }
+    });
+    if (navLinks[idx]) navLinks[idx].classList.add('active');
+  }
+
+  function updateProgress() {
+    var progress = totalChapters > 1 ? (currentChapter / (totalChapters - 1)) * 100 : 0;
+    progressBar.style.width = progress + '%';
+  }
+
+  // ── Trigger reveals when navigating to a slide ─────
+  function triggerReveals(idx) {
+    var slide = slides[idx];
+    if (!slide) return;
+    // Small delay for the transition to start
+    setTimeout(function() {
+      slide.querySelectorAll('.reveal').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      // Shield layers for chapter 6
+      slide.querySelectorAll('.shield-layer').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      // Journey steps for chapter 9
+      slide.querySelectorAll('.journey-step').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      // Engine cards
+      slide.querySelectorAll('.engine-card').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      // Bridge connector
+      slide.querySelectorAll('.bridge-connector').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      // Timeline
+      slide.querySelectorAll('.timeline').forEach(function(el) {
+        if (!el.dataset.animated) {
+          el.dataset.animated = 'true';
+          el.classList.add('visible');
+          if (!reducedMotion) {
+            var steps = el.querySelectorAll('.timeline-step');
+            steps.forEach(function(step, i) {
+              var daysEl = step.querySelector('.timeline-days');
+              var targetVal = parseInt(daysEl.textContent, 10);
+              var startVal = 398;
+              var duration = 800;
+              var delay = i * 200;
+              setTimeout(function() {
+                var startTime = null;
+                daysEl.textContent = startVal;
+                function animateDay(ts) {
+                  if (!startTime) startTime = ts;
+                  var progress = Math.min((ts - startTime) / duration, 1);
+                  var eased = 1 - Math.pow(1 - progress, 3);
+                  var current = Math.round(startVal + (targetVal - startVal) * eased);
+                  daysEl.textContent = current;
+                  if (progress < 1) requestAnimationFrame(animateDay);
+                }
+                requestAnimationFrame(animateDay);
+              }, delay);
+            });
+          }
+        }
+      });
+      // Counters
+      slide.querySelectorAll('.counter-value').forEach(function(el) {
+        if (!el.dataset.counted) {
+          el.dataset.counted = 'true';
+          animateCounter(el);
+        }
+      });
+    }, 200);
+  }
 
   // ── Hero Signature Load Sequence (choreographed) ──
   function revealHeroSequence() {
@@ -1682,25 +2004,21 @@
     var subtitle = document.querySelector('.hero-subtitle');
     var scrollHint = document.querySelector('.scroll-hint');
 
-    // Phase 1: Logos scale in (0-500ms)
     setTimeout(function () {
       if (logos) logos.classList.add('show');
     }, 100);
 
-    // Phase 2: Words reveal one by one (600ms-1500ms)
     words.forEach(function (word, i) {
       setTimeout(function () {
         word.classList.add('show');
       }, 600 + i * 180);
     });
 
-    // Phase 3: Subtitle slides up after headline completes (~1600ms)
     var subtitleDelay = 600 + words.length * 180 + 100;
     setTimeout(function () {
       if (subtitle) subtitle.classList.add('hero-sub-show');
     }, subtitleDelay);
 
-    // Phase 4: Scroll hint fades in last (~2000ms)
     setTimeout(function () {
       if (scrollHint) scrollHint.classList.add('hero-hint-show');
     }, subtitleDelay + 400);
@@ -1718,58 +2036,7 @@
     revealHeroSequence();
   }
 
-  // ── IntersectionObserver for reveals ───────────────
-  var revealObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
-
-  document.querySelectorAll('.reveal').forEach(function (el) {
-    revealObserver.observe(el);
-  });
-
-  // ── IntersectionObserver for active chapter ────────
-  var chapterObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting && entry.intersectionRatio > 0.4) {
-        var idx = Array.prototype.indexOf.call(slides, entry.target);
-        if (idx !== -1) {
-          currentChapter = idx;
-          updateNav(idx);
-        }
-      }
-    });
-  }, { threshold: 0.5 });
-
-  slides.forEach(function (slide) {
-    chapterObserver.observe(slide);
-  });
-
-  function updateNav(idx) {
-    navLinks.forEach(function (link) { link.classList.remove('active'); });
-    if (navLinks[idx]) navLinks[idx].classList.add('active');
-  }
-
-  // ── Progress bar ───────────────────────────────────
-  function updateProgress() {
-    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    progressBar.style.width = progress + '%';
-  }
-
   // ── Keyboard navigation ────────────────────────────
-  function navigateTo(idx) {
-    if (idx < 0) idx = 0;
-    if (idx >= totalChapters) idx = totalChapters - 1;
-    currentChapter = idx;
-    slides[idx].scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
-    updateNav(idx);
-  }
-
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -1798,6 +2065,37 @@
         break;
     }
   });
+
+  // ── Mouse wheel → horizontal navigation ────────────
+  var wheelTimeout;
+  document.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(function() {
+      if (e.deltaY > 20 || e.deltaX > 20) {
+        navigateTo(currentChapter + 1);
+      } else if (e.deltaY < -20 || e.deltaX < -20) {
+        navigateTo(currentChapter - 1);
+      }
+    }, 50);
+  }, { passive: false });
+
+  // ── Touch swipe support ────────────────────────────
+  var touchStartX = 0;
+  var touchStartY = 0;
+  document.addEventListener('touchstart', function(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) navigateTo(currentChapter + 1);
+      else navigateTo(currentChapter - 1);
+    }
+  }, { passive: true });
 
   // ── Chapter nav click handling ─────────────────────
   navLinks.forEach(function (link) {
@@ -1829,34 +2127,11 @@
     requestAnimationFrame(step);
   }
 
-  var counterObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting && !entry.target.dataset.counted) {
-        entry.target.dataset.counted = 'true';
-        animateCounter(entry.target);
-      }
-    });
-  }, { threshold: 0.5 });
-
-  document.querySelectorAll('.counter-value').forEach(function (el) {
-    counterObserver.observe(el);
-  });
-
   // ── Typed hostname effect ──────────────────────────
   var hostname = '{{ inventory_hostname }}';
   var typedEl = document.getElementById('typedHostname');
   var charIndex = 0;
-
-  var typedObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting && !typedEl.dataset.typed) {
-        typedEl.dataset.typed = 'true';
-        typeHostname();
-      }
-    });
-  }, { threshold: 0.5 });
-
-  typedObserver.observe(typedEl);
+  var typedStarted = false;
 
   function typeHostname() {
     if (charIndex <= hostname.length) {
@@ -1868,7 +2143,7 @@
 
   // ── Staggered list item reveals ────────────────────
   function assignListItemDelays() {
-    var selectors = ['.engine-card ul', '.lifecycle-detail-panel ul'];
+    var selectors = ['.engine-card ul', '.lifecycle-detail-panel ul', '.spotlight-card ul'];
     selectors.forEach(function(sel) {
       document.querySelectorAll(sel).forEach(function(ul) {
         var items = ul.querySelectorAll('li');
@@ -1880,126 +2155,24 @@
   }
   assignListItemDelays();
 
-  // ── Engine card visibility for staggered list reveals ──
-  var engineCardObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.2 });
-
-  document.querySelectorAll('.engine-card').forEach(function (el) {
-    engineCardObserver.observe(el);
-  });
-
-  // ── Bridge connector draw animation ──────────────
-  var bridgeObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.3 });
-
-  document.querySelectorAll('.bridge-connector').forEach(function (el) {
-    bridgeObserver.observe(el);
-  });
-
-  // ── Timeline activation sequence ──────────────────
-  var timelineObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting && !entry.target.dataset.animated) {
-        entry.target.dataset.animated = 'true';
-        entry.target.classList.add('visible');
-        // Animate timeline numbers counting down from 398
-        if (!reducedMotion) {
-          var steps = entry.target.querySelectorAll('.timeline-step');
-          steps.forEach(function(step, i) {
-            var daysEl = step.querySelector('.timeline-days');
-            var targetVal = parseInt(daysEl.textContent, 10);
-            var startVal = 398;
-            var duration = 800;
-            var delay = i * 200;
-            setTimeout(function() {
-              var startTime = null;
-              daysEl.textContent = startVal;
-              function animateDay(ts) {
-                if (!startTime) startTime = ts;
-                var progress = Math.min((ts - startTime) / duration, 1);
-                var eased = 1 - Math.pow(1 - progress, 3);
-                var current = Math.round(startVal + (targetVal - startVal) * eased);
-                daysEl.textContent = current;
-                if (progress < 1) requestAnimationFrame(animateDay);
-              }
-              requestAnimationFrame(animateDay);
-            }, delay);
-          });
-        }
-      }
-    });
-  }, { threshold: 0.3 });
-
-  document.querySelectorAll('.timeline').forEach(function (el) {
-    timelineObserver.observe(el);
-  });
-
-  // ── Scroll progress rings on chapter nav ──────────
-  function updateProgressRings() {
-    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    var windowH = window.innerHeight;
-    navLinks.forEach(function(link, i) {
-      var section = slides[i];
-      if (!section) return;
-      var rect = section.getBoundingClientRect();
-      var sectionTop = rect.top + scrollTop;
-      var sectionH = section.offsetHeight;
-      var progressCircle = link.querySelector('.dot svg circle.progress');
-      if (!progressCircle) return;
-
-      // Calculate how far through this section we've scrolled
-      var sectionProgress = 0;
-      if (scrollTop + windowH > sectionTop && scrollTop < sectionTop + sectionH) {
-        sectionProgress = Math.min(Math.max((scrollTop - sectionTop + windowH * 0.5) / sectionH, 0), 1);
-      } else if (scrollTop >= sectionTop + sectionH) {
-        sectionProgress = 1;
-      }
-      // 44 = 2 * PI * 7 (circumference)
-      var dashOffset = 44 * (1 - sectionProgress);
-      progressCircle.style.strokeDashoffset = dashOffset;
-    });
-  }
-
-  window.addEventListener('scroll', function() {
-    updateProgress();
-    updateProgressRings();
-  }, { passive: true });
-
-  // ── Outcome values subtle parallax ────────────────
-  if (!reducedMotion) {
-    var outcomeValues = document.querySelectorAll('.outcome-value');
-    function updateOutcomeParallax() {
-      outcomeValues.forEach(function(el) {
-        var rect = el.getBoundingClientRect();
-        var windowH = window.innerHeight;
-        if (rect.top < windowH && rect.bottom > 0) {
-          var center = rect.top + rect.height / 2;
-          var offset = (center - windowH / 2) * 0.08;
-          el.style.transform = 'translateY(' + offset + 'px)';
-        }
-      });
-    }
-    window.addEventListener('scroll', updateOutcomeParallax, { passive: true });
-  }
-
   // ── Initialize ─────────────────────────────────────
   updateNav(0);
   updateProgress();
-  updateProgressRings();
+  triggerReveals(0);
+
+  // Start typed hostname when reaching CTA slide
+  var origNavigateTo = navigateTo;
+  navigateTo = function(idx) {
+    origNavigateTo(idx);
+    if (idx === totalChapters - 1 && !typedStarted) {
+      typedStarted = true;
+      setTimeout(typeHostname, 600);
+    }
+  };
 
 })();
 
-// ── Interactive Lifecycle Wheel ──────────────────
+// ── Interactive Lifecycle Wheel with Connectors ──────
 (function() {
   var wheel = document.getElementById('lifecycleWheel');
   if (!wheel) return;
@@ -2014,6 +2187,46 @@
 
   var cx = 250, cy = 250, r = 160;
   var ns = 'http://www.w3.org/2000/svg';
+
+  // Draw connector lines from center to each node
+  var connectorsG = wheel.querySelector('#connectorLines');
+  var connectorElements = [];
+
+  capabilities.forEach(function(cap) {
+    var a = cap.angle * Math.PI / 180;
+    var nx = cx + r * Math.cos(a);
+    var ny = cy + r * Math.sin(a);
+
+    // Main connector line
+    var line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', cx);
+    line.setAttribute('y1', cy);
+    line.setAttribute('x2', nx);
+    line.setAttribute('y2', ny);
+    line.classList.add('connector-line');
+    line.setAttribute('stroke', cap.color);
+    line.setAttribute('data-cap', cap.id);
+    line.style.setProperty('--line-color', cap.color);
+    line.style.opacity = '0.3';
+    connectorsG.appendChild(line);
+
+    // Animated particle dots along the line
+    for (var p = 0; p < 3; p++) {
+      var particle = document.createElementNS(ns, 'circle');
+      particle.setAttribute('r', '3');
+      particle.setAttribute('fill', cap.color);
+      particle.classList.add('connector-particle');
+      particle.setAttribute('data-cap', cap.id);
+      // Position particles along the line
+      var t = 0.25 + p * 0.25;
+      particle.setAttribute('cx', cx + (nx - cx) * t);
+      particle.setAttribute('cy', cy + (ny - cy) * t);
+      particle.style.opacity = '0';
+      connectorsG.appendChild(particle);
+    }
+
+    connectorElements.push({ line: line, cap: cap.id, nx: nx, ny: ny });
+  });
 
   // Draw dashed arc connectors
   var arcsG = wheel.querySelector('#arcs');
@@ -2031,6 +2244,46 @@
     arcsG.appendChild(path);
   });
 
+  // Helper to activate/deactivate connector visuals
+  function setConnectorState(capId, state) {
+    wheel.querySelectorAll('.connector-line[data-cap="' + capId + '"]').forEach(function(el) {
+      el.classList.toggle('active', state === 'active');
+      el.classList.toggle('hovered', state === 'hovered');
+      el.style.opacity = (state === 'active' || state === 'hovered') ? '1' : '0.3';
+      el.setAttribute('stroke-width', (state === 'active' || state === 'hovered') ? '3' : '1.5');
+    });
+    wheel.querySelectorAll('.connector-particle[data-cap="' + capId + '"]').forEach(function(el) {
+      el.classList.toggle('active', state === 'active');
+      el.classList.toggle('hovered', state === 'hovered');
+      el.style.opacity = (state === 'active' || state === 'hovered') ? '0.8' : '0';
+    });
+  }
+
+  // Particle animation
+  var particlePhase = 0;
+  function animateParticles() {
+    particlePhase += 0.015;
+    wheel.querySelectorAll('.connector-particle').forEach(function(el) {
+      if (el.style.opacity === '0') return;
+      var capId = el.getAttribute('data-cap');
+      var cap = capabilities.find(function(c) { return c.id === capId; });
+      if (!cap) return;
+      var a = cap.angle * Math.PI / 180;
+      var nx = cx + r * Math.cos(a);
+      var ny = cy + r * Math.sin(a);
+      // Get particle index from siblings
+      var siblings = wheel.querySelectorAll('.connector-particle[data-cap="' + capId + '"]');
+      var idx = Array.prototype.indexOf.call(siblings, el);
+      var t = ((particlePhase + idx * 0.33) % 1);
+      el.setAttribute('cx', cx + (nx - cx) * t);
+      el.setAttribute('cy', cy + (ny - cy) * t);
+      el.setAttribute('r', 2 + Math.sin(t * Math.PI) * 2);
+      el.style.opacity = String(Math.sin(t * Math.PI) * 0.9);
+    });
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+
   // Create interactive nodes
   capabilities.forEach(function(cap, i) {
     var a = cap.angle * Math.PI / 180;
@@ -2040,7 +2293,10 @@
     var g = document.createElementNS(ns, 'g');
     g.classList.add('lifecycle-node');
     g.dataset.cap = cap.id;
-    if (i === 0) g.classList.add('active');
+    if (i === 0) {
+      g.classList.add('active');
+      setConnectorState(cap.id, 'active');
+    }
 
     // Outer glow
     var bg = document.createElementNS(ns, 'circle');
@@ -2078,12 +2334,25 @@
       g.appendChild(text);
     });
 
+    // Hover handlers for connector glow
+    g.addEventListener('mouseenter', function() {
+      if (!g.classList.contains('active')) {
+        setConnectorState(cap.id, 'hovered');
+      }
+    });
+    g.addEventListener('mouseleave', function() {
+      if (!g.classList.contains('active')) {
+        setConnectorState(cap.id, 'off');
+      }
+    });
+
     // Click handler
     g.addEventListener('click', function() {
       // Deactivate all
       wheel.querySelectorAll('.lifecycle-node').forEach(function(n) {
         n.classList.remove('active');
         n.querySelector('.node-ring').setAttribute('stroke-width', '2.5');
+        setConnectorState(n.dataset.cap, 'off');
       });
       document.querySelectorAll('.lifecycle-detail-panel').forEach(function(p) {
         p.classList.remove('active');
@@ -2092,6 +2361,7 @@
       // Activate clicked
       g.classList.add('active');
       ring.setAttribute('stroke-width', '5');
+      setConnectorState(cap.id, 'active');
       var panel = document.querySelector('.lifecycle-detail-panel[data-cap="' + cap.id + '"]');
       if (panel) panel.classList.add('active');
     });
@@ -2099,7 +2369,7 @@
     wheel.appendChild(g);
   });
 
-  // Auto-rotate through capabilities every 5 seconds (pauses on interaction)
+  // Auto-rotate through capabilities every 5 seconds
   var autoTimer;
   var currentIdx = 0;
   var userInteracted = false;
@@ -2116,7 +2386,6 @@
   wheel.addEventListener('click', function() {
     userInteracted = true;
     clearInterval(autoTimer);
-    // Resume after 15 seconds of no interaction
     setTimeout(function() { userInteracted = false; autoTimer = setInterval(autoAdvance, 5000); }, 15000);
   });
 })();
