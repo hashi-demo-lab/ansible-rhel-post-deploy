@@ -653,17 +653,17 @@
 
     /* ── Lifecycle (Chapter 5) ────────────────────────── */
     .lifecycle-container {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: auto 1fr;
       gap: var(--space-m);
       margin-top: var(--space-s);
+      align-items: center;
     }
 
     .lifecycle-wheel-wrap {
-      flex: 0 0 auto;
       position: relative;
-      width: clamp(380px, 42vw, 560px);
-      height: clamp(380px, 42vw, 560px);
+      width: clamp(400px, 50vw, 650px);
+      height: clamp(400px, 50vw, 650px);
     }
 
     .lifecycle-wheel-wrap svg {
@@ -719,9 +719,7 @@
     }
 
     .lifecycle-detail {
-      flex: 1;
       min-width: 0;
-      max-width: 40rem;
     }
 
     .lifecycle-detail-panel {
@@ -1724,7 +1722,7 @@
 
 <!-- ━━━ CHAPTER 5: Five Capabilities ━━━ -->
 <section class="slide slide--lifecycle" id="lifecycle">
-  <div class="wrap">
+  <div class="wrap" style="width: min(95%, 90rem)">
     <p class="section-label reveal">Chapter 5</p>
     <h2 class="section-title reveal reveal-delay-1">The Complete Lifecycle</h2>
     <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.9rem;">Click any capability to explore</p>
