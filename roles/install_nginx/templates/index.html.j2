@@ -929,7 +929,8 @@
     }
 
     .benefit-panel {
-      flex: 1;
+      flex: 1.2;
+      min-width: 0;
       border-radius: 1rem;
       position: relative;
       overflow: hidden;
@@ -942,7 +943,7 @@
     }
 
     .benefit-panel.expanded {
-      flex: 4;
+      flex: 5;
       padding: var(--space-m) var(--space-l);
     }
 
@@ -1005,16 +1006,42 @@
     }
 
     .benefit-panel h3 {
-      font-size: var(--step-1);
+      font-size: var(--step-2);
       font-weight: 800;
       color: oklch(95% 0.005 55);
       margin-bottom: var(--space-xs);
       white-space: nowrap;
-      transition: font-size 0.5s var(--ease-out-expo);
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.3s var(--ease-out-expo), max-height 0.3s var(--ease-out-expo), font-size 0.5s var(--ease-out-expo);
     }
 
     .benefit-panel.expanded h3 {
       font-size: var(--step-3);
+      opacity: 1;
+      max-height: 5rem;
+    }
+
+    /* Vertical label visible when collapsed */
+    .benefit-panel .panel-vlabel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: clamp(1rem, 1.2vw, 1.4rem);
+      font-weight: 800;
+      color: oklch(90% 0.005 55);
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      opacity: 1;
+      transition: opacity 0.3s var(--ease-out-expo);
+      pointer-events: none;
+    }
+
+    .benefit-panel.expanded .panel-vlabel {
+      opacity: 0;
     }
 
     .benefit-panel ul {
@@ -1854,6 +1881,7 @@
       <div class="benefit-panel benefit-panel--security expanded reveal reveal-delay-2">
         <div class="panel-stripe"></div>
         <div class="panel-number">01</div>
+        <div class="panel-vlabel">Security &amp; Compliance</div>
         <div class="persona-tag">Primary Stakeholder</div>
         <h3>Security &amp; Compliance</h3>
         <ul>
@@ -1866,6 +1894,7 @@
       <div class="benefit-panel benefit-panel--platform reveal reveal-delay-3">
         <div class="panel-stripe"></div>
         <div class="panel-number">02</div>
+        <div class="panel-vlabel">Platform &amp; Ops</div>
         <div class="persona-tag">Day-to-Day Operators</div>
         <h3>Platform &amp; Ops</h3>
         <ul>
@@ -1878,6 +1907,7 @@
       <div class="benefit-panel benefit-panel--leadership reveal reveal-delay-4">
         <div class="panel-stripe"></div>
         <div class="panel-number">03</div>
+        <div class="panel-vlabel">Leadership</div>
         <div class="persona-tag">Decision Makers</div>
         <h3>Leadership</h3>
         <ul>
