@@ -927,7 +927,7 @@
     }
 
     .benefit-panel {
-      flex: 1.2;
+      flex: 1.5;
       min-width: 0;
       border-radius: 1rem;
       position: relative;
@@ -1028,7 +1028,7 @@
       left: 50%;
       transform: translate(-50%, -50%) rotate(-90deg);
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: clamp(1rem, 1.2vw, 1.4rem);
+      font-size: clamp(0.8rem, 1vw, 1.1rem);
       font-weight: 800;
       color: oklch(90% 0.005 55);
       white-space: nowrap;
@@ -1036,6 +1036,7 @@
       opacity: 1;
       transition: opacity 0.3s var(--ease-out-expo);
       pointer-events: none;
+      max-width: none;
     }
 
     .benefit-panel.expanded .panel-vlabel {
