@@ -947,17 +947,18 @@
 
     .spotlight-card--security {
       grid-row: 1 / 3;
-      background: oklch(16% 0.03 270);
-      color: oklch(92% 0.01 270);
+      background: linear-gradient(145deg, oklch(94% 0.025 270), oklch(96.5% 0.015 280));
+      border: 1px solid oklch(88% 0.03 270);
+      color: var(--text);
     }
 
     .spotlight-card--security::before {
       background: linear-gradient(90deg, oklch(55% 0.15 270), oklch(65% 0.12 300));
     }
 
-    .spotlight-card--security h3 { color: oklch(85% 0.08 270); }
-    .spotlight-card--security li { color: oklch(78% 0.02 270); }
-    .spotlight-card--security .persona-tag { color: oklch(70% 0.12 270); }
+    .spotlight-card--security h3 { color: oklch(40% 0.12 270); }
+    .spotlight-card--security li { color: var(--text-muted); }
+    .spotlight-card--security .persona-tag { color: oklch(50% 0.12 270); }
 
     .spotlight-card--platform {
       background: linear-gradient(145deg, oklch(95% 0.02 170), oklch(97% 0.01 170));
@@ -1016,7 +1017,7 @@
       border-radius: 50%;
     }
 
-    .spotlight-card--security ul li::before { background: oklch(70% 0.12 270); }
+    .spotlight-card--security ul li::before { background: oklch(55% 0.15 270); }
     .spotlight-card--platform ul li::before { background: oklch(55% 0.12 170); }
     .spotlight-card--leadership ul li::before { background: oklch(65% 0.12 80); }
 
@@ -1065,7 +1066,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto var(--space-s);
+      margin: 0 auto var(--space-m);
       font-family: 'Outfit', system-ui, sans-serif;
       font-size: var(--step-2);
       font-weight: 800;
@@ -1269,14 +1270,14 @@
       50% { filter: drop-shadow(0 0 8px currentColor); }
     }
     .lifecycle-node.active {
-      animation: pulseGlow 2s ease-in-out infinite;
+      animation: pulseGlow 3s ease-in-out infinite;
     }
 
     @keyframes flowDash {
       to { stroke-dashoffset: -20; }
     }
     #arcs path {
-      animation: flowDash 2s linear infinite;
+      animation: flowDash 3s linear infinite;
     }
 
     /* Particle flow animation along connectors */
@@ -2262,7 +2263,7 @@
   // Particle animation
   var particlePhase = 0;
   function animateParticles() {
-    particlePhase += 0.015;
+    particlePhase += 0.008;
     wheel.querySelectorAll('.connector-particle').forEach(function(el) {
       if (el.style.opacity === '0') return;
       var capId = el.getAttribute('data-cap');
@@ -2381,12 +2382,12 @@
     if (node) node.click();
   }
 
-  autoTimer = setInterval(autoAdvance, 5000);
+  autoTimer = setInterval(autoAdvance, 7500);
 
   wheel.addEventListener('click', function() {
     userInteracted = true;
     clearInterval(autoTimer);
-    setTimeout(function() { userInteracted = false; autoTimer = setInterval(autoAdvance, 5000); }, 15000);
+    setTimeout(function() { userInteracted = false; autoTimer = setInterval(autoAdvance, 7500); }, 15000);
   });
 })();
 </script>
