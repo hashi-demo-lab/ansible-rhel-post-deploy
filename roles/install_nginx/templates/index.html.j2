@@ -922,9 +922,9 @@
     /* ── Who Benefits (Chapter 8) — Expanding Panels ──── */
     .benefits-panels {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.75rem;
       margin-top: var(--space-m);
-      height: clamp(20rem, 45vh, 28rem);
+      height: clamp(26rem, 55vh, 38rem);
     }
 
     .benefit-panel {
@@ -937,12 +937,12 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      padding: var(--space-m);
+      padding: var(--space-m) var(--space-m);
     }
 
-    .benefit-panel:hover,
     .benefit-panel.expanded {
-      flex: 3;
+      flex: 4;
+      padding: var(--space-m) var(--space-l);
     }
 
     .benefit-panel--security {
@@ -962,7 +962,7 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 4px;
+      height: 5px;
     }
 
     .benefit-panel--security .panel-stripe {
@@ -977,7 +977,7 @@
 
     .benefit-panel .panel-number {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: clamp(4rem, 8vh, 7rem);
+      font-size: clamp(5rem, 10vh, 9rem);
       font-weight: 800;
       color: oklch(100% 0 0 / 0.06);
       position: absolute;
@@ -987,25 +987,20 @@
       pointer-events: none;
     }
 
-    .benefit-panel .panel-icon {
-      font-size: 1.5rem;
-      margin-bottom: var(--space-xs);
-      transition: transform 0.4s var(--ease-out-expo);
-    }
-
-    .benefit-panel:hover .panel-icon,
-    .benefit-panel.expanded .panel-icon {
-      transform: scale(1.2);
-    }
-
     .benefit-panel .persona-tag {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: oklch(80% 0.03 0);
-      margin-bottom: 0.25rem;
+      color: oklch(75% 0.03 0);
+      margin-bottom: 0.4rem;
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-out-expo);
+    }
+
+    .benefit-panel.expanded .persona-tag {
+      opacity: 1;
     }
 
     .benefit-panel h3 {
@@ -1014,34 +1009,37 @@
       color: oklch(95% 0.005 55);
       margin-bottom: var(--space-xs);
       white-space: nowrap;
-      transition: font-size 0.4s var(--ease-out-expo);
+      transition: font-size 0.5s var(--ease-out-expo);
     }
 
-    .benefit-panel:hover h3,
     .benefit-panel.expanded h3 {
-      font-size: var(--step-2);
+      font-size: var(--step-3);
     }
 
     .benefit-panel ul {
       list-style: none;
       padding: 0;
-      max-height: 0;
-      overflow: hidden;
+      display: grid;
+      grid-template-rows: 0fr;
       opacity: 0;
-      transition: max-height 0.5s var(--ease-out-expo), opacity 0.4s var(--ease-out-expo);
+      transition: grid-template-rows 0.5s var(--ease-out-expo), opacity 0.4s var(--ease-out-expo);
     }
 
-    .benefit-panel:hover ul,
+    .benefit-panel ul > * {
+      overflow: hidden;
+    }
+
     .benefit-panel.expanded ul {
-      max-height: 20rem;
+      grid-template-rows: 1fr;
       opacity: 1;
     }
 
     .benefit-panel ul li {
-      padding: 0.3rem 0;
-      font-size: 0.875rem;
-      color: oklch(80% 0.01 55);
-      padding-left: 1rem;
+      padding: 0.5rem 0;
+      font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+      line-height: 1.5;
+      color: oklch(82% 0.01 55);
+      padding-left: 1.5rem;
       position: relative;
     }
 
@@ -1049,9 +1047,9 @@
       content: '';
       position: absolute;
       left: 0;
-      top: 0.6rem;
-      width: 5px;
-      height: 5px;
+      top: 0.75rem;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
     }
 
@@ -1069,9 +1067,10 @@
         min-height: 5rem;
       }
       .benefit-panel ul {
-        max-height: none;
-        opacity: 1;
+        grid-template-rows: 1fr !important;
+        opacity: 1 !important;
       }
+      .benefit-panel .persona-tag { opacity: 1 !important; }
     }
 
     /* ── CTA (Chapter 9) — Journey Path ─────────────── */
@@ -1460,7 +1459,10 @@
         transform: none !important;
       }
       .benefit-panel ul {
-        max-height: none !important;
+        grid-template-rows: 1fr !important;
+        opacity: 1 !important;
+      }
+      .benefit-panel .persona-tag {
         opacity: 1 !important;
       }
       .lifecycle-node.active { animation: none !important; }
@@ -2202,6 +2204,19 @@
     });
   }
   assignListItemDelays();
+
+  // ── Benefit panels: exclusive expand ───────────────
+  var benefitPanels = document.querySelectorAll('.benefit-panel');
+  benefitPanels.forEach(function(panel) {
+    panel.addEventListener('mouseenter', function() {
+      benefitPanels.forEach(function(p) { p.classList.remove('expanded'); });
+      panel.classList.add('expanded');
+    });
+    panel.addEventListener('click', function() {
+      benefitPanels.forEach(function(p) { p.classList.remove('expanded'); });
+      panel.classList.add('expanded');
+    });
+  });
 
   // ── Initialize ─────────────────────────────────────
   updateNav(0);
