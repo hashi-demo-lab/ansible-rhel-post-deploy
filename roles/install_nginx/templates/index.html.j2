@@ -76,8 +76,8 @@
     .slide-track {
       display: flex;
       height: 100vh;
-      width: calc(9 * 100vw);
-      transition: transform 0.7s var(--ease-out-expo);
+      width: calc(10 * 100vw);
+      transition: transform 1.1s var(--ease-out-quart);
       will-change: transform;
     }
 
@@ -420,17 +420,17 @@
 
     /* ── 47-Day Shift Section ─────────────────────────── */
     .shift-lead {
-      font-size: var(--step-1);
+      font-size: var(--step-0);
       color: var(--text);
       max-width: var(--measure);
-      margin-bottom: var(--space-m);
+      margin-bottom: var(--space-s);
     }
 
     .timeline {
       display: flex;
       align-items: stretch;
       gap: 0;
-      margin: var(--space-m) 0;
+      margin: var(--space-s) 0;
       position: relative;
     }
 
@@ -486,12 +486,12 @@
     .shift-stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-      gap: var(--space-m);
-      margin: var(--space-m) 0;
+      gap: var(--space-s);
+      margin: var(--space-s) 0;
     }
 
     .shift-stat-block {
-      padding: var(--space-m);
+      padding: var(--space-s);
       background: var(--bg-light);
       border-radius: 0.75rem;
       border: 1px solid var(--border);
@@ -499,29 +499,30 @@
 
     .shift-stat-block .big-number {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-3);
+      font-size: var(--step-2);
       font-weight: 800;
       color: var(--accent);
     }
 
     .shift-stat-block p {
       color: var(--text-muted);
-      font-size: 0.9375rem;
-      margin-top: 0.5rem;
+      font-size: 0.8125rem;
+      margin-top: 0.35rem;
+      line-height: 1.5;
     }
 
     .shift-insight {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-1);
+      font-size: var(--step-0);
       font-weight: 700;
       color: var(--text);
-      margin: var(--space-s) 0;
+      margin: var(--space-xs) 0;
       max-width: var(--measure);
     }
 
     .shift-callout {
-      margin: var(--space-m) 0;
-      padding: var(--space-m) var(--space-m) var(--space-m) var(--space-m);
+      margin: var(--space-s) 0;
+      padding: var(--space-s) var(--space-s) var(--space-s) var(--space-s);
       border-left: 4px solid var(--accent);
       background: oklch(93% 0.015 270 / 0.3);
       border-radius: 0 0.5rem 0.5rem 0;
@@ -529,17 +530,17 @@
 
     .shift-callout .callout-label {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: var(--space-xs);
+      margin-bottom: 0.25rem;
     }
 
     .shift-callout .callout-text {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-2);
+      font-size: var(--step-1);
       font-weight: 800;
       color: var(--text);
       line-height: 1.2;
@@ -547,16 +548,17 @@
 
     .shift-callout .callout-sub {
       font-family: 'DM Sans', system-ui, sans-serif;
-      font-size: var(--step-0);
+      font-size: 0.8125rem;
       color: var(--text-muted);
-      margin-top: var(--space-xs);
+      margin-top: 0.25rem;
       max-width: var(--measure);
+      line-height: 1.45;
     }
 
     .shift-source {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--text-faint);
-      margin-top: var(--space-m);
+      margin-top: var(--space-xs);
     }
 
     /* ── Better Together ──────────────────────────────── */
@@ -1009,7 +1011,6 @@
       font-weight: 800;
       color: oklch(95% 0.005 55);
       margin-bottom: var(--space-xs);
-      white-space: nowrap;
       opacity: 0;
       max-height: 0;
       overflow: hidden;
@@ -1017,9 +1018,9 @@
     }
 
     .benefit-panel.expanded h3 {
-      font-size: var(--step-3);
+      font-size: var(--step-2);
       opacity: 1;
-      max-height: 5rem;
+      max-height: 6rem;
     }
 
     /* Vertical label visible when collapsed */
@@ -1972,27 +1973,27 @@
               fill="none" stroke="oklch(45% 0.01 55)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrowhead)"/>
         <text x="487" y="242" font-size="9" fill="oklch(50% 0.01 55)">targets</text>
 
-        <!-- RIGHT GAP: Smooth curves from Issue/Deploy to Target Hosts -->
+        <!-- RIGHT GAP: Labeled connection lanes from Issue/Deploy to Target Hosts -->
 
         <!-- Issue/Deploy → Nginx (deploy cert) -->
-        <path d="M 595 295 C 630 295 655 110 683 110"
+        <path d="M 595 290 H 620 Q 628 290 628 282 V 118 Q 628 110 636 110 H 683"
               fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
-        <text x="598" y="289" font-size="9" fill="#0F62FE">deploy</text>
+        <text x="631" y="210" font-size="8.5" fill="#0F62FE" font-weight="600">deploy</text>
 
         <!-- Issue/Deploy → SSL Config (configure) -->
-        <path d="M 595 313 C 630 313 655 197 683 197"
+        <path d="M 595 313 H 640 Q 648 313 648 305 V 205 Q 648 197 656 197 H 683"
               fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="598" y="307" font-size="9" fill="#198038">config</text>
+        <text x="651" y="262" font-size="8.5" fill="#198038" font-weight="600">config</text>
 
         <!-- Issue/Deploy → Backups (backup existing) -->
-        <path d="M 595 331 C 630 331 655 277 683 277"
+        <path d="M 595 336 H 640 Q 648 336 648 328 V 285 Q 648 277 656 277 H 683"
               fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
-        <text x="598" y="325" font-size="9" fill="#B28600">backup</text>
+        <text x="651" y="312" font-size="8.5" fill="#B28600" font-weight="600">backup</text>
 
-        <!-- Issue/Deploy → TLS Verify (verify handshake) -->
-        <path d="M 595 349 C 630 349 655 357 683 357"
+        <!-- Issue/Deploy → TLS Verify (verify handshake) — nearly horizontal -->
+        <path d="M 595 357 H 683"
               fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowhead)"/>
-        <text x="598" y="343" font-size="9" fill="#009D9A">verify</text>
+        <text x="631" y="351" font-size="8.5" fill="#009D9A" font-weight="600">verify</text>
 
         <!-- ── Legend ── -->
         <g transform="translate(685 420)" font-size="10">
@@ -2188,7 +2189,7 @@
     updateProgress();
     triggerReveals(idx);
 
-    setTimeout(function() { isAnimating = false; }, 700);
+    setTimeout(function() { isAnimating = false; }, 1100);
   }
 
   function updateNav(idx) {
