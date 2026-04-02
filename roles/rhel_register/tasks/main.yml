@@ -6,6 +6,26 @@
   changed_when: false
   failed_when: false
 
+- name: Test subscription validity with refresh
+  ansible.builtin.command:
+    cmd: subscription-manager refresh
+  register: _refresh_test
+  changed_when: false
+  failed_when: false
+  when: rhsm_status.rc == 0
+
+- name: Determine if registration is needed
+  ansible.builtin.set_fact:
+    _needs_registration: >-
+      {{ rhsm_status.rc != 0 or
+         (_refresh_test.rc | default(0)) != 0 }}
+
+- name: Force clean stale registration
+  ansible.builtin.command:
+    cmd: subscription-manager clean
+  when: _needs_registration | bool and rhsm_status.rc == 0
+  changed_when: true
+
 - name: Read RHEL subscription credentials from Vault
   community.hashi_vault.vault_kv2_get:
     url: "{{ vault_addr }}"
@@ -19,7 +39,7 @@
   delegate_to: localhost
   become: false
   no_log: true
-  when: rhsm_status.rc != 0
+  when: _needs_registration | bool
 
 - name: Register with RHSM
   community.general.redhat_subscription:
@@ -27,7 +47,8 @@
     username: "{{ rhel_creds.secret.rhn_username }}"
     password: "{{ rhel_creds.secret.rhn_password }}"
     auto_attach: "{{ rhsm_auto_attach }}"
-  when: rhsm_status.rc != 0
+    force_register: "{{ rhsm_status.rc == 0 }}"
+  when: _needs_registration | bool
   no_log: true
 
 - name: Check for Simple Content Access mode
