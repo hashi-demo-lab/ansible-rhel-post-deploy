@@ -233,6 +233,7 @@
     .slide--shift { background: var(--bg-warm); }
     .slide--together { background: var(--bg); }
     .slide--lifecycle { background: var(--bg-alt); }
+    .slide--architecture { background: var(--bg-cool); }
     .slide--resilience { background: var(--bg-cool); }
     .slide--outcomes { background: var(--bg); }
     .slide--benefits { background: var(--bg-warm); }
@@ -1527,10 +1528,11 @@
   <a href="#shift" data-chapter="2"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">47 Days</span></a>
   <a href="#together" data-chapter="3"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Together</span></a>
   <a href="#lifecycle" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
-  <a href="#resilience" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
-  <a href="#outcomes" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
-  <a href="#benefits" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
-  <a href="#cta" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
+  <a href="#architecture" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
+  <a href="#resilience" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
+  <a href="#outcomes" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
+  <a href="#benefits" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#cta" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
 
 <!-- Keyboard Hint -->
@@ -1815,10 +1817,185 @@
   </div>
 </section>
 
-<!-- ━━━ CHAPTER 6: Built-In Resilience ━━━ -->
+<!-- ━━━ CHAPTER 6: Automation Architecture ━━━ -->
+<section class="slide slide--architecture" id="architecture">
+  <div class="wrap" style="width: min(95%, 90rem)">
+    <p class="section-label reveal">Chapter 6</p>
+    <h2 class="section-title reveal reveal-delay-1">How It All Connects</h2>
+    <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.95rem;">
+      Three platforms, one automated flow &mdash; from inventory insight to verified deployment
+    </p>
+
+    <div class="reveal reveal-delay-2" style="display: flex; justify-content: center;">
+      <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 960px; font-family: 'Outfit', sans-serif;">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="oklch(45% 0.01 55)"/>
+          </marker>
+          <marker id="arrowGold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#B28600"/>
+          </marker>
+          <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#EE0000"/>
+          </marker>
+          <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#0F62FE"/>
+          </marker>
+          <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.08"/>
+          </filter>
+        </defs>
+
+        <!-- ── Platform Zones ── -->
+        <!-- HCP Vault Zone -->
+        <rect x="20" y="15" width="280" height="490" rx="16" fill="oklch(96% 0.015 80)" stroke="oklch(85% 0.02 80)" stroke-width="1.5"/>
+        <text x="160" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.02 80)">HCP Vault Dedicated</text>
+
+        <!-- AAP Zone -->
+        <rect x="340" y="15" width="280" height="490" rx="16" fill="oklch(96.5% 0.01 10)" stroke="oklch(85% 0.015 10)" stroke-width="1.5"/>
+        <text x="480" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.015 10)">Ansible Automation Platform</text>
+
+        <!-- Target Hosts Zone -->
+        <rect x="660" y="15" width="280" height="490" rx="16" fill="oklch(96.5% 0.008 240)" stroke="oklch(85% 0.01 240)" stroke-width="1.5"/>
+        <text x="800" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.01 240)">Target Hosts</text>
+
+        <!-- ── HCP Vault Components ── -->
+        <!-- PKI Engine -->
+        <rect x="45" y="75" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="105" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">PKI Secrets Engine</text>
+        <text x="72" y="122" font-size="10.5" fill="oklch(50% 0.01 55)">issuing-ca / server-certs role</text>
+        <rect x="55" y="93" width="8" height="8" rx="2" fill="#FFD814"/>
+
+        <!-- Certificates Inventory -->
+        <rect x="45" y="170" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="200" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Certificates Inventory</text>
+        <text x="72" y="217" font-size="10.5" fill="oklch(50% 0.01 55)">Expiry tracking &amp; reporting</text>
+        <rect x="55" y="188" width="8" height="8" rx="2" fill="#009D9A"/>
+
+        <!-- AppRole Auth -->
+        <rect x="45" y="265" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="292" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">AppRole Authentication</text>
+        <text x="72" y="307" font-size="10.5" fill="oklch(50% 0.01 55)">aap-clm role &rarr; generate_certificate</text>
+        <rect x="55" y="280" width="8" height="8" rx="2" fill="#B28600"/>
+
+        <!-- Auto-Tidy -->
+        <rect x="45" y="345" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="372" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Auto-Tidy</text>
+        <text x="72" y="387" font-size="10.5" fill="oklch(50% 0.01 55)">Cleans expired/revoked certs every 24h</text>
+        <rect x="55" y="360" width="8" height="8" rx="2" fill="#DA1E28"/>
+
+        <!-- ── AAP Components ── -->
+        <!-- Daily Check Workflow -->
+        <rect x="365" y="75" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="100" font-size="12" font-weight="700" fill="oklch(25% 0.01 55)">1. Daily Renewal Check</text>
+        <text x="392" y="115" font-size="10.5" fill="oklch(50% 0.01 55)">Query inventory API &rarr; find</text>
+        <text x="392" y="128" font-size="10.5" fill="oklch(50% 0.01 55)">expiring certs &rarr; populate targets</text>
+        <rect x="375" y="88" width="8" height="8" rx="2" fill="#009D9A"/>
+
+        <!-- CLM Workflow -->
+        <rect x="365" y="170" width="230" height="130" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="195" font-size="12" font-weight="700" fill="oklch(25% 0.01 55)">2. Issue, Deploy &amp; Verify</text>
+        <!-- Sub-steps -->
+        <g font-size="10.5" fill="oklch(40% 0.01 55)">
+          <circle cx="385" cy="215" r="3.5" fill="#0F62FE"/>  <text x="394" y="218">Issue cert from Vault PKI</text>
+          <circle cx="385" cy="233" r="3.5" fill="#198038"/>  <text x="394" y="236">Backup existing cert</text>
+          <circle cx="385" cy="251" r="3.5" fill="#B28600"/>  <text x="394" y="254">Deploy &amp; reload service</text>
+          <circle cx="385" cy="269" r="3.5" fill="#009D9A"/>  <text x="394" y="272">Verify TLS handshake</text>
+          <circle cx="385" cy="287" r="3.5" fill="#DA1E28"/>  <text x="394" y="290">Rollback on failure</text>
+        </g>
+
+        <!-- Renewal Inventory -->
+        <rect x="365" y="325" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="352" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">CLM Renewal Targets</text>
+        <text x="392" y="367" font-size="10.5" fill="oklch(50% 0.01 55)">Dynamic inventory &mdash; only expiring hosts</text>
+        <rect x="375" y="340" width="8" height="8" rx="2" fill="#EE0000"/>
+
+        <!-- Credentials -->
+        <rect x="365" y="405" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="432" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Credentials</text>
+        <text x="392" y="447" font-size="10.5" fill="oklch(50% 0.01 55)">HCP AppRole &bull; HCP SP &bull; SSH &bull; Controller</text>
+        <rect x="375" y="420" width="8" height="8" rx="2" fill="#B28600"/>
+
+        <!-- ── Target Host Components ── -->
+        <!-- Web Servers -->
+        <rect x="685" y="75" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="102" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Nginx Web Servers</text>
+        <text x="712" y="119" font-size="10.5" fill="oklch(50% 0.01 55)">PEM cert + key + fullchain</text>
+        <rect x="695" y="90" width="8" height="8" rx="2" fill="#0F62FE"/>
+
+        <!-- Staging Files -->
+        <rect x="685" y="170" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="197" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Staging Files</text>
+        <text x="712" y="212" font-size="10.5" fill="oklch(50% 0.01 55)">/tmp/vault_cert_staging/ per host</text>
+        <rect x="695" y="185" width="8" height="8" rx="2" fill="#198038"/>
+
+        <!-- Backups -->
+        <rect x="685" y="250" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="277" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Certificate Backups</text>
+        <text x="712" y="292" font-size="10.5" fill="oklch(50% 0.01 55)">/opt/cert_backups/ with retention</text>
+        <rect x="695" y="265" width="8" height="8" rx="2" fill="#B28600"/>
+
+        <!-- TLS Verification -->
+        <rect x="685" y="330" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="357" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">TLS Verification</text>
+        <text x="712" y="372" font-size="10.5" fill="oklch(50% 0.01 55)">openssl s_client + HTTPS check</text>
+        <rect x="695" y="345" width="8" height="8" rx="2" fill="#009D9A"/>
+
+        <!-- ── Flow Arrows ── -->
+        <!-- Cert Inventory -> Daily Check (query API) -->
+        <line x1="275" y1="200" x2="363" y2="110" stroke="#009D9A" stroke-width="2" marker-end="url(#arrowhead)" stroke-dasharray="6 3"/>
+        <text x="308" y="145" font-size="9" fill="#009D9A" transform="rotate(-25 308 145)">query expiry</text>
+
+        <!-- Daily Check -> Renewal Inventory (populate) -->
+        <line x1="480" y1="147" x2="480" y2="323" stroke="#EE0000" stroke-width="1.8" marker-end="url(#arrowRed)" stroke-dasharray="5 3"/>
+        <text x="487" y="245" font-size="9" fill="#EE0000">populate</text>
+
+        <!-- Renewal Inventory -> CLM Workflow (triggers against) -->
+        <path d="M 505 325 C 530 280 530 270 530 235" stroke="oklch(45% 0.01 55)" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" stroke-dasharray="5 3"/>
+
+        <!-- AppRole -> AAP (authenticate) -->
+        <line x1="275" y1="290" x2="363" y2="230" stroke="#B28600" stroke-width="1.8" marker-end="url(#arrowGold)"/>
+        <text x="300" y="270" font-size="9" fill="#B28600" transform="rotate(-20 300 270)">auth</text>
+
+        <!-- AAP -> PKI (issue cert) -->
+        <line x1="365" y1="195" x2="277" y2="110" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
+        <text x="295" y="160" font-size="9" fill="#0F62FE" transform="rotate(25 295 160)">issue cert</text>
+
+        <!-- AAP -> Target (deploy) -->
+        <line x1="597" y1="220" x2="683" y2="110" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
+        <text x="635" y="155" font-size="9" fill="#0F62FE" transform="rotate(-30 635 155)">deploy</text>
+
+        <!-- AAP -> Staging (write cert data) -->
+        <line x1="597" y1="240" x2="683" y2="195" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- AAP -> Backups -->
+        <line x1="597" y1="260" x2="683" y2="275" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
+
+        <!-- AAP -> TLS Verify -->
+        <line x1="597" y1="280" x2="683" y2="355" stroke="#009D9A" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="640" y="330" font-size="9" fill="#009D9A" transform="rotate(30 640 330)">verify</text>
+
+        <!-- ── Legend ── -->
+        <g transform="translate(685 420)" font-size="10">
+          <text x="0" y="0" font-weight="700" fill="oklch(30% 0.01 55)">Flow</text>
+          <line x1="0" y1="14" x2="20" y2="14" stroke="#009D9A" stroke-width="1.8" stroke-dasharray="5 3"/>
+          <text x="25" y="18" fill="oklch(45% 0.01 55)">Monitor</text>
+          <line x1="0" y1="32" x2="20" y2="32" stroke="#0F62FE" stroke-width="1.8"/>
+          <text x="25" y="36" fill="oklch(45% 0.01 55)">Issue &amp; Deploy</text>
+          <line x1="110" y1="14" x2="130" y2="14" stroke="#B28600" stroke-width="1.8"/>
+          <text x="135" y="18" fill="oklch(45% 0.01 55)">Auth &amp; Backup</text>
+          <line x1="110" y1="32" x2="130" y2="32" stroke="#DA1E28" stroke-width="1.8" stroke-dasharray="5 3"/>
+          <text x="135" y="36" fill="oklch(45% 0.01 55)">Failure &amp; Rollback</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━ CHAPTER 7: Built-In Resilience ━━━ -->
 <section class="slide slide--resilience" id="resilience">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 6</p>
+    <p class="section-label reveal">Chapter 7</p>
     <h2 class="section-title reveal reveal-delay-1">Built-In Resilience</h2>
 
     <div class="resilience-stack">
@@ -1843,10 +2020,10 @@
   </div>
 </section>
 
-<!-- ━━━ CHAPTER 7: Business Outcomes ━━━ -->
+<!-- ━━━ CHAPTER 8: Business Outcomes ━━━ -->
 <section class="slide slide--outcomes" id="outcomes">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 7</p>
+    <p class="section-label reveal">Chapter 8</p>
     <h2 class="section-title reveal reveal-delay-1">Business Outcomes</h2>
 
     <div class="outcomes-grid">
@@ -1870,10 +2047,10 @@
   </div>
 </section>
 
-<!-- ━━━ CHAPTER 8: Who Benefits ━━━ -->
+<!-- ━━━ CHAPTER 9: Who Benefits ━━━ -->
 <section class="slide slide--benefits" id="benefits">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 8</p>
+    <p class="section-label reveal">Chapter 9</p>
     <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
 
     <div class="benefits-panels">
@@ -1920,10 +2097,10 @@
   </div>
 </section>
 
-<!-- ━━━ CHAPTER 9: Close the Gap ━━━ -->
+<!-- ━━━ CHAPTER 10: Close the Gap ━━━ -->
 <section class="slide slide--cta" id="cta">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 9</p>
+    <p class="section-label reveal">Chapter 10</p>
     <h2 class="section-title reveal reveal-delay-1" style="max-width: 18ch;">Close the Gap</h2>
 
     <div class="cta-journey reveal reveal-delay-2">
