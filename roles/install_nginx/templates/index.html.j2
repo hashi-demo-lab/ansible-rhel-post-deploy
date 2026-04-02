@@ -1526,8 +1526,8 @@
   <a href="#lifecycle" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
   <a href="#architecture" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
   <a href="#resilience" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
-  <a href="#outcomes" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
-  <a href="#benefits" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#benefits" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#outcomes" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
   <a href="#cta" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
 
@@ -2038,37 +2038,10 @@
   </div>
 </section>
 
-<!-- ━━━ CHAPTER 8: Business Outcomes ━━━ -->
-<section class="slide slide--outcomes" id="outcomes">
-  <div class="wrap">
-    <p class="section-label reveal">Chapter 8</p>
-    <h2 class="section-title reveal reveal-delay-1">Business Outcomes</h2>
-
-    <div class="outcomes-grid">
-      <div class="outcome-item reveal reveal-delay-2">
-        <div class="outcome-value">Zero</div>
-        <div class="outcome-label">Certificate-related outages</div>
-      </div>
-      <div class="outcome-item reveal reveal-delay-3">
-        <div class="outcome-value">Seconds</div>
-        <div class="outcome-label">Not days &mdash; renewal time across the fleet</div>
-      </div>
-      <div class="outcome-item reveal reveal-delay-4">
-        <div class="outcome-value"><span class="counter-value" data-target="100" data-suffix="%">0%</span></div>
-        <div class="outcome-label">Audit trail coverage &mdash; every action logged</div>
-      </div>
-      <div class="outcome-item reveal reveal-delay-5">
-        <div class="outcome-value">Zero</div>
-        <div class="outcome-label">Manual steps in the certificate lifecycle</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ━━━ CHAPTER 9: Who Benefits ━━━ -->
+<!-- ━━━ CHAPTER 8: Who Benefits ━━━ -->
 <section class="slide slide--benefits" id="benefits">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 9</p>
+    <p class="section-label reveal">Chapter 8</p>
     <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
 
     <div class="benefits-panels">
@@ -2110,6 +2083,33 @@
           <li>Future-proof for the 47-day certificate mandate</li>
           <li>Consolidate tooling &mdash; fewer vendors, lower cost</li>
         </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━ CHAPTER 9: Business Outcomes ━━━ -->
+<section class="slide slide--outcomes" id="outcomes">
+  <div class="wrap">
+    <p class="section-label reveal">Chapter 9</p>
+    <h2 class="section-title reveal reveal-delay-1">Business Outcomes</h2>
+
+    <div class="outcomes-grid">
+      <div class="outcome-item reveal reveal-delay-2">
+        <div class="outcome-value">Zero</div>
+        <div class="outcome-label">Certificate-related outages</div>
+      </div>
+      <div class="outcome-item reveal reveal-delay-3">
+        <div class="outcome-value">Seconds</div>
+        <div class="outcome-label">Not days &mdash; renewal time across the fleet</div>
+      </div>
+      <div class="outcome-item reveal reveal-delay-4">
+        <div class="outcome-value"><span class="counter-value" data-target="100" data-suffix="%">0%</span></div>
+        <div class="outcome-label">Audit trail coverage &mdash; every action logged</div>
+      </div>
+      <div class="outcome-item reveal reveal-delay-5">
+        <div class="outcome-value">Zero</div>
+        <div class="outcome-label">Manual steps in the certificate lifecycle</div>
       </div>
     </div>
   </div>
@@ -2471,7 +2471,7 @@
   // ── Benefit panels: arrow-key progression ──────────
   var benefitPanels = document.querySelectorAll('.benefit-panel');
   var benefitIdx = 0; // which panel is expanded (0-2)
-  var BENEFITS_CHAPTER = 8;
+  var BENEFITS_CHAPTER = 7;
 
   function expandBenefitPanel(idx) {
     if (idx < 0) idx = 0;
