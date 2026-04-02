@@ -105,7 +105,7 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      align-items: center;
+      align-items: flex-start;
     }
 
     .chapter-nav a {
@@ -1239,35 +1239,7 @@
       50% { border-color: transparent; }
     }
 
-    /* ── Keyboard Hint ────────────────────────────────── */
-    .key-hint {
-      position: fixed;
-      bottom: 4.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.75rem;
-      color: var(--text-faint);
-      background: var(--bg-light);
-      border: 1px solid var(--border);
-      padding: 0.35rem 1rem;
-      border-radius: 2rem;
-      z-index: 100;
-      opacity: 0.7;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-
-    .key-hint kbd {
-      display: inline-block;
-      background: var(--bg-alt);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 0.1rem 0.4rem;
-      font-family: inherit;
-      font-size: 0.6875rem;
-      margin: 0 0.1rem;
-    }
+    /* key-hint removed */
 
     /* ── Animation: Hero Signature Load Sequence ────── */
     .hero-logos {
@@ -1536,10 +1508,6 @@
   <a href="#cta" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
 
-<!-- Keyboard Hint -->
-<div class="key-hint" id="keyHint">
-  <kbd>&larr;</kbd> <kbd>&rarr;</kbd> navigate &middot; <kbd>Space</kbd> advance
-</div>
 
 <!-- ━━━ Horizontal Slide Track ━━━ -->
 <div class="slide-track" id="slideTrack">
