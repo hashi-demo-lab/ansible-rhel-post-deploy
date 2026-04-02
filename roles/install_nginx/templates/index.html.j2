@@ -810,23 +810,23 @@
       }
     }
 
-    /* ── Resilience (Chapter 6) — Stacked Shield Layers ── */
+    /* ── Resilience (Chapter 7) — Stacked Shield Layers ── */
     .resilience-stack {
       position: relative;
-      margin-top: var(--space-m);
+      margin-top: var(--space-s);
       perspective: 800px;
     }
 
     .shield-layer {
       position: relative;
-      padding: var(--space-m) var(--space-l);
+      padding: var(--space-s) var(--space-m);
       border-radius: 1rem;
-      margin-bottom: -1.5rem;
+      margin-bottom: -1rem;
       transition: transform 0.5s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
     }
 
     .shield-layer:hover {
-      transform: translateY(-6px) scale(1.01);
+      transform: translateY(-4px) scale(1.005);
     }
 
     .shield-layer:nth-child(1) {
@@ -841,8 +841,8 @@
       border: 1px solid oklch(87% 0.03 270);
       box-shadow: 0 12px 40px oklch(55% 0.05 270 / 0.1);
       z-index: 2;
-      margin-left: 2rem;
-      margin-right: -2rem;
+      margin-left: 1.5rem;
+      margin-right: -1.5rem;
     }
 
     .shield-layer:nth-child(3) {
@@ -850,44 +850,45 @@
       border: 1px solid oklch(86% 0.03 160);
       box-shadow: 0 16px 48px oklch(55% 0.05 160 / 0.08);
       z-index: 1;
-      margin-left: 4rem;
-      margin-right: -4rem;
+      margin-left: 3rem;
+      margin-right: -3rem;
       margin-bottom: 0;
     }
 
     .shield-layer .shield-icon {
-      font-size: 1.75rem;
-      margin-bottom: var(--space-xs);
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
       display: block;
     }
 
     .shield-layer .shield-num {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--text-faint);
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.15rem;
     }
 
     .shield-layer h3 {
-      font-size: var(--step-2);
+      font-size: var(--step-1);
       font-weight: 800;
-      margin-bottom: var(--space-xs);
+      margin-bottom: 0.25rem;
     }
 
     .shield-layer p {
-      font-size: var(--step-0);
+      font-size: 0.875rem;
       color: var(--text-muted);
       max-width: 50ch;
+      line-height: 1.45;
     }
 
     .resilience-motto {
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-3);
+      font-size: var(--step-2);
       font-weight: 800;
-      margin-top: calc(var(--space-l) + 1.5rem);
+      margin-top: calc(var(--space-s) + 1rem);
       background: linear-gradient(135deg, oklch(45% 0.12 240), oklch(50% 0.15 270));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -1796,7 +1797,7 @@
     </p>
 
     <div class="reveal reveal-delay-2" style="display: flex; justify-content: center;">
-      <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 960px; font-family: 'Outfit', sans-serif;">
+      <svg viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 960px; font-family: 'Outfit', sans-serif;">
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill="oklch(45% 0.01 55)"/>
@@ -1817,15 +1818,15 @@
 
         <!-- ── Platform Zones ── -->
         <!-- HCP Vault Zone -->
-        <rect x="20" y="15" width="280" height="490" rx="16" fill="oklch(96% 0.015 80)" stroke="oklch(85% 0.02 80)" stroke-width="1.5"/>
+        <rect x="20" y="15" width="280" height="585" rx="16" fill="oklch(96% 0.015 80)" stroke="oklch(85% 0.02 80)" stroke-width="1.5"/>
         <text x="160" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.02 80)">HCP Vault Dedicated</text>
 
         <!-- AAP Zone -->
-        <rect x="340" y="15" width="280" height="490" rx="16" fill="oklch(96.5% 0.01 10)" stroke="oklch(85% 0.015 10)" stroke-width="1.5"/>
+        <rect x="340" y="15" width="280" height="585" rx="16" fill="oklch(96.5% 0.01 10)" stroke="oklch(85% 0.015 10)" stroke-width="1.5"/>
         <text x="480" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.015 10)">Ansible Automation Platform</text>
 
         <!-- Target Hosts Zone -->
-        <rect x="660" y="15" width="280" height="490" rx="16" fill="oklch(96.5% 0.008 240)" stroke="oklch(85% 0.01 240)" stroke-width="1.5"/>
+        <rect x="660" y="15" width="280" height="585" rx="16" fill="oklch(96.5% 0.008 240)" stroke="oklch(85% 0.01 240)" stroke-width="1.5"/>
         <text x="800" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="oklch(30% 0.01 240)">Target Hosts</text>
 
         <!-- ── HCP Vault Components ── -->
@@ -1835,23 +1836,23 @@
         <text x="72" y="122" font-size="10.5" fill="oklch(50% 0.01 55)">Expiry tracking &amp; reporting</text>
         <rect x="55" y="93" width="8" height="8" rx="2" fill="#009D9A"/>
 
-        <!-- PKI Secrets Engine (below — aligns with Issue/Deploy) -->
-        <rect x="45" y="170" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="72" y="200" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">PKI Secrets Engine</text>
-        <text x="72" y="217" font-size="10.5" fill="oklch(50% 0.01 55)">issuing-ca / server-certs role</text>
-        <rect x="55" y="188" width="8" height="8" rx="2" fill="#FFD814"/>
+        <!-- PKI Secrets Engine -->
+        <rect x="45" y="200" width="230" height="70" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="230" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">PKI Secrets Engine</text>
+        <text x="72" y="247" font-size="10.5" fill="oklch(50% 0.01 55)">issuing-ca / server-certs role</text>
+        <rect x="55" y="218" width="8" height="8" rx="2" fill="#FFD814"/>
 
         <!-- Authentication -->
-        <rect x="45" y="265" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="72" y="292" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Authentication</text>
-        <text x="72" y="307" font-size="10.5" fill="oklch(50% 0.01 55)">AppRole &bull; Service Principal</text>
-        <rect x="55" y="280" width="8" height="8" rx="2" fill="#B28600"/>
+        <rect x="45" y="325" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="352" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Authentication</text>
+        <text x="72" y="367" font-size="10.5" fill="oklch(50% 0.01 55)">AppRole &bull; Service Principal</text>
+        <rect x="55" y="340" width="8" height="8" rx="2" fill="#B28600"/>
 
         <!-- Auto-Tidy -->
-        <rect x="45" y="345" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="72" y="372" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Auto-Tidy</text>
-        <text x="72" y="387" font-size="10.5" fill="oklch(50% 0.01 55)">Cleans expired/revoked certs every 24h</text>
-        <rect x="55" y="360" width="8" height="8" rx="2" fill="#DA1E28"/>
+        <rect x="45" y="430" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="457" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Auto-Tidy</text>
+        <text x="72" y="472" font-size="10.5" fill="oklch(50% 0.01 55)">Cleans expired/revoked certs every 24h</text>
+        <rect x="55" y="445" width="8" height="8" rx="2" fill="#DA1E28"/>
 
         <!-- ── AAP Components ── -->
         <!-- 1. Daily Renewal Check (top) -->
@@ -1861,29 +1862,29 @@
         <text x="392" y="128" font-size="10.5" fill="oklch(50% 0.01 55)">expiring certs &rarr; populate targets</text>
         <rect x="375" y="88" width="8" height="8" rx="2" fill="#009D9A"/>
 
-        <!-- CLM Renewal Targets (MOVED — now between Daily Check and Issue/Deploy) -->
-        <rect x="365" y="170" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="392" y="197" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">CLM Renewal Targets</text>
-        <text x="392" y="212" font-size="10.5" fill="oklch(50% 0.01 55)">Dynamic inventory &mdash; only expiring hosts</text>
-        <rect x="375" y="185" width="8" height="8" rx="2" fill="#EE0000"/>
+        <!-- CLM Renewal Targets -->
+        <rect x="365" y="190" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="217" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">CLM Renewal Targets</text>
+        <text x="392" y="232" font-size="10.5" fill="oklch(50% 0.01 55)">Dynamic inventory &mdash; only expiring hosts</text>
+        <rect x="375" y="205" width="8" height="8" rx="2" fill="#EE0000"/>
 
         <!-- 2. Issue, Deploy & Verify (main workflow) -->
-        <rect x="365" y="250" width="230" height="130" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="392" y="275" font-size="12" font-weight="700" fill="oklch(25% 0.01 55)">2. Issue, Deploy &amp; Verify</text>
+        <rect x="365" y="290" width="230" height="140" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="315" font-size="12" font-weight="700" fill="oklch(25% 0.01 55)">2. Issue, Deploy &amp; Verify</text>
         <!-- Sub-steps -->
         <g font-size="10.5" fill="oklch(40% 0.01 55)">
-          <circle cx="385" cy="295" r="3.5" fill="#0F62FE"/>  <text x="394" y="298">Issue cert from Vault PKI</text>
-          <circle cx="385" cy="313" r="3.5" fill="#198038"/>  <text x="394" y="316">Backup existing cert</text>
-          <circle cx="385" cy="331" r="3.5" fill="#B28600"/>  <text x="394" y="334">Deploy &amp; reload service</text>
-          <circle cx="385" cy="349" r="3.5" fill="#009D9A"/>  <text x="394" y="352">Verify TLS handshake</text>
-          <circle cx="385" cy="367" r="3.5" fill="#DA1E28"/>  <text x="394" y="370">Rollback on failure</text>
+          <circle cx="385" cy="335" r="3.5" fill="#0F62FE"/>  <text x="394" y="338">Issue cert from Vault PKI</text>
+          <circle cx="385" cy="353" r="3.5" fill="#198038"/>  <text x="394" y="356">Backup existing cert</text>
+          <circle cx="385" cy="371" r="3.5" fill="#B28600"/>  <text x="394" y="374">Deploy &amp; reload service</text>
+          <circle cx="385" cy="389" r="3.5" fill="#009D9A"/>  <text x="394" y="392">Verify TLS handshake</text>
+          <circle cx="385" cy="407" r="3.5" fill="#DA1E28"/>  <text x="394" y="410">Rollback on failure</text>
         </g>
 
         <!-- Credentials -->
-        <rect x="365" y="405" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="392" y="432" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Credentials</text>
-        <text x="392" y="447" font-size="10.5" fill="oklch(50% 0.01 55)">HCP AppRole &bull; HCP SP &bull; SSH &bull; Controller</text>
-        <rect x="375" y="420" width="8" height="8" rx="2" fill="#B28600"/>
+        <rect x="365" y="485" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="512" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Credentials</text>
+        <text x="392" y="527" font-size="10.5" fill="oklch(50% 0.01 55)">HCP AppRole &bull; HCP SP &bull; SSH &bull; Controller</text>
+        <rect x="375" y="500" width="8" height="8" rx="2" fill="#B28600"/>
 
         <!-- ── Target Host Components ── -->
         <!-- Nginx Web Servers -->
@@ -1892,79 +1893,79 @@
         <text x="712" y="119" font-size="10.5" fill="oklch(50% 0.01 55)">PEM cert + key + fullchain</text>
         <rect x="695" y="90" width="8" height="8" rx="2" fill="#0F62FE"/>
 
-        <!-- SSL Configuration (replaces Staging Files — staging is transient) -->
-        <rect x="685" y="170" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="712" y="197" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">SSL Configuration</text>
-        <text x="712" y="212" font-size="10.5" fill="oklch(50% 0.01 55)">/etc/nginx/conf.d/ssl.conf</text>
-        <rect x="695" y="185" width="8" height="8" rx="2" fill="#198038"/>
+        <!-- SSL Configuration -->
+        <rect x="685" y="200" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="227" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">SSL Configuration</text>
+        <text x="712" y="242" font-size="10.5" fill="oklch(50% 0.01 55)">/etc/nginx/conf.d/ssl.conf</text>
+        <rect x="695" y="215" width="8" height="8" rx="2" fill="#198038"/>
 
         <!-- Certificate Backups -->
-        <rect x="685" y="250" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="712" y="277" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Certificate Backups</text>
-        <text x="712" y="292" font-size="10.5" fill="oklch(50% 0.01 55)">/opt/cert_backups/ with retention</text>
-        <rect x="695" y="265" width="8" height="8" rx="2" fill="#B28600"/>
+        <rect x="685" y="310" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="337" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Certificate Backups</text>
+        <text x="712" y="352" font-size="10.5" fill="oklch(50% 0.01 55)">/opt/cert_backups/ with retention</text>
+        <rect x="695" y="325" width="8" height="8" rx="2" fill="#B28600"/>
 
         <!-- TLS Verification -->
-        <rect x="685" y="330" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="712" y="357" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">TLS Verification</text>
-        <text x="712" y="372" font-size="10.5" fill="oklch(50% 0.01 55)">openssl s_client + HTTPS check</text>
-        <rect x="695" y="345" width="8" height="8" rx="2" fill="#009D9A"/>
+        <rect x="685" y="420" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.01 240)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="712" y="447" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">TLS Verification</text>
+        <text x="712" y="462" font-size="10.5" fill="oklch(50% 0.01 55)">openssl s_client + HTTPS check</text>
+        <rect x="695" y="435" width="8" height="8" rx="2" fill="#009D9A"/>
 
         <!-- ── Flow Connections ── -->
 
         <!-- LEFT GAP: Cross-column connections -->
 
-        <!-- Cert Inventory → Daily Check (query expiry) — HORIZONTAL, no crossing -->
+        <!-- Cert Inventory → Daily Check (query expiry) — HORIZONTAL -->
         <path d="M 275 110 H 363"
               fill="none" stroke="#009D9A" stroke-width="1.8" stroke-dasharray="6 3" marker-end="url(#arrowhead)"/>
         <text x="320" y="103" font-size="9" fill="#009D9A" text-anchor="middle">query expiry</text>
 
-        <!-- Issue/Deploy → PKI Engine (issue cert) — orthogonal route through gap -->
-        <path d="M 365 295 H 333 Q 325 295 325 287 V 213 Q 325 205 317 205 H 277"
+        <!-- Issue/Deploy → PKI Engine (issue cert) — orthogonal route -->
+        <path d="M 365 335 H 333 Q 325 335 325 327 V 243 Q 325 235 317 235 H 277"
               fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
-        <text x="362" y="289" font-size="9" fill="#0F62FE" text-anchor="end">issue</text>
+        <text x="362" y="329" font-size="9" fill="#0F62FE" text-anchor="end">issue</text>
 
-        <!-- Credentials → Authentication (auth) — orthogonal route through gap -->
-        <path d="M 365 432 H 318 Q 310 432 310 424 V 300 Q 310 292 302 292 H 277"
+        <!-- Credentials → Authentication (auth) — orthogonal route -->
+        <path d="M 365 512 H 318 Q 310 512 310 504 V 360 Q 310 352 302 352 H 277"
               fill="none" stroke="#B28600" stroke-width="1.8" marker-end="url(#arrowGold)"/>
-        <text x="362" y="426" font-size="9" fill="#B28600" text-anchor="end">auth</text>
+        <text x="362" y="506" font-size="9" fill="#B28600" text-anchor="end">auth</text>
 
-        <!-- WITHIN AAP: Clean top-to-bottom waterfall -->
+        <!-- WITHIN AAP: Top-to-bottom waterfall (now with proper gaps) -->
 
         <!-- Daily Check → Renewal Targets (populate) -->
-        <path d="M 480 147 V 168"
+        <path d="M 480 147 V 188"
               fill="none" stroke="#EE0000" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#arrowRed)"/>
-        <text x="487" y="162" font-size="9" fill="#EE0000">populate</text>
+        <text x="487" y="172" font-size="9" fill="#EE0000">populate</text>
 
         <!-- Renewal Targets → Issue/Deploy (feed targets) -->
-        <path d="M 480 227 V 248"
+        <path d="M 480 247 V 288"
               fill="none" stroke="oklch(45% 0.01 55)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrowhead)"/>
-        <text x="487" y="242" font-size="9" fill="oklch(50% 0.01 55)">targets</text>
+        <text x="487" y="272" font-size="9" fill="oklch(50% 0.01 55)">targets</text>
 
-        <!-- RIGHT GAP: Labeled connection lanes from Issue/Deploy to Target Hosts -->
+        <!-- RIGHT GAP: Orthogonal routes from Issue/Deploy to Target Hosts -->
 
         <!-- Issue/Deploy → Nginx (deploy cert) -->
-        <path d="M 595 290 H 620 Q 628 290 628 282 V 118 Q 628 110 636 110 H 683"
+        <path d="M 595 335 H 620 Q 628 335 628 327 V 118 Q 628 110 636 110 H 683"
               fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
-        <text x="631" y="210" font-size="8.5" fill="#0F62FE" font-weight="600">deploy</text>
+        <text x="631" y="230" font-size="8.5" fill="#0F62FE" font-weight="600">deploy</text>
 
         <!-- Issue/Deploy → SSL Config (configure) -->
-        <path d="M 595 313 H 640 Q 648 313 648 305 V 205 Q 648 197 656 197 H 683"
+        <path d="M 595 353 H 640 Q 648 353 648 345 V 235 Q 648 227 656 227 H 683"
               fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="651" y="262" font-size="8.5" fill="#198038" font-weight="600">config</text>
+        <text x="651" y="296" font-size="8.5" fill="#198038" font-weight="600">config</text>
 
         <!-- Issue/Deploy → Backups (backup existing) -->
-        <path d="M 595 336 H 640 Q 648 336 648 328 V 285 Q 648 277 656 277 H 683"
+        <path d="M 595 371 H 640 Q 648 371 648 363 V 345 Q 648 337 656 337 H 683"
               fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
-        <text x="651" y="312" font-size="8.5" fill="#B28600" font-weight="600">backup</text>
+        <text x="651" y="360" font-size="8.5" fill="#B28600" font-weight="600">backup</text>
 
-        <!-- Issue/Deploy → TLS Verify (verify handshake) — nearly horizontal -->
-        <path d="M 595 357 H 683"
+        <!-- Issue/Deploy → TLS Verify (verify handshake) -->
+        <path d="M 595 389 H 620 Q 628 389 628 397 V 439 Q 628 447 636 447 H 683"
               fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowhead)"/>
-        <text x="631" y="351" font-size="8.5" fill="#009D9A" font-weight="600">verify</text>
+        <text x="631" y="424" font-size="8.5" fill="#009D9A" font-weight="600">verify</text>
 
         <!-- ── Legend ── -->
-        <g transform="translate(685 420)" font-size="10">
+        <g transform="translate(685 510)" font-size="10">
           <text x="0" y="0" font-weight="700" fill="oklch(30% 0.01 55)">Flow</text>
           <path d="M 0 14 H 20" stroke="#009D9A" stroke-width="1.8" stroke-dasharray="5 3" fill="none"/>
           <text x="25" y="18" fill="oklch(45% 0.01 55)">Monitor</text>
