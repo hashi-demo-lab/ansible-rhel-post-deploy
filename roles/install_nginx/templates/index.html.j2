@@ -245,17 +245,25 @@
 
     .arch-phase-label {
       position: absolute;
-      top: -1.6rem;
-      left: 0;
+      top: -3.2rem;
+      left: 50%;
+      transform: translateX(-50%);
       font-family: 'Outfit', system-ui, sans-serif;
-      font-size: 0.75rem;
-      font-weight: 700;
+      font-size: clamp(1.15rem, 0.95rem + 0.9vw, 1.6rem);
+      font-weight: 800;
       color: var(--accent);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
       opacity: 0;
       transition: opacity 0.4s var(--ease-out-expo);
     }
     .arch-phase-label.visible { opacity: 1; }
+    .arch-phase-label .typed,
+    .arch-subtitle .typed {
+      border-right: 2px solid var(--vault-gold);
+      padding-right: 3px;
+      animation: blink 1s step-end infinite;
+    }
     .slide--resilience { background: var(--bg-cool); }
     .slide--outcomes { background: var(--bg); }
     .slide--benefits { background: var(--bg-warm); }
@@ -1836,12 +1844,12 @@
   <div class="wrap" style="width: min(95%, 90rem)">
     <p class="section-label reveal">Chapter 6</p>
     <h2 class="section-title reveal reveal-delay-1">How It All Connects</h2>
-    <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.95rem;">
-      Three platforms, one automated flow &mdash; from inventory insight to verified deployment
+    <p class="arch-subtitle text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.95rem; min-height: 1.3em;">
+      <span class="typed" id="archSubtitleTyped"></span>
     </p>
 
-    <div class="reveal reveal-delay-2" style="display: flex; justify-content: center; position: relative;">
-      <span class="arch-phase-label" id="archPhaseLabel"></span>
+    <div class="reveal reveal-delay-2" style="display: flex; justify-content: center; position: relative; margin-top: 3.5rem;">
+      <span class="arch-phase-label" id="archPhaseLabel"><span class="typed" id="archPhaseTyped"></span></span>
       <svg id="archSvg" viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 960px; font-family: 'Outfit', sans-serif;" class="arch-highlight-monitor">
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -2511,8 +2519,46 @@
   var ARCH_CHAPTER = 5;
   var archSvg = document.getElementById('archSvg');
   var archLabel = document.getElementById('archPhaseLabel');
+  var archPhaseTyped = document.getElementById('archPhaseTyped');
+  var archSubtitleTyped = document.getElementById('archSubtitleTyped');
   var archIdx = 0; // 0 = monitor, 1 = deploy
-  var archPhaseNames = ['Step 1 — Monitor & Check', 'Step 2 — Issue, Deploy & Verify'];
+  var archPhaseNames = ['Step 1. Monitor & Check', 'Step 2. Issue, Deploy & Verify'];
+  var archSubtitleText = 'Three platforms. One automated flow.';
+  var archSubtitleTyped_started = false;
+  var archPhaseTypeTimer = null;
+  var archSubtitleTypeTimer = null;
+
+  function typePhaseName(text) {
+    if (archPhaseTypeTimer) clearTimeout(archPhaseTypeTimer);
+    if (!archPhaseTyped) return;
+    archPhaseTyped.textContent = '';
+    var i = 0;
+    function step() {
+      if (i <= text.length) {
+        archPhaseTyped.textContent = text.substring(0, i);
+        i++;
+        archPhaseTypeTimer = setTimeout(step, reducedMotion ? 0 : 40);
+      }
+    }
+    step();
+  }
+
+  function typeArchSubtitle() {
+    if (archSubtitleTyped_started) return;
+    archSubtitleTyped_started = true;
+    if (archSubtitleTypeTimer) clearTimeout(archSubtitleTypeTimer);
+    if (!archSubtitleTyped) return;
+    archSubtitleTyped.textContent = '';
+    var i = 0;
+    function step() {
+      if (i <= archSubtitleText.length) {
+        archSubtitleTyped.textContent = archSubtitleText.substring(0, i);
+        i++;
+        archSubtitleTypeTimer = setTimeout(step, reducedMotion ? 0 : 35);
+      }
+    }
+    step();
+  }
 
   function setArchPhase(idx) {
     archIdx = idx;
@@ -2521,8 +2567,8 @@
     if (idx === 0) archSvg.classList.add('arch-highlight-monitor');
     else archSvg.classList.add('arch-highlight-deploy');
     if (archLabel) {
-      archLabel.textContent = archPhaseNames[idx];
       archLabel.classList.add('visible');
+      typePhaseName(archPhaseNames[idx]);
     }
   }
 
@@ -2551,6 +2597,7 @@
     // Reset architecture phase when arriving at architecture chapter
     if (idx === ARCH_CHAPTER) {
       setArchPhase(0);
+      setTimeout(typeArchSubtitle, 300);
     } else if (archLabel) {
       archLabel.classList.remove('visible');
     }
