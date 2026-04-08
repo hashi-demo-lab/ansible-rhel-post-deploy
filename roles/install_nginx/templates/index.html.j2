@@ -238,10 +238,18 @@
     /* Architecture diagram phase highlighting */
     #archSvg .arch-monitor,
     #archSvg .arch-deploy {
-      transition: opacity 0.6s var(--ease-out-expo);
+      transition: opacity 0.9s var(--ease-out-expo);
+      opacity: 1;
     }
-    #archSvg.arch-highlight-monitor .arch-deploy { opacity: 0.12; }
-    #archSvg.arch-highlight-deploy .arch-monitor { opacity: 0.12; }
+    #archSvg.arch-highlight-monitor .arch-deploy,
+    #archSvg.arch-highlight-deploy .arch-monitor {
+      opacity: 0.05;
+    }
+    #archSvg.arch-highlight-monitor .arch-monitor,
+    #archSvg.arch-highlight-deploy .arch-deploy {
+      opacity: 1;
+      transition: opacity 0.9s var(--ease-out-expo) 0.15s;
+    }
 
     .arch-phase-label {
       position: absolute;
