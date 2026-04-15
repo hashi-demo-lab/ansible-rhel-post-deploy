@@ -87,7 +87,7 @@
       top: 0;
       left: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--vault-gold), var(--accent));
+      background: linear-gradient(90deg, oklch(60% 0.16 80), var(--accent));
       box-shadow: 0 0 8px oklch(55% 0.15 270 / 0.4);
       z-index: 200;
       width: 0%;
@@ -439,7 +439,7 @@
 
     .risk-hero-quote .incident-source {
       font-size: 0.9rem;
-      color: oklch(70% 0.02 25);
+      color: oklch(80% 0.02 25);
       font-weight: 600;
       margin-top: var(--space-s);
       font-style: normal;
@@ -746,7 +746,7 @@
       margin-top: 0.5em;
     }
 
-    .engine-card.vault ul li::before { background: var(--vault-gold); }
+    .engine-card.vault ul li::before { background: oklch(60% 0.16 80); }
     .engine-card.ansible ul li::before { background: var(--redhat-red); }
 
     .bridge-connector {
@@ -1330,7 +1330,7 @@
     .cta-hostname {
       font-family: 'DM Sans', monospace;
       font-size: 0.875rem;
-      color: oklch(55% 0.008 55);
+      color: oklch(42% 0.01 55);
       margin-top: var(--space-m);
     }
 
