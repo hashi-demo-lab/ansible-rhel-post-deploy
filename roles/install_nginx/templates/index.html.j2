@@ -1715,50 +1715,50 @@
         <text x="52" y="74" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
 
         <!-- Danger zone fill (above 5,000 line) -->
-        <path d="M 60 130 H 780 V 28 H 60 Z" fill="oklch(65% 0.12 25 / 0.06)"/>
-        <text x="72" y="42" font-size="8" fill="oklch(55% 0.1 25)" font-weight="600" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
+        <path d="M 60 130 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
+        <text x="72" y="42" font-size="8" fill="oklch(45% 0.12 25)" font-weight="600" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
 
-        <!-- Exponential growth curve -->
+        <!-- Exponential growth curve — deep crimson for contrast on warm bg -->
         <path class="growth-curve-path"
               d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52"
-              fill="none" stroke="var(--redhat-red)" stroke-width="3" stroke-linecap="round"/>
+              fill="none" stroke="oklch(42% 0.2 25)" stroke-width="3" stroke-linecap="round"/>
 
         <!-- Glow under curve -->
         <path d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52 V 250 H 120 Z"
-              fill="url(#curveGlow)" opacity="0.3"/>
+              fill="url(#curveGlow)" opacity="0.25"/>
         <defs>
           <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--redhat-red)" stop-opacity="0.4"/>
-            <stop offset="100%" stop-color="var(--redhat-red)" stop-opacity="0"/>
+            <stop offset="0%" stop-color="oklch(42% 0.2 25)" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="oklch(42% 0.2 25)" stop-opacity="0"/>
           </linearGradient>
         </defs>
 
         <!-- Data points -->
-        <circle class="growth-dot growth-dot-1" cx="120" cy="228" r="6" fill="oklch(65% 0.01 55)" stroke="white" stroke-width="2"/>
-        <circle class="growth-dot growth-dot-2" cx="360" cy="208" r="7" fill="var(--vault-gold)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-1" cx="120" cy="228" r="6" fill="oklch(50% 0.02 55)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-2" cx="360" cy="208" r="7" fill="oklch(55% 0.16 55)" stroke="white" stroke-width="2"/>
         <circle class="growth-dot growth-dot-3" cx="540" cy="160" r="6" fill="var(--accent)" stroke="white" stroke-width="2"/>
-        <circle class="growth-dot growth-dot-4" cx="720" cy="52" r="8" fill="var(--redhat-red)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-4" cx="720" cy="52" r="8" fill="oklch(42% 0.2 25)" stroke="white" stroke-width="2"/>
 
         <!-- Labels at each point -->
         <g class="growth-label growth-label-1">
-          <text x="120" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">398 days</text>
-          <text x="120" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">Before 2026</text>
-          <text x="120" y="218" font-size="11" font-weight="800" fill="oklch(45% 0.01 55)" text-anchor="middle">~917</text>
+          <text x="120" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">398 days</text>
+          <text x="120" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">Before 2026</text>
+          <text x="120" y="218" font-size="11" font-weight="800" fill="oklch(40% 0.02 55)" text-anchor="middle">~917</text>
         </g>
         <g class="growth-label growth-label-2">
-          <text x="360" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">200 days</text>
-          <text x="360" y="276" font-size="8" fill="var(--vault-gold)" text-anchor="middle" font-weight="700">NOW</text>
+          <text x="360" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">200 days</text>
+          <text x="360" y="276" font-size="8" fill="oklch(45% 0.16 55)" text-anchor="middle" font-weight="700">NOW</text>
           <text x="360" y="198" font-size="11" font-weight="800" fill="oklch(35% 0.01 55)" text-anchor="middle">~1,825</text>
         </g>
         <g class="growth-label growth-label-3">
-          <text x="540" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">100 days</text>
-          <text x="540" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2027</text>
+          <text x="540" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">100 days</text>
+          <text x="540" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">March 2027</text>
           <text x="540" y="150" font-size="11" font-weight="800" fill="var(--accent)" text-anchor="middle">~3,650</text>
         </g>
         <g class="growth-label growth-label-4">
-          <text x="720" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">47 days</text>
-          <text x="720" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2029</text>
-          <text x="720" y="42" font-size="14" font-weight="800" fill="var(--redhat-red)" text-anchor="middle">7,700+</text>
+          <text x="720" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">47 days</text>
+          <text x="720" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">March 2029</text>
+          <text x="720" y="42" font-size="14" font-weight="800" fill="oklch(42% 0.2 25)" text-anchor="middle">7,700+</text>
         </g>
       </svg>
     </div>
