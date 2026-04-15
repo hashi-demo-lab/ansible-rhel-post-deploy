@@ -2630,7 +2630,7 @@
       if (i <= text.length) {
         archPhaseTyped.textContent = text.substring(0, i);
         i++;
-        archPhaseTypeTimer = setTimeout(step, reducedMotion ? 0 : 80);
+        archPhaseTypeTimer = setTimeout(step, reducedMotion ? 0 : 140);
       }
     }
     step();
@@ -2647,7 +2647,7 @@
       if (i <= archSubtitleText.length) {
         archSubtitleTyped.textContent = archSubtitleText.substring(0, i);
         i++;
-        archSubtitleTypeTimer = setTimeout(step, reducedMotion ? 0 : 65);
+        archSubtitleTypeTimer = setTimeout(step, reducedMotion ? 0 : 110);
       }
     }
     step();
@@ -2673,7 +2673,7 @@
         var step = parseInt(line.getAttribute('data-step'), 10);
         setTimeout(function() {
           line.classList.add('arch-line-visible');
-        }, reducedMotion ? 0 : step * 800);
+        }, reducedMotion ? 0 : step * 1200);
       });
     } else {
       deployLines.forEach(function(line) {
