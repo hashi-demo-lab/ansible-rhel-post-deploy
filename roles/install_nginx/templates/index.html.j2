@@ -239,9 +239,13 @@
     /* Architecture diagram: sequential line build for deploy phase */
     .arch-deploy-line {
       opacity: 0;
-      transition: opacity 0.6s var(--ease-out-expo);
+      transform: translateX(-8px);
+      transition: opacity 1s var(--ease-out-expo), transform 1s var(--ease-out-expo);
     }
-    .arch-deploy-line.arch-line-visible { opacity: 1; }
+    .arch-deploy-line.arch-line-visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
 
     /* Architecture diagram phase highlighting */
     #archSvg .arch-monitor,
@@ -2626,7 +2630,7 @@
       if (i <= text.length) {
         archPhaseTyped.textContent = text.substring(0, i);
         i++;
-        archPhaseTypeTimer = setTimeout(step, reducedMotion ? 0 : 40);
+        archPhaseTypeTimer = setTimeout(step, reducedMotion ? 0 : 80);
       }
     }
     step();
@@ -2643,7 +2647,7 @@
       if (i <= archSubtitleText.length) {
         archSubtitleTyped.textContent = archSubtitleText.substring(0, i);
         i++;
-        archSubtitleTypeTimer = setTimeout(step, reducedMotion ? 0 : 35);
+        archSubtitleTypeTimer = setTimeout(step, reducedMotion ? 0 : 65);
       }
     }
     step();
@@ -2669,7 +2673,7 @@
         var step = parseInt(line.getAttribute('data-step'), 10);
         setTimeout(function() {
           line.classList.add('arch-line-visible');
-        }, reducedMotion ? 0 : step * 500);
+        }, reducedMotion ? 0 : step * 800);
       });
     } else {
       deployLines.forEach(function(line) {
