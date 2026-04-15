@@ -76,7 +76,7 @@
     .slide-track {
       display: flex;
       height: 100vh;
-      width: calc(10 * 100vw);
+      width: calc(11 * 100vw);
       transition: transform 1.1s var(--ease-out-quart);
       will-change: transform;
     }
@@ -231,9 +231,17 @@
     .slide--hero { background: var(--bg); }
     .slide--risk { background: var(--bg-warm); }
     .slide--shift { background: var(--bg-warm); }
+    .slide--why { background: var(--bg-cool); }
     .slide--together { background: var(--bg); }
     .slide--lifecycle { background: var(--bg-alt); }
     .slide--architecture { background: var(--bg-cool); }
+
+    /* Architecture diagram: sequential line build for deploy phase */
+    .arch-deploy-line {
+      opacity: 0;
+      transition: opacity 0.6s var(--ease-out-expo);
+    }
+    .arch-deploy-line.arch-line-visible { opacity: 1; }
 
     /* Architecture diagram phase highlighting */
     #archSvg .arch-monitor,
@@ -271,6 +279,10 @@
       border-right: 2px solid var(--vault-gold);
       padding-right: 3px;
       animation: blink 1s step-end infinite;
+    }
+    .arch-subtitle .typed.caret-off {
+      border-right-color: transparent;
+      animation: none;
     }
     .slide--resilience { background: var(--bg-cool); }
     .slide--outcomes { background: var(--bg); }
@@ -619,6 +631,60 @@
       font-size: 0.7rem;
       color: var(--text-faint);
       margin-top: var(--space-xs);
+    }
+
+    /* ── Why Shorter Lifetimes (Chapter 3b) ─────────── */
+    .why-reasons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-s);
+      margin: var(--space-m) 0;
+    }
+
+    @media (max-width: 768px) {
+      .why-reasons { grid-template-columns: 1fr; }
+    }
+
+    .why-reason {
+      padding: var(--space-s);
+      background: var(--bg-light);
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+    }
+
+    .why-reason .reason-num {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .why-reason h3 {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: var(--step-1);
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+    }
+
+    .why-reason p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .why-precedent {
+      font-size: 0.9375rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: var(--measure);
+    }
+
+    .why-precedent strong {
+      color: var(--text);
     }
 
     /* ── Better Together ──────────────────────────────── */
@@ -1546,13 +1612,14 @@
   <a href="#hero" data-chapter="0"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Hero</span></a>
   <a href="#risk" data-chapter="1"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Risk</span></a>
   <a href="#shift" data-chapter="2"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">47 Days</span></a>
-  <a href="#together" data-chapter="3"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Together</span></a>
-  <a href="#lifecycle" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
-  <a href="#architecture" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
-  <a href="#resilience" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
-  <a href="#benefits" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
-  <a href="#outcomes" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
-  <a href="#cta" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
+  <a href="#why" data-chapter="3"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Why</span></a>
+  <a href="#together" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Together</span></a>
+  <a href="#lifecycle" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
+  <a href="#architecture" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
+  <a href="#resilience" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
+  <a href="#benefits" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#outcomes" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
+  <a href="#cta" data-chapter="10"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
 
 
@@ -1686,6 +1753,40 @@
   </div>
 </section>
 
+<!-- ━━━ CHAPTER 3b: Why Shorter Lifetimes Matter ━━━ -->
+<section class="slide slide--why" id="why">
+  <div class="wrap">
+    <p class="section-label reveal">Chapter 3</p>
+    <h2 class="section-title reveal reveal-delay-1">Why Are They Doing This?</h2>
+    <p class="why-precedent reveal reveal-delay-2">The CA/Browser Forum&rsquo;s rules govern public CAs &mdash; but the <strong>reasoning</strong> applies to every certificate in your organisation.</p>
+
+    <div class="why-reasons">
+      <div class="why-reason reveal reveal-delay-3">
+        <div class="reason-num">Reason 01</div>
+        <h3>Shorter Exposure Window</h3>
+        <p>A compromised key is dangerous for less time. Shorter lifetimes limit the blast radius of any key compromise.</p>
+      </div>
+      <div class="why-reason reveal reveal-delay-4">
+        <div class="reason-num">Reason 02</div>
+        <h3>Forces Automation</h3>
+        <p>Human-dependent processes fail at scale. Short lifetimes make automation a requirement, not an option.</p>
+      </div>
+      <div class="why-reason reveal reveal-delay-5">
+        <div class="reason-num">Reason 03</div>
+        <h3>Crypto Agility</h3>
+        <p>If an algorithm is broken tomorrow, how quickly can your fleet rotate? Short-lived certs mean faster response.</p>
+      </div>
+      <div class="why-reason reveal reveal-delay-6">
+        <div class="reason-num">Reason 04</div>
+        <h3>Reduces Revocation Reliance</h3>
+        <p>CRL and OCSP checking are unreliable in practice. Short-lived certs expire before revocation even matters.</p>
+      </div>
+    </div>
+
+    <p class="why-precedent reveal reveal-delay-7">The pattern is clear: <strong>public standard today &rarr; internal best practice tomorrow.</strong> TLS everywhere, encryption at rest, mutual TLS in service meshes &mdash; all followed this path. The only question is whether you adopt on your terms or wait for an auditor to ask.</p>
+  </div>
+</section>
+
 <!-- ━━━ CHAPTER 4: Better Together ━━━ -->
 <section class="slide slide--together" id="together">
   <div class="wrap">
@@ -1772,60 +1873,55 @@
         <div class="lifecycle-detail-panel active" data-cap="issue">
           <div class="capability-number">01 / 05</div>
           <h3 style="color: #0F62FE;">Issue &amp; Deploy</h3>
-          <p>Vault's PKI engine generates short-lived X.509 certificates with policy-enforced common names, TTLs, and key usage constraints. AAP deploys them to target services with validated configuration and automatic service reload.</p>
+          <p>Vault generates short-lived X.509 certificates on demand. AAP deploys to target services with automatic reload.</p>
           <ul style="--dot-color: #0F62FE;">
-            <li>Dynamic issuance — certificates generated on demand, not pre-provisioned</li>
-            <li>Policy-as-code — CN restrictions, TTL limits, key types all enforced by Vault</li>
-            <li>Service-aware deployment — nginx gets PEM files, Tomcat gets PKCS12 keystores</li>
-            <li>TLS verification — handshake confirmed before marking deployment complete</li>
+            <li>Policy-as-code &mdash; CN, TTL, key type enforced by Vault</li>
+            <li>Service-aware &mdash; PEM for nginx, PKCS12 for Tomcat</li>
+            <li>TLS-verified before marking complete</li>
           </ul>
         </div>
 
         <div class="lifecycle-detail-panel" data-cap="monitor">
           <div class="capability-number">02 / 05</div>
           <h3 style="color: #009D9A;">Monitor</h3>
-          <p>Continuous certificate expiry tracking across every host in the fleet. Configurable thresholds trigger renewal workflows before certificates approach expiry — shifting from reactive firefighting to proactive management.</p>
+          <p>Fleet-wide expiry tracking with configurable thresholds. Proactive, not reactive.</p>
           <ul style="--dot-color: #009D9A;">
-            <li>Fleet-wide visibility — know the status of every certificate at any time</li>
-            <li>Configurable thresholds — default 30 days, adjustable per environment</li>
-            <li>Compliance-ready reporting — audit your certificate posture on demand</li>
-            <li>Read-only — safe to schedule daily without risk of changes</li>
+            <li>Configurable thresholds per environment</li>
+            <li>Compliance-ready reporting on demand</li>
+            <li>Read-only &mdash; safe to schedule daily</li>
           </ul>
         </div>
 
         <div class="lifecycle-detail-panel" data-cap="renew">
           <div class="capability-number">03 / 05</div>
           <h3 style="color: #198038;">Renew</h3>
-          <p>When certificates approach their expiry threshold, AAP automatically issues replacements from Vault, backs up the existing certificate, deploys the new one, and verifies the TLS handshake — all without human intervention.</p>
+          <p>Automatic replacement: issue, backup, deploy, verify &mdash; zero human intervention.</p>
           <ul style="--dot-color: #198038;">
-            <li>Conditional — only renews hosts that actually need it</li>
-            <li>Backup-first — existing certificate preserved before replacement</li>
-            <li>Verified — TLS handshake confirmed after every renewal</li>
-            <li>Schedulable — run daily at 2 AM, forget about it</li>
+            <li>Only renews hosts that need it</li>
+            <li>Backup-first &mdash; existing cert preserved</li>
+            <li>Schedulable &mdash; run nightly, forget about it</li>
           </ul>
         </div>
 
         <div class="lifecycle-detail-panel" data-cap="revoke">
           <div class="capability-number">04 / 05</div>
           <h3 style="color: #DA1E28;">Revoke</h3>
-          <p>When a certificate is compromised or needs to be invalidated, security teams can revoke it instantly through Vault's PKI engine. CRL updates propagate automatically. Revocation is always a deliberate security decision — never automated.</p>
+          <p>Instant revocation through Vault&rsquo;s PKI engine. Always deliberate, never automated.</p>
           <ul style="--dot-color: #DA1E28;">
-            <li>Instant — revocation takes effect in Vault immediately</li>
-            <li>Intentional — never triggered automatically by rollback or failure</li>
-            <li>Audited — every revocation recorded with timestamp and operator</li>
-            <li>CRL management — optional tidy operation cleans up expired entries</li>
+            <li>Takes effect immediately in Vault</li>
+            <li>Every revocation audited with timestamp</li>
+            <li>CRL tidy cleans up expired entries</li>
           </ul>
         </div>
 
         <div class="lifecycle-detail-panel" data-cap="rollback">
           <div class="capability-number">05 / 05</div>
           <h3 style="color: #B28600;">Rollback</h3>
-          <p>If a new certificate causes service issues, AAP restores the previous certificate from a timestamped backup, reloads the service, and verifies recovery — automatically during deployment, or manually when needed.</p>
+          <p>Automatic restore from timestamped backup if deployment or verification fails.</p>
           <ul style="--dot-color: #B28600;">
-            <li>Automatic — triggered by block/rescue if deployment or verification fails</li>
-            <li>Manual option — run the rollback playbook for emergency recovery</li>
-            <li>Latest backup auto-detected — or specify a specific backup path</li>
-            <li>Verified — TLS handshake confirmed after rollback completes</li>
+            <li>Auto-triggered by block/rescue on failure</li>
+            <li>Manual option for emergency recovery</li>
+            <li>TLS-verified after rollback completes</li>
           </ul>
         </div>
       </div>
@@ -1888,8 +1984,7 @@
         </g>
         <text x="480" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="oklch(30% 0.015 10)">Ansible Automation Platform</text>
 
-        <!-- Target Hosts Zone -->
-        <rect x="660" y="15" width="280" height="585" rx="16" fill="oklch(96.5% 0.008 240)" stroke="oklch(85% 0.01 240)" stroke-width="1.5"/>
+        <!-- Target Hosts Zone (no surrounding box — collection of items) -->
         <text x="800" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="oklch(30% 0.01 240)">Target Hosts</text>
 
         <!-- Credentials (always visible — used by both phases) -->
@@ -1923,11 +2018,12 @@
           <text x="392" y="128" font-size="10.5" fill="oklch(50% 0.01 55)">expiring certs &rarr; populate targets</text>
           <rect x="375" y="88" width="8" height="8" rx="2" fill="#009D9A"/>
 
-          <!-- CLM Renewal Targets -->
-          <rect x="365" y="190" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
-          <text x="392" y="217" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">CLM Renewal Targets</text>
-          <text x="392" y="232" font-size="10.5" fill="oklch(50% 0.01 55)">Dynamic inventory &mdash; only expiring hosts</text>
-          <rect x="375" y="205" width="8" height="8" rx="2" fill="#EE0000"/>
+          <!-- CLM Renewal Targets (fully automated dynamic inventory) -->
+          <rect x="365" y="190" width="230" height="65" rx="10" fill="white" stroke="#EE0000" stroke-width="2" filter="url(#shadow)"/>
+          <text x="392" y="214" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">CLM Renewal Targets</text>
+          <text x="392" y="229" font-size="10.5" fill="oklch(50% 0.01 55)">Auto-populated &mdash; zero human input</text>
+          <text x="392" y="244" font-size="9" font-weight="600" fill="#EE0000">&#x2713; Fully automated dynamic inventory</text>
+          <rect x="375" y="202" width="8" height="8" rx="2" fill="#EE0000"/>
 
           <!-- Daily Check → Cert Inventory (query expiry) -->
           <path d="M 363 110 H 277" fill="none" stroke="#009D9A" stroke-width="1.8" stroke-dasharray="6 3" marker-end="url(#arrowTeal)"/>
@@ -1987,18 +2083,26 @@
           <path d="M 365 512 H 318 Q 310 512 310 504 V 360 Q 310 352 302 352 H 277" fill="none" stroke="#B28600" stroke-width="1.8" marker-end="url(#arrowGold)"/>
           <text x="362" y="506" font-size="9" fill="#B28600" text-anchor="end">auth</text>
 
-          <!-- Right-side connections -->
-          <path d="M 595 335 H 617 Q 625 335 625 327 V 118 Q 625 110 633 110 H 683" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
-          <text x="658" y="103" font-size="8.5" fill="#0F62FE" font-weight="600" text-anchor="middle">issue</text>
+          <!-- Right-side connections (sequential build: 1→2→3→4) -->
+          <g class="arch-deploy-line" data-step="1">
+            <path d="M 595 335 H 617 Q 625 335 625 327 V 118 Q 625 110 633 110 H 683" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
+            <text x="658" y="103" font-size="8.5" fill="#0F62FE" font-weight="600" text-anchor="middle">1. issue</text>
+          </g>
 
-          <path d="M 595 353 H 630 Q 638 353 638 345 V 235 Q 638 227 646 227 H 683" fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
-          <text x="664" y="220" font-size="8.5" fill="#B28600" font-weight="600" text-anchor="middle">deploy</text>
+          <g class="arch-deploy-line" data-step="2">
+            <path d="M 595 353 H 630 Q 638 353 638 345 V 235 Q 638 227 646 227 H 683" fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
+            <text x="664" y="220" font-size="8.5" fill="#B28600" font-weight="600" text-anchor="middle">2. deploy</text>
+          </g>
 
-          <path d="M 595 371 H 642 Q 650 371 650 363 V 345 Q 650 337 658 337 H 683" fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
-          <text x="670" y="330" font-size="8.5" fill="#198038" font-weight="600" text-anchor="middle">backup</text>
+          <g class="arch-deploy-line" data-step="3">
+            <path d="M 595 371 H 642 Q 650 371 650 363 V 345 Q 650 337 658 337 H 683" fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+            <text x="670" y="330" font-size="8.5" fill="#198038" font-weight="600" text-anchor="middle">3. backup</text>
+          </g>
 
-          <path d="M 595 389 H 617 Q 625 389 625 397 V 439 Q 625 447 633 447 H 683" fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowTeal)"/>
-          <text x="658" y="440" font-size="8.5" fill="#009D9A" font-weight="600" text-anchor="middle">verify</text>
+          <g class="arch-deploy-line" data-step="4">
+            <path d="M 595 389 H 617 Q 625 389 625 397 V 439 Q 625 447 633 447 H 683" fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowTeal)"/>
+            <text x="658" y="440" font-size="8.5" fill="#009D9A" font-weight="600" text-anchor="middle">4. verify</text>
+          </g>
         </g>
 
       </svg>
@@ -2499,7 +2603,7 @@
   assignListItemDelays();
 
   // ── Architecture diagram: phase progression ────────
-  var ARCH_CHAPTER = 5;
+  var ARCH_CHAPTER = 6;
   var archSvg = document.getElementById('archSvg');
   var archLabel = document.getElementById('archPhaseLabel');
   var archPhaseTyped = document.getElementById('archPhaseTyped');
@@ -2514,6 +2618,8 @@
   function typePhaseName(text) {
     if (archPhaseTypeTimer) clearTimeout(archPhaseTypeTimer);
     if (!archPhaseTyped) return;
+    // Hide subtitle caret so only one cursor blinks at a time
+    if (archSubtitleTyped) archSubtitleTyped.classList.add('caret-off');
     archPhaseTyped.textContent = '';
     var i = 0;
     function step() {
@@ -2553,12 +2659,29 @@
       archLabel.classList.add('visible');
       typePhaseName(archPhaseNames[idx]);
     }
+    // Sequential line build for deploy phase
+    var deployLines = archSvg.querySelectorAll('.arch-deploy-line');
+    if (idx === 1) {
+      deployLines.forEach(function(line) {
+        line.classList.remove('arch-line-visible');
+      });
+      deployLines.forEach(function(line) {
+        var step = parseInt(line.getAttribute('data-step'), 10);
+        setTimeout(function() {
+          line.classList.add('arch-line-visible');
+        }, reducedMotion ? 0 : step * 500);
+      });
+    } else {
+      deployLines.forEach(function(line) {
+        line.classList.remove('arch-line-visible');
+      });
+    }
   }
 
   // ── Benefit panels: arrow-key progression ──────────
   var benefitPanels = document.querySelectorAll('.benefit-panel');
   var benefitIdx = 0; // which panel is expanded (0-2)
-  var BENEFITS_CHAPTER = 7;
+  var BENEFITS_CHAPTER = 8;
 
   function expandBenefitPanel(idx) {
     if (idx < 0) idx = 0;
