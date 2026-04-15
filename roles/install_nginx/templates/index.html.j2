@@ -2023,18 +2023,18 @@
 
         <!-- Target Hosts Zone (no box, no label — boxes stand on their own) -->
 
-        <!-- Authentication & Credentials — below both platform boxes -->
-        <!-- Authentication (Vault column) -->
-        <rect x="45" y="510" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="72" y="537" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Authentication</text>
-        <text x="72" y="552" font-size="10.5" fill="oklch(50% 0.01 55)">AppRole &amp; identity-based access</text>
-        <rect x="55" y="525" width="8" height="8" rx="2" fill="#B28600"/>
+        <!-- Authentication & Credentials — inside platform boxes at bottom -->
+        <!-- Authentication (Vault column — bottom of box) -->
+        <rect x="45" y="420" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="72" y="447" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Authentication</text>
+        <text x="72" y="462" font-size="10.5" fill="oklch(50% 0.01 55)">AppRole &amp; identity-based access</text>
+        <rect x="55" y="435" width="8" height="8" rx="2" fill="#B28600"/>
 
-        <!-- Credentials (AAP column, aligned with Authentication) -->
-        <rect x="365" y="510" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
-        <text x="392" y="537" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Credentials</text>
-        <text x="392" y="552" font-size="10.5" fill="oklch(50% 0.01 55)">identity-based Vault auth</text>
-        <rect x="375" y="525" width="8" height="8" rx="2" fill="#B28600"/>
+        <!-- Credentials (AAP column — bottom of box, aligned) -->
+        <rect x="365" y="420" width="230" height="55" rx="10" fill="white" stroke="oklch(82% 0.015 10)" stroke-width="1.2" filter="url(#shadow)"/>
+        <text x="392" y="447" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Credentials</text>
+        <text x="392" y="462" font-size="10.5" fill="oklch(50% 0.01 55)">identity-based Vault auth</text>
+        <rect x="375" y="435" width="8" height="8" rx="2" fill="#B28600"/>
 
         <!-- ══════ PHASE 1: Monitor & Check ══════ -->
         <g class="arch-monitor">
@@ -2128,9 +2128,9 @@
           <path id="archPathLeft" d="M 365 335 H 333 Q 325 335 325 327 V 243 Q 325 235 317 235 H 277" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
           <text x="362" y="329" font-size="9" fill="#0F62FE" text-anchor="end">issue</text>
 
-          <!-- Credentials → Authentication (horizontal, both at y=537) -->
-          <path d="M 365 537 H 277" fill="none" stroke="#B28600" stroke-width="1.8" marker-end="url(#arrowGold)"/>
-          <text x="320" y="530" font-size="9" fill="#B28600" text-anchor="middle">auth</text>
+          <!-- Credentials → Authentication (horizontal, both at y=447) -->
+          <path d="M 365 447 H 277" fill="none" stroke="#B28600" stroke-width="1.8" marker-end="url(#arrowGold)"/>
+          <text x="320" y="440" font-size="9" fill="#B28600" text-anchor="middle">auth</text>
 
           <!-- Right-side connections (sequential: 1.issue → 2.backup → 3.deploy → 4.verify) -->
           <g class="arch-deploy-line" data-step="1">
@@ -2735,6 +2735,8 @@
 
       // Highlight one step at a time with flow ball
       var ballDuration = 1000; // ms for ball to traverse a path
+      // Step 1 takes longer (left + right), so offset subsequent steps
+      var stepOffsets = [0, 1, 3.4, 4.6, 5.8]; // seconds (index 0 unused)
       for (var s = 1; s <= numSteps; s++) {
         (function(step) {
           setTimeout(function() {
@@ -2745,16 +2747,16 @@
             // Animate flow ball along the path
             var color = flowColors[step] || '#0F62FE';
             if (step === 1) {
-              // Step 1: ball goes left to PKI first, then right to Web Servers
+              // Step 1: ball goes LEFT to PKI, pauses, then RIGHT to Web Servers
               animateFlowBall('archPathLeft', color, ballDuration, function() {
                 setTimeout(function() {
                   animateFlowBall('archPathR1', color, ballDuration, null);
-                }, 100);
+                }, 200);
               });
             } else {
               animateFlowBall('archPathR' + step, color, ballDuration, null);
             }
-          }, step * stepDelay);
+          }, stepOffsets[step] * 1000);
         })(s);
       }
 
@@ -2765,7 +2767,7 @@
           el.classList.remove('arch-line-highlight');
           el.classList.add('arch-line-all-on');
         });
-      }, (numSteps + 1) * stepDelay);
+      }, 7000);
     } else {
       stopFlowBall();
       deployLines.forEach(function(el) {
