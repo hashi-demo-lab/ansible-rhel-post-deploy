@@ -2681,37 +2681,49 @@
       archLabel.classList.add('visible');
       typePhaseName(archPhaseNames[idx]);
     }
-    // Sequential highlight for deploy phase: one box at a time, then all on
+    // Sequential highlight for deploy phase: one step at a time, then all on
     var deployLines = archSvg.querySelectorAll('.arch-deploy-line');
     if (idx === 1) {
       // Reset all
-      deployLines.forEach(function(line) {
-        line.classList.remove('arch-line-visible', 'arch-line-highlight', 'arch-line-all-on');
+      deployLines.forEach(function(el) {
+        el.classList.remove('arch-line-visible', 'arch-line-highlight', 'arch-line-all-on');
       });
-      var totalSteps = deployLines.length;
+
+      // Helper: get all elements for a given step number
+      function getStep(n) {
+        return archSvg.querySelectorAll('.arch-deploy-line[data-step="' + n + '"]');
+      }
+
+      var numSteps = 4;
       var stepDelay = 800;
-      deployLines.forEach(function(line) {
-        var s = parseInt(line.getAttribute('data-step'), 10);
-        // Show all as dimmed first
-        setTimeout(function() {
-          line.classList.add('arch-line-visible');
-        }, 200);
-        // Highlight this one at its turn
-        setTimeout(function() {
-          deployLines.forEach(function(l) { l.classList.remove('arch-line-highlight'); });
-          line.classList.add('arch-line-highlight');
-        }, s * stepDelay);
-      });
+
+      // Show all as dimmed first
+      setTimeout(function() {
+        deployLines.forEach(function(el) { el.classList.add('arch-line-visible'); });
+      }, 200);
+
+      // Highlight one step at a time
+      for (var s = 1; s <= numSteps; s++) {
+        (function(step) {
+          setTimeout(function() {
+            // Remove highlight from all
+            deployLines.forEach(function(el) { el.classList.remove('arch-line-highlight'); });
+            // Highlight this step (both box and line)
+            getStep(step).forEach(function(el) { el.classList.add('arch-line-highlight'); });
+          }, step * stepDelay);
+        })(s);
+      }
+
       // After all steps, light everything up
       setTimeout(function() {
-        deployLines.forEach(function(line) {
-          line.classList.remove('arch-line-highlight');
-          line.classList.add('arch-line-all-on');
+        deployLines.forEach(function(el) {
+          el.classList.remove('arch-line-highlight');
+          el.classList.add('arch-line-all-on');
         });
-      }, (totalSteps + 1) * stepDelay);
+      }, (numSteps + 1) * stepDelay);
     } else {
-      deployLines.forEach(function(line) {
-        line.classList.remove('arch-line-visible', 'arch-line-highlight', 'arch-line-all-on');
+      deployLines.forEach(function(el) {
+        el.classList.remove('arch-line-visible', 'arch-line-highlight', 'arch-line-all-on');
       });
     }
   }
