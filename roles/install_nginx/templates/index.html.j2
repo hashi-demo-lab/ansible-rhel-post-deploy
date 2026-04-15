@@ -497,77 +497,49 @@
       margin-bottom: var(--space-s);
     }
 
-    .timeline {
-      display: flex;
-      align-items: stretch;
-      gap: 0;
+    /* ── Growth Curve Chart ────────────────────────── */
+    .growth-curve-wrap {
       margin: var(--space-s) 0;
       position: relative;
     }
 
-    .timeline::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--border);
+    .growth-curve-wrap svg {
+      width: 100%;
+      max-width: 50rem;
     }
 
-    .timeline-step {
-      flex: 1;
-      text-align: center;
-      position: relative;
-      padding: 0 var(--space-xs);
+    .growth-curve-path {
+      stroke-dasharray: 800;
+      stroke-dashoffset: 800;
+      transition: stroke-dashoffset 2.5s var(--ease-out-quart);
     }
 
-    .timeline-step .marker {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--border);
-      margin: -7px auto var(--space-s);
-      position: relative;
-      z-index: 2;
-      transition: background 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+    .growth-curve-wrap.visible .growth-curve-path {
+      stroke-dashoffset: 0;
     }
 
-    .timeline-step.past .marker {
-      background: var(--text-faint);
+    .growth-dot {
+      opacity: 0;
+      transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+      transform-origin: center;
+      transform: scale(0);
     }
 
-    .timeline-step.past .timeline-days {
-      color: var(--text-faint);
-    }
+    .growth-curve-wrap.visible .growth-dot { opacity: 1; transform: scale(1); }
+    .growth-curve-wrap.visible .growth-dot-1 { transition-delay: 0.6s; }
+    .growth-curve-wrap.visible .growth-dot-2 { transition-delay: 1.2s; }
+    .growth-curve-wrap.visible .growth-dot-3 { transition-delay: 1.8s; }
+    .growth-curve-wrap.visible .growth-dot-4 { transition-delay: 2.3s; }
 
-    .timeline-step.active .marker {
-      background: var(--vault-gold);
-      transform: scale(1.3);
+    .growth-label {
+      opacity: 0;
+      transition: opacity 0.4s var(--ease-out-expo);
     }
-
-    .timeline-step.active .marker::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      border: 2px solid var(--vault-gold);
-      animation: markerRadiate 2.5s ease-out infinite;
-    }
-
-    @keyframes markerRadiate {
-      0% { transform: scale(1); opacity: 0.6; }
-      100% { transform: scale(2.4); opacity: 0; }
-    }
-
-    .timeline-step.future .marker { background: var(--accent); }
-
-    .timeline-days {
-      font-family: 'Outfit', system-ui, sans-serif;
-      font-size: var(--step-2);
-      font-weight: 800;
-      color: var(--text);
-    }
+    .growth-curve-wrap.visible .growth-label { opacity: 1; }
+    .growth-curve-wrap.visible .growth-label-1 { transition-delay: 0.7s; }
+    .growth-curve-wrap.visible .growth-label-2 { transition-delay: 1.3s; }
+    .growth-curve-wrap.visible .growth-label-3 { transition-delay: 1.9s; }
+    .growth-curve-wrap.visible .growth-label-4 { transition-delay: 2.4s; }
 
     .timeline-date {
       font-size: 0.8125rem;
@@ -1726,27 +1698,71 @@
       The CA/Browser Forum adopted Apple's proposal &mdash; all major browsers voted in favour. The first reduction took effect March 2026. <strong>This is already happening.</strong>
     </p>
 
-    <div class="timeline reveal reveal-delay-3">
-      <div class="timeline-step past">
-        <div class="marker"></div>
-        <div class="timeline-days">398</div>
-        <div class="timeline-date">Before March 2026</div>
-      </div>
-      <div class="timeline-step active">
-        <div class="marker"></div>
-        <div class="timeline-days">200</div>
-        <div class="timeline-date">Now</div>
-      </div>
-      <div class="timeline-step future">
-        <div class="marker"></div>
-        <div class="timeline-days">100</div>
-        <div class="timeline-date">March 2027</div>
-      </div>
-      <div class="timeline-step future">
-        <div class="marker"></div>
-        <div class="timeline-days">47</div>
-        <div class="timeline-date">March 2029</div>
-      </div>
+    <div class="growth-curve-wrap reveal reveal-delay-3">
+      <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Outfit', sans-serif;">
+        <!-- Y-axis label -->
+        <text x="10" y="20" font-size="10" font-weight="700" fill="oklch(45% 0.01 55)" letter-spacing="0.05em">RENEWALS / YEAR</text>
+
+        <!-- Grid lines -->
+        <line x1="80" y1="240" x2="660" y2="240" stroke="oklch(90% 0.005 55)" stroke-width="1"/>
+        <line x1="80" y1="180" x2="660" y2="180" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="80" y1="120" x2="660" y2="120" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="80" y1="60" x2="660" y2="60" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis values -->
+        <text x="70" y="244" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">0</text>
+        <text x="70" y="184" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">2,500</text>
+        <text x="70" y="124" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
+        <text x="70" y="64" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
+
+        <!-- Danger zone fill -->
+        <path d="M 80 120 H 660 V 30 H 80 Z" fill="oklch(65% 0.12 25 / 0.06)"/>
+        <text x="655" y="45" font-size="8" fill="oklch(55% 0.1 25)" text-anchor="end" font-weight="600">UNSUSTAINABLE MANUALLY</text>
+
+        <!-- The exponential growth curve (renewals: 917 → 1825 → 3650 → 7766) -->
+        <!-- y: 240=0, 60=7500; each 1 renewal = 0.024 px; scale: y = 240 - (val/7766)*180 -->
+        <path class="growth-curve-path"
+              d="M 140 219 C 200 219, 280 197, 330 198 C 380 198, 420 155, 470 155 C 520 155, 540 80, 590 60"
+              fill="none" stroke="var(--redhat-red)" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Glow under curve -->
+        <path d="M 140 219 C 200 219, 280 197, 330 198 C 380 198, 420 155, 470 155 C 520 155, 540 80, 590 60 V 240 H 140 Z"
+              fill="url(#curveGlow)" opacity="0.3"/>
+        <defs>
+          <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--redhat-red)" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="var(--redhat-red)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Data points -->
+        <circle class="growth-dot growth-dot-1" cx="140" cy="219" r="6" fill="oklch(65% 0.01 55)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-2" cx="330" cy="198" r="7" fill="var(--vault-gold)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-3" cx="470" cy="155" r="6" fill="var(--accent)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-4" cx="590" cy="60" r="8" fill="var(--redhat-red)" stroke="white" stroke-width="2"/>
+
+        <!-- Labels at each point -->
+        <g class="growth-label growth-label-1">
+          <text x="140" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">398 days</text>
+          <text x="140" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">Before 2026</text>
+          <text x="140" y="210" font-size="11" font-weight="800" fill="oklch(45% 0.01 55)" text-anchor="middle">~917</text>
+        </g>
+        <g class="growth-label growth-label-2">
+          <text x="330" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">200 days</text>
+          <text x="330" y="262" font-size="8" fill="var(--vault-gold)" text-anchor="middle" font-weight="700">NOW</text>
+          <text x="330" y="188" font-size="11" font-weight="800" fill="oklch(35% 0.01 55)" text-anchor="middle">~1,825</text>
+        </g>
+        <g class="growth-label growth-label-3">
+          <text x="470" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">100 days</text>
+          <text x="470" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2027</text>
+          <text x="470" y="145" font-size="11" font-weight="800" fill="var(--accent)" text-anchor="middle">~3,650</text>
+        </g>
+        <g class="growth-label growth-label-4">
+          <text x="590" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">47 days</text>
+          <text x="590" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2029</text>
+          <text x="590" y="50" font-size="13" font-weight="800" fill="var(--redhat-red)" text-anchor="middle">7,700+</text>
+        </g>
+      </svg>
     </div>
 
     <div class="shift-callout reveal reveal-delay-4">
