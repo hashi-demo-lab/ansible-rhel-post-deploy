@@ -255,6 +255,15 @@
       transform: translateX(0);
     }
 
+    /* Architecture diagram: animated flow ball */
+    .arch-flow-ball {
+      filter: drop-shadow(0 0 6px var(--ball-color, #0F62FE));
+      opacity: 0;
+    }
+    .arch-flow-ball.flowing {
+      opacity: 1;
+    }
+
     /* Architecture diagram phase highlighting */
     #archSvg .arch-monitor,
     #archSvg .arch-deploy {
@@ -2097,7 +2106,7 @@
           </g>
 
           <!-- Issue/Deploy → PKI Engine -->
-          <path d="M 365 335 H 333 Q 325 335 325 327 V 243 Q 325 235 317 235 H 277" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
+          <path id="archPathLeft" d="M 365 335 H 333 Q 325 335 325 327 V 243 Q 325 235 317 235 H 277" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
           <text x="362" y="329" font-size="9" fill="#0F62FE" text-anchor="end">issue</text>
 
           <!-- Credentials → Authentication (horizontal, both at y=557) -->
@@ -2106,25 +2115,28 @@
 
           <!-- Right-side connections (sequential: 1.issue → 2.backup → 3.deploy → 4.verify) -->
           <g class="arch-deploy-line" data-step="1">
-            <path d="M 595 335 H 617 Q 625 335 625 327 V 118 Q 625 110 633 110 H 683" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
+            <path id="archPathR1" d="M 595 335 H 617 Q 625 335 625 327 V 118 Q 625 110 633 110 H 683" fill="none" stroke="#0F62FE" stroke-width="2" marker-end="url(#arrowBlue)"/>
             <text x="658" y="103" font-size="8.5" fill="#0F62FE" font-weight="600" text-anchor="middle">1. issue</text>
           </g>
 
           <g class="arch-deploy-line" data-step="2">
-            <path d="M 595 353 H 630 Q 638 353 638 345 V 235 Q 638 227 646 227 H 683" fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+            <path id="archPathR2" d="M 595 353 H 630 Q 638 353 638 345 V 235 Q 638 227 646 227 H 683" fill="none" stroke="#198038" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
             <text x="664" y="220" font-size="8.5" fill="#198038" font-weight="600" text-anchor="middle">2. backup</text>
           </g>
 
           <g class="arch-deploy-line" data-step="3">
-            <path d="M 595 371 H 642 Q 650 371 650 363 V 345 Q 650 337 658 337 H 683" fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
+            <path id="archPathR3" d="M 595 371 H 642 Q 650 371 650 363 V 345 Q 650 337 658 337 H 683" fill="none" stroke="#B28600" stroke-width="1.5" marker-end="url(#arrowGold)"/>
             <text x="670" y="330" font-size="8.5" fill="#B28600" font-weight="600" text-anchor="middle">3. deploy</text>
           </g>
 
           <g class="arch-deploy-line" data-step="4">
-            <path d="M 595 389 H 617 Q 625 389 625 397 V 439 Q 625 447 633 447 H 683" fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowTeal)"/>
+            <path id="archPathR4" d="M 595 389 H 617 Q 625 389 625 397 V 439 Q 625 447 633 447 H 683" fill="none" stroke="#009D9A" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowTeal)"/>
             <text x="658" y="440" font-size="8.5" fill="#009D9A" font-weight="600" text-anchor="middle">4. verify</text>
           </g>
         </g>
+
+        <!-- Flow ball -->
+        <circle id="archFlowBall" class="arch-flow-ball" r="5" fill="#0F62FE" cx="0" cy="0"/>
 
       </svg>
     </div>
@@ -2702,7 +2714,8 @@
         deployLines.forEach(function(el) { el.classList.add('arch-line-visible'); });
       }, 200);
 
-      // Highlight one step at a time
+      // Highlight one step at a time with flow ball
+      var ballDuration = 600; // ms for ball to traverse a path
       for (var s = 1; s <= numSteps; s++) {
         (function(step) {
           setTimeout(function() {
@@ -2710,22 +2723,73 @@
             deployLines.forEach(function(el) { el.classList.remove('arch-line-highlight'); });
             // Highlight this step (both box and line)
             getStep(step).forEach(function(el) { el.classList.add('arch-line-highlight'); });
+            // Animate flow ball along the path
+            var color = flowColors[step] || '#0F62FE';
+            if (step === 1) {
+              // Step 1: ball goes left to PKI first, then right to Web Servers
+              animateFlowBall('archPathLeft', color, ballDuration, function() {
+                setTimeout(function() {
+                  animateFlowBall('archPathR1', color, ballDuration, null);
+                }, 100);
+              });
+            } else {
+              animateFlowBall('archPathR' + step, color, ballDuration, null);
+            }
           }, step * stepDelay);
         })(s);
       }
 
       // After all steps, light everything up
       setTimeout(function() {
+        stopFlowBall();
         deployLines.forEach(function(el) {
           el.classList.remove('arch-line-highlight');
           el.classList.add('arch-line-all-on');
         });
       }, (numSteps + 1) * stepDelay);
     } else {
+      stopFlowBall();
       deployLines.forEach(function(el) {
         el.classList.remove('arch-line-visible', 'arch-line-highlight', 'arch-line-all-on');
       });
     }
+  }
+
+  // ── Architecture: flow ball animation along paths ──
+  var flowBall = document.getElementById('archFlowBall');
+  var flowBallAnim = null;
+  var flowColors = { 1: '#0F62FE', 2: '#198038', 3: '#B28600', 4: '#009D9A' };
+
+  function animateFlowBall(pathId, color, duration, onDone) {
+    var path = document.getElementById(pathId);
+    if (!path || !flowBall) { if (onDone) onDone(); return; }
+    var len = path.getTotalLength();
+    flowBall.setAttribute('fill', color);
+    flowBall.style.setProperty('--ball-color', color);
+    flowBall.classList.add('flowing');
+    var startTime = null;
+    function tick(ts) {
+      if (!startTime) startTime = ts;
+      var t = Math.min((ts - startTime) / duration, 1);
+      // Ease out cubic
+      var eased = 1 - Math.pow(1 - t, 3);
+      var pt = path.getPointAtLength(eased * len);
+      flowBall.setAttribute('cx', pt.x);
+      flowBall.setAttribute('cy', pt.y);
+      if (t < 1) {
+        flowBallAnim = requestAnimationFrame(tick);
+      } else {
+        flowBall.classList.remove('flowing');
+        if (onDone) onDone();
+      }
+    }
+    if (flowBallAnim) cancelAnimationFrame(flowBallAnim);
+    flowBallAnim = requestAnimationFrame(tick);
+  }
+
+  function stopFlowBall() {
+    if (flowBallAnim) cancelAnimationFrame(flowBallAnim);
+    if (flowBall) flowBall.classList.remove('flowing');
   }
 
   // ── Benefit panels: arrow-key progression ──────────
