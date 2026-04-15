@@ -1699,34 +1699,33 @@
     </p>
 
     <div class="growth-curve-wrap reveal reveal-delay-3">
-      <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Outfit', sans-serif;">
+      <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width: 100%; font-family: 'Outfit', sans-serif;">
         <!-- Y-axis label -->
-        <text x="10" y="20" font-size="10" font-weight="700" fill="oklch(45% 0.01 55)" letter-spacing="0.05em">RENEWALS / YEAR</text>
+        <text x="10" y="18" font-size="10" font-weight="700" fill="oklch(45% 0.01 55)" letter-spacing="0.05em">RENEWALS / YEAR</text>
 
-        <!-- Grid lines -->
-        <line x1="80" y1="240" x2="660" y2="240" stroke="oklch(90% 0.005 55)" stroke-width="1"/>
-        <line x1="80" y1="180" x2="660" y2="180" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
-        <line x1="80" y1="120" x2="660" y2="120" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
-        <line x1="80" y1="60" x2="660" y2="60" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <!-- Grid lines (full width) -->
+        <line x1="60" y1="250" x2="780" y2="250" stroke="oklch(90% 0.005 55)" stroke-width="1"/>
+        <line x1="60" y1="190" x2="780" y2="190" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="60" y1="130" x2="780" y2="130" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="60" y1="70" x2="780" y2="70" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
 
         <!-- Y-axis values -->
-        <text x="70" y="244" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">0</text>
-        <text x="70" y="184" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">2,500</text>
-        <text x="70" y="124" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
-        <text x="70" y="64" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
+        <text x="52" y="254" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">0</text>
+        <text x="52" y="194" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">2,500</text>
+        <text x="52" y="134" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
+        <text x="52" y="74" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
 
-        <!-- Danger zone fill -->
-        <path d="M 80 120 H 660 V 30 H 80 Z" fill="oklch(65% 0.12 25 / 0.06)"/>
-        <text x="655" y="45" font-size="8" fill="oklch(55% 0.1 25)" text-anchor="end" font-weight="600">UNSUSTAINABLE MANUALLY</text>
+        <!-- Danger zone fill (above 5,000 line) -->
+        <path d="M 60 130 H 780 V 28 H 60 Z" fill="oklch(65% 0.12 25 / 0.06)"/>
+        <text x="72" y="42" font-size="8" fill="oklch(55% 0.1 25)" font-weight="600" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
 
-        <!-- The exponential growth curve (renewals: 917 → 1825 → 3650 → 7766) -->
-        <!-- y: 240=0, 60=7500; each 1 renewal = 0.024 px; scale: y = 240 - (val/7766)*180 -->
+        <!-- Exponential growth curve -->
         <path class="growth-curve-path"
-              d="M 140 219 C 200 219, 280 197, 330 198 C 380 198, 420 155, 470 155 C 520 155, 540 80, 590 60"
+              d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52"
               fill="none" stroke="var(--redhat-red)" stroke-width="3" stroke-linecap="round"/>
 
         <!-- Glow under curve -->
-        <path d="M 140 219 C 200 219, 280 197, 330 198 C 380 198, 420 155, 470 155 C 520 155, 540 80, 590 60 V 240 H 140 Z"
+        <path d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52 V 250 H 120 Z"
               fill="url(#curveGlow)" opacity="0.3"/>
         <defs>
           <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
@@ -1736,31 +1735,31 @@
         </defs>
 
         <!-- Data points -->
-        <circle class="growth-dot growth-dot-1" cx="140" cy="219" r="6" fill="oklch(65% 0.01 55)" stroke="white" stroke-width="2"/>
-        <circle class="growth-dot growth-dot-2" cx="330" cy="198" r="7" fill="var(--vault-gold)" stroke="white" stroke-width="2"/>
-        <circle class="growth-dot growth-dot-3" cx="470" cy="155" r="6" fill="var(--accent)" stroke="white" stroke-width="2"/>
-        <circle class="growth-dot growth-dot-4" cx="590" cy="60" r="8" fill="var(--redhat-red)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-1" cx="120" cy="228" r="6" fill="oklch(65% 0.01 55)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-2" cx="360" cy="208" r="7" fill="var(--vault-gold)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-3" cx="540" cy="160" r="6" fill="var(--accent)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-4" cx="720" cy="52" r="8" fill="var(--redhat-red)" stroke="white" stroke-width="2"/>
 
         <!-- Labels at each point -->
         <g class="growth-label growth-label-1">
-          <text x="140" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">398 days</text>
-          <text x="140" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">Before 2026</text>
-          <text x="140" y="210" font-size="11" font-weight="800" fill="oklch(45% 0.01 55)" text-anchor="middle">~917</text>
+          <text x="120" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">398 days</text>
+          <text x="120" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">Before 2026</text>
+          <text x="120" y="218" font-size="11" font-weight="800" fill="oklch(45% 0.01 55)" text-anchor="middle">~917</text>
         </g>
         <g class="growth-label growth-label-2">
-          <text x="330" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">200 days</text>
-          <text x="330" y="262" font-size="8" fill="var(--vault-gold)" text-anchor="middle" font-weight="700">NOW</text>
-          <text x="330" y="188" font-size="11" font-weight="800" fill="oklch(35% 0.01 55)" text-anchor="middle">~1,825</text>
+          <text x="360" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">200 days</text>
+          <text x="360" y="276" font-size="8" fill="var(--vault-gold)" text-anchor="middle" font-weight="700">NOW</text>
+          <text x="360" y="198" font-size="11" font-weight="800" fill="oklch(35% 0.01 55)" text-anchor="middle">~1,825</text>
         </g>
         <g class="growth-label growth-label-3">
-          <text x="470" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">100 days</text>
-          <text x="470" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2027</text>
-          <text x="470" y="145" font-size="11" font-weight="800" fill="var(--accent)" text-anchor="middle">~3,650</text>
+          <text x="540" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">100 days</text>
+          <text x="540" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2027</text>
+          <text x="540" y="150" font-size="11" font-weight="800" fill="var(--accent)" text-anchor="middle">~3,650</text>
         </g>
         <g class="growth-label growth-label-4">
-          <text x="590" y="250" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">47 days</text>
-          <text x="590" y="262" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2029</text>
-          <text x="590" y="50" font-size="13" font-weight="800" fill="var(--redhat-red)" text-anchor="middle">7,700+</text>
+          <text x="720" y="264" font-size="10" fill="oklch(55% 0.008 55)" text-anchor="middle">47 days</text>
+          <text x="720" y="276" font-size="8" fill="oklch(65% 0.008 55)" text-anchor="middle">March 2029</text>
+          <text x="720" y="42" font-size="14" font-weight="800" fill="var(--redhat-red)" text-anchor="middle">7,700+</text>
         </g>
       </svg>
     </div>
