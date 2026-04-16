@@ -207,6 +207,16 @@
       transform: translateX(0);
     }
 
+    /* Reveal variants — applied selectively to avoid uniform motion */
+    .reveal-up { transform: translateY(2rem); }
+    .reveal-up.visible { transform: translateY(0); }
+
+    .reveal-scale { transform: scale(0.94); }
+    .reveal-scale.visible { transform: scale(1); }
+
+    .reveal-blur { filter: blur(8px); }
+    .reveal-blur.visible { filter: blur(0); }
+
     .reveal-delay-1 { transition-delay: 0.1s; }
     .reveal-delay-2 { transition-delay: 0.2s; }
     .reveal-delay-3 { transition-delay: 0.3s; }
@@ -262,6 +272,15 @@
     }
     .arch-flow-ball.flowing {
       opacity: 1;
+    }
+    .arch-flow-ball.pulsing {
+      opacity: 1;
+      animation: ballPulse 0.7s ease-in-out;
+    }
+    @keyframes ballPulse {
+      0% { r: 5; filter: drop-shadow(0 0 6px var(--ball-color)); }
+      50% { r: 10; filter: drop-shadow(0 0 18px var(--ball-color)); }
+      100% { r: 5; filter: drop-shadow(0 0 6px var(--ball-color)); }
     }
 
     /* Architecture diagram phase highlighting */
@@ -540,13 +559,6 @@
     .growth-curve-wrap.visible .growth-label-3 { transition-delay: 1.9s; }
     .growth-curve-wrap.visible .growth-label-4 { transition-delay: 2.4s; }
 
-    .timeline-date {
-      font-size: 0.8125rem;
-      color: oklch(60% 0.008 55);
-      font-weight: 600;
-      margin-top: 0.25rem;
-    }
-
     .shift-stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
@@ -643,6 +655,23 @@
       border-radius: 0.75rem;
       border: 1px solid var(--border);
       border-left: 4px solid var(--accent);
+      opacity: 0;
+      transform: translateY(1rem);
+      transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo), box-shadow 0.6s var(--ease-out-expo);
+    }
+    .why-reason.reason-dim {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    .why-reason.reason-spotlight {
+      opacity: 1;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px oklch(55% 0.15 270 / 0.12);
+    }
+    .why-reason.reason-all-on {
+      opacity: 1;
+      transform: none;
+      box-shadow: none;
     }
 
     .why-reason .reason-num {
@@ -837,6 +866,7 @@
     .connector-particle.active,
     .connector-particle.hovered {
       opacity: 1;
+      filter: drop-shadow(0 0 3px currentColor);
     }
 
     .lifecycle-detail {
@@ -940,10 +970,21 @@
       padding: var(--space-s) var(--space-m);
       border-radius: 1rem;
       margin-bottom: -1rem;
-      transition: transform 0.5s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
+      opacity: 0;
+      transform: translateY(2rem);
+      transition: transform 0.7s var(--ease-out-expo), opacity 0.7s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
     }
 
-    .shield-layer:hover {
+    .shield-layer.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .shield-layer:nth-child(1).visible { transition-delay: 0.1s; }
+    .shield-layer:nth-child(2).visible { transition-delay: 0.45s; }
+    .shield-layer:nth-child(3).visible { transition-delay: 0.8s; }
+
+    .shield-layer.visible:hover {
       transform: translateY(-4px) scale(1.005);
     }
 
@@ -1023,6 +1064,18 @@
 
     .outcome-item {
       text-align: left;
+      position: relative;
+      padding-top: var(--space-s);
+    }
+
+    .outcome-item .outcome-ordinal {
+      display: block;
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-faint);
+      margin-bottom: 0.35rem;
     }
 
     .outcome-item .outcome-value {
@@ -1033,6 +1086,26 @@
       margin-bottom: 0.5rem;
       color: var(--text);
     }
+
+    .outcome-item .outcome-bar {
+      display: block;
+      height: 3px;
+      width: 0;
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+      transition: width 1.1s var(--ease-out-quart) 0.4s;
+    }
+    .outcome-item.visible .outcome-bar { width: 4rem; }
+
+    .outcome-item:nth-child(1) .outcome-bar { background: oklch(55% 0.17 155); }
+    .outcome-item:nth-child(2) .outcome-bar { background: oklch(55% 0.17 240); }
+    .outcome-item:nth-child(3) .outcome-bar { background: oklch(60% 0.16 80); }
+    .outcome-item:nth-child(4) .outcome-bar { background: var(--accent); }
+
+    .outcome-item:nth-child(1) .outcome-ordinal { color: oklch(50% 0.15 155); }
+    .outcome-item:nth-child(2) .outcome-ordinal { color: oklch(50% 0.15 240); }
+    .outcome-item:nth-child(3) .outcome-ordinal { color: oklch(50% 0.14 80); }
+    .outcome-item:nth-child(4) .outcome-ordinal { color: var(--accent); }
 
     .outcome-item .outcome-label {
       font-size: 0.9375rem;
@@ -1327,6 +1400,69 @@
     .cta-footer svg { height: 2rem; }
     .cta-footer .hashicorp-logo { color: var(--text); }
 
+    /* ── CTA Proof block ─────────────────────────── */
+    .cta-proof {
+      margin-top: var(--space-m);
+      padding: var(--space-s) var(--space-m);
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-left: 4px solid oklch(60% 0.16 80);
+      border-radius: 0.75rem;
+      max-width: 48rem;
+    }
+
+    .cta-proof-label {
+      font-family: 'Outfit', system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: oklch(50% 0.14 80);
+      margin-bottom: 0.5rem;
+    }
+
+    .cta-proof-text {
+      font-size: var(--step-0);
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: var(--space-s);
+      max-width: 50ch;
+    }
+
+    .cta-proof-text strong {
+      font-weight: 700;
+    }
+
+    .cta-proof-host {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.9rem;
+      background: oklch(18% 0.01 55);
+      border-radius: 0.5rem;
+      font-family: 'DM Sans', monospace;
+    }
+
+    .cta-proof-host-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: oklch(60% 0.16 80);
+    }
+
+    .cta-proof-host-value {
+      font-size: 0.875rem;
+      color: oklch(92% 0.005 55);
+    }
+
+    .cta-proof-host .typed {
+      border-right: 2px solid oklch(60% 0.16 80);
+      padding-right: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
     .cta-hostname {
       font-family: 'DM Sans', monospace;
       font-size: 0.875rem;
@@ -1487,22 +1623,6 @@
       animation: bridgePulse 2s ease-in-out infinite 1.2s;
     }
 
-    /* ── Animation: Timeline Activation ────────────── */
-    .timeline-step .marker {
-      transform: scale(1);
-    }
-    .timeline.visible .timeline-step .marker {
-      animation: markerPulse 0.4s var(--ease-out-expo) forwards;
-    }
-    .timeline.visible .timeline-step:nth-child(1) .marker { animation-delay: 0s; }
-    .timeline.visible .timeline-step:nth-child(2) .marker { animation-delay: 0.2s; }
-    .timeline.visible .timeline-step:nth-child(3) .marker { animation-delay: 0.4s; }
-    .timeline.visible .timeline-step:nth-child(4) .marker { animation-delay: 0.6s; }
-    @keyframes markerPulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.6); }
-      100% { transform: scale(1.3); }
-    }
 
     /* ── Animation: Outcome Values Parallax ──────────── */
     .outcome-value {
@@ -1587,10 +1707,31 @@
         stroke-dashoffset: 0 !important;
         animation: none !important;
       }
-      .timeline.visible .timeline-step .marker { animation: none !important; }
       .chapter-nav .dot svg circle.progress { transition: none !important; }
       .slide-track { transition: none !important; }
       .journey-step.visible .journey-milestone { animation: none !important; opacity: 1 !important; }
+    }
+
+    /* ── Mobile Consolidation ───────────────────────── */
+    @media (max-width: 768px) {
+      .outcomes-grid { grid-template-columns: 1fr 1fr; gap: var(--space-s); }
+      .why-reasons { grid-template-columns: 1fr; }
+      .shift-stats { grid-template-columns: 1fr; }
+      .slide { padding: var(--space-m) 0; overflow-y: auto; }
+      .growth-curve-wrap svg { min-width: 500px; }
+      .growth-curve-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      #archSvg { min-width: 640px; }
+      .slide--architecture .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .cta-proof { padding: var(--space-s); }
+      .cta-proof-host { flex-wrap: wrap; }
+      .resilience-stack .shield-layer { margin-left: 0 !important; margin-right: 0 !important; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-headline { font-size: clamp(2.25rem, 8vw, 3.5rem); }
+      .outcomes-grid { grid-template-columns: 1fr; }
+      .chapter-nav { display: none; }
+      .progress-bar { height: 4px; }
     }
   </style>
 </head>
@@ -1655,7 +1796,7 @@
 <!-- ━━━ CHAPTER 2: The Risk Is Real ━━━ -->
 <section class="slide slide--risk" id="risk">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 2</p>
+    <p class="section-label reveal">The cost of inaction</p>
     <h2 class="section-title reveal reveal-delay-1">The Risk Is Real</h2>
 
     <div class="risk-hero-quote reveal reveal-delay-2">
@@ -1690,7 +1831,7 @@
 <!-- ━━━ CHAPTER 3: Industry Shift — The 47-Day Era ━━━ -->
 <section class="slide slide--shift" id="shift">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 3</p>
+    <p class="section-label reveal">The industry shift</p>
     <h2 class="section-title reveal reveal-delay-1">The 47-Day Era</h2>
 
     <p class="shift-lead reveal reveal-delay-2">
@@ -1717,6 +1858,10 @@
         <!-- Danger zone fill (above 5,000 line) -->
         <path d="M 60 130 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
         <text x="72" y="42" font-size="8" fill="oklch(45% 0.12 25)" font-weight="600" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
+
+        <!-- OLD NORMAL reference line at ~917 renewals/year -->
+        <line x1="60" y1="228" x2="780" y2="228" stroke="oklch(50% 0.02 55)" stroke-width="1" stroke-dasharray="2 5" opacity="0.5"/>
+        <text x="775" y="224" font-size="8" fill="oklch(50% 0.02 55)" font-weight="600" text-anchor="end" letter-spacing="0.08em">OLD NORMAL (398-day era)</text>
 
         <!-- Exponential growth curve — deep crimson for contrast on warm bg -->
         <path class="growth-curve-path"
@@ -1770,11 +1915,11 @@
     </div>
 
     <div class="shift-stats">
-      <div class="shift-stat-block reveal reveal-delay-5">
+      <div class="shift-stat-block reveal reveal-up reveal-delay-5">
         <div class="big-number" style="color: var(--text-faint);">~1,825</div>
         <p><strong>Now (200-day max)</strong> &mdash; with 200-day lifetimes, ~5 certificates expire per day across a fleet of 1,000. That's ~1,825 renewals per year &mdash; already straining manual processes.</p>
       </div>
-      <div class="shift-stat-block reveal reveal-delay-6">
+      <div class="shift-stat-block reveal reveal-up reveal-delay-6">
         <div class="big-number"><span class="counter-value" data-target="7700" data-suffix="+">0</span></div>
         <p><strong>By 2029</strong> &mdash; at 47-day lifetimes, that jumps to ~21 certificates expiring every single day. Over 7,700 renewals per year &mdash; an <strong>8&times; increase</strong>. No team can sustain that manually.</p>
       </div>
@@ -1791,27 +1936,27 @@
 <!-- ━━━ CHAPTER 3b: Why Shorter Lifetimes Matter ━━━ -->
 <section class="slide slide--why" id="why">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 3</p>
+    <p class="section-label reveal">The reasoning</p>
     <h2 class="section-title reveal reveal-delay-1">Why Are They Doing This?</h2>
     <p class="why-precedent reveal reveal-delay-2">The CA/Browser Forum&rsquo;s rules govern public CAs &mdash; but the <strong>reasoning</strong> applies to every certificate in your organisation.</p>
 
     <div class="why-reasons">
-      <div class="why-reason reveal reveal-delay-3">
+      <div class="why-reason" data-reason="1">
         <div class="reason-num">Reason 01</div>
         <h3>Shorter Exposure Window</h3>
         <p>A compromised key is dangerous for less time. Shorter lifetimes limit the blast radius of any key compromise.</p>
       </div>
-      <div class="why-reason reveal reveal-delay-4">
+      <div class="why-reason" data-reason="2">
         <div class="reason-num">Reason 02</div>
         <h3>Forces Automation</h3>
         <p>Human-dependent processes fail at scale. Short lifetimes make automation a requirement, not an option.</p>
       </div>
-      <div class="why-reason reveal reveal-delay-5">
+      <div class="why-reason" data-reason="3">
         <div class="reason-num">Reason 03</div>
         <h3>Crypto Agility</h3>
         <p>If an algorithm is broken tomorrow, how quickly can your fleet rotate? Short-lived certs mean faster response.</p>
       </div>
-      <div class="why-reason reveal reveal-delay-6">
+      <div class="why-reason" data-reason="4">
         <div class="reason-num">Reason 04</div>
         <h3>Reduces Revocation Reliance</h3>
         <p>CRL and OCSP checking are unreliable in practice. Short-lived certs expire before revocation even matters.</p>
@@ -1825,11 +1970,11 @@
 <!-- ━━━ CHAPTER 4: Better Together ━━━ -->
 <section class="slide slide--together" id="together">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 4</p>
+    <p class="section-label reveal">Two engines, one outcome</p>
     <h2 class="section-title reveal reveal-delay-1">Better Together</h2>
 
     <div class="together-grid">
-      <div class="engine-card vault reveal reveal-delay-2">
+      <div class="engine-card vault reveal reveal-scale reveal-delay-2">
         <svg class="engine-logo hashicorp-logo" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp Vault">
           <path d="M107.77 0 0 62.21 0 62.26 0 211.54 40.47 234.95 40.47 85.56 107.77 46.71 107.77 0Z" fill="currentColor"/>
           <path d="M150.79 0 150.79 118.96 107.77 118.96 107.77 74.54 67.25 97.94 67.25 250.34 107.77 273.75 107.77 155.16 150.79 155.16 150.79 199.26 191.31 175.91 191.31 23.41 150.79 0Z" fill="currentColor"/>
@@ -1856,7 +2001,7 @@
         <span>API</span>
       </div>
 
-      <div class="engine-card ansible reveal reveal-delay-4">
+      <div class="engine-card ansible reveal reveal-scale reveal-delay-4">
         <svg class="engine-logo" viewBox="0 0 193 146" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat AAP">
           <path d="m 128,84 c 12.5,0 30.6,-2.6 30.6,-17.5 a 19.53,19.53 0 0 0 -0.3,-3.4 L 150.9,30.7 C 149.2,23.6 147.7,20.3 135.2,14.1 125.5,9.1 104.4,1 98.1,1 92.2,1 90.5,8.5 83.6,8.5 76.9,8.5 72,2.9 65.7,2.9 c -6,0 -9.9,4.1 -12.9,12.5 0,0 -8.4,23.7 -9.5,27.2 a 6.15,6.15 0 0 0 -0.2,1.9 C 43,53.7 79.3,83.9 128,84 m 32.5,-11.4 c 1.7,8.2 1.7,9.1 1.7,10.1 0,14 -15.7,21.8 -36.4,21.8 C 79,104.5 38.1,77.1 38.1,59 a 18.35,18.35 0 0 1 1.5,-7.3 C 22.8,52.5 1,55.5 1,74.7 1,106.2 75.6,145 134.6,145 c 45.3,0 56.7,-20.5 56.7,-36.7 0,-12.7 -11,-27.1 -30.8,-35.7" fill="#ee0000"/>
           <path d="m 160.5,72.6 c 1.7,8.2 1.7,9.1 1.7,10.1 0,14 -15.7,21.8 -36.4,21.8 C 79,104.5 38.1,77.1 38.1,59 a 18.35,18.35 0 0 1 1.5,-7.3 l 3.7,-9.1 a 6.15,6.15 0 0 0 -0.2,1.9 c 0,9.2 36.3,39.4 84.9,39.4 12.5,0 30.6,-2.6 30.6,-17.5 A 19.53,19.53 0 0 0 158.3,63 Z" fill="#2d0000"/>
@@ -1878,7 +2023,7 @@
 <!-- ━━━ CHAPTER 5: Five Capabilities ━━━ -->
 <section class="slide slide--lifecycle" id="lifecycle">
   <div class="wrap" style="width: min(95%, 90rem)">
-    <p class="section-label reveal">Chapter 5</p>
+    <p class="section-label reveal">Beyond the happy path</p>
     <h2 class="section-title reveal reveal-delay-1">The Complete Lifecycle</h2>
     <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.9rem;">Click any capability to explore</p>
 
@@ -1967,7 +2112,7 @@
 <!-- ━━━ CHAPTER 6: Automation Architecture ━━━ -->
 <section class="slide slide--architecture" id="architecture">
   <div class="wrap" style="width: min(95%, 90rem)">
-    <p class="section-label reveal">Chapter 6</p>
+    <p class="section-label reveal">Under the hood</p>
     <h2 class="section-title reveal reveal-delay-1">How It All Connects</h2>
     <p class="arch-subtitle text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.95rem; min-height: 1.3em;">
       <span class="typed" id="archSubtitleTyped"></span>
@@ -2163,7 +2308,7 @@
 <!-- ━━━ CHAPTER 7: Built-In Resilience ━━━ -->
 <section class="slide slide--resilience" id="resilience">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 7</p>
+    <p class="section-label reveal">When things go wrong</p>
     <h2 class="section-title reveal reveal-delay-1">Built-In Resilience</h2>
 
     <div class="resilience-stack">
@@ -2191,7 +2336,7 @@
 <!-- ━━━ CHAPTER 8: Who Benefits ━━━ -->
 <section class="slide slide--benefits" id="benefits">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 8</p>
+    <p class="section-label reveal">Three audiences</p>
     <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
 
     <div class="benefits-panels">
@@ -2247,24 +2392,32 @@
 <!-- ━━━ CHAPTER 9: Business Outcomes ━━━ -->
 <section class="slide slide--outcomes" id="outcomes">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 9</p>
+    <p class="section-label reveal">Four numbers that matter</p>
     <h2 class="section-title reveal reveal-delay-1">Business Outcomes</h2>
 
     <div class="outcomes-grid">
-      <div class="outcome-item reveal reveal-delay-2">
+      <div class="outcome-item reveal reveal-up reveal-delay-2">
+        <span class="outcome-ordinal">01 / RELIABILITY</span>
         <div class="outcome-value">Zero</div>
+        <span class="outcome-bar"></span>
         <div class="outcome-label">Certificate-related outages</div>
       </div>
-      <div class="outcome-item reveal reveal-delay-3">
+      <div class="outcome-item reveal reveal-up reveal-delay-3">
+        <span class="outcome-ordinal">02 / SPEED</span>
         <div class="outcome-value">Seconds</div>
+        <span class="outcome-bar"></span>
         <div class="outcome-label">Not days &mdash; renewal time across the fleet</div>
       </div>
-      <div class="outcome-item reveal reveal-delay-4">
+      <div class="outcome-item reveal reveal-up reveal-delay-4">
+        <span class="outcome-ordinal">03 / COMPLIANCE</span>
         <div class="outcome-value"><span class="counter-value" data-target="100" data-suffix="%">0%</span></div>
+        <span class="outcome-bar"></span>
         <div class="outcome-label">Audit trail coverage &mdash; every action logged</div>
       </div>
-      <div class="outcome-item reveal reveal-delay-5">
+      <div class="outcome-item reveal reveal-up reveal-delay-5">
+        <span class="outcome-ordinal">04 / AUTOMATION</span>
         <div class="outcome-value">Zero</div>
+        <span class="outcome-bar"></span>
         <div class="outcome-label">Manual steps in the certificate lifecycle</div>
       </div>
     </div>
@@ -2274,7 +2427,7 @@
 <!-- ━━━ CHAPTER 10: Close the Gap ━━━ -->
 <section class="slide slide--cta" id="cta">
   <div class="wrap">
-    <p class="section-label reveal">Chapter 10</p>
+    <p class="section-label reveal">Where to start</p>
     <h2 class="section-title reveal reveal-delay-1" style="max-width: 18ch;">Close the Gap</h2>
 
     <div class="cta-journey reveal reveal-delay-2">
@@ -2297,7 +2450,17 @@
       </div>
     </div>
 
-    <div class="cta-footer reveal reveal-delay-5">
+    <div class="cta-proof reveal reveal-up reveal-delay-5">
+      <div class="cta-proof-label">Proof of concept</div>
+      <p class="cta-proof-text">This page is served by nginx, deployed by Ansible, secured by a Vault-issued certificate &mdash;
+        <strong>you&rsquo;ve been looking at the product the entire time.</strong></p>
+      <div class="cta-proof-host">
+        <span class="cta-proof-host-label">serving now</span>
+        <span class="cta-proof-host-value"><span class="typed" id="typedHostname"></span></span>
+      </div>
+    </div>
+
+    <div class="cta-footer reveal reveal-delay-6">
       <svg class="hashicorp-logo" viewBox="0 0 258.56 273.8" xmlns="http://www.w3.org/2000/svg" aria-label="HashiCorp">
         <path d="M107.77 0 0 62.21 0 62.26 0 211.54 40.47 234.95 40.47 85.56 107.77 46.71 107.77 0Z" fill="currentColor"/>
         <path d="M150.79 0 150.79 118.96 107.77 118.96 107.77 74.54 67.25 97.94 67.25 250.34 107.77 273.75 107.77 155.16 150.79 155.16 150.79 199.26 191.31 175.91 191.31 23.41 150.79 0Z" fill="currentColor"/>
@@ -2308,11 +2471,6 @@
         <path d="m 160.5,72.6 c 1.7,8.2 1.7,9.1 1.7,10.1 0,14 -15.7,21.8 -36.4,21.8 C 79,104.5 38.1,77.1 38.1,59 a 18.35,18.35 0 0 1 1.5,-7.3 l 3.7,-9.1 a 6.15,6.15 0 0 0 -0.2,1.9 c 0,9.2 36.3,39.4 84.9,39.4 12.5,0 30.6,-2.6 30.6,-17.5 A 19.53,19.53 0 0 0 158.3,63 Z" fill="#2d0000"/>
       </svg>
     </div>
-
-    <p class="cta-hostname reveal reveal-delay-6">
-      Secured by HashiCorp Vault PKI &middot; <span class="typed" id="typedHostname"></span>
-      <!-- v3-slow-anim -->
-    </p>
   </div>
 </section>
 
@@ -2388,36 +2546,6 @@
       // Bridge connector
       slide.querySelectorAll('.bridge-connector').forEach(function(el) {
         el.classList.add('visible');
-      });
-      // Timeline
-      slide.querySelectorAll('.timeline').forEach(function(el) {
-        if (!el.dataset.animated) {
-          el.dataset.animated = 'true';
-          el.classList.add('visible');
-          if (!reducedMotion) {
-            var steps = el.querySelectorAll('.timeline-step');
-            steps.forEach(function(step, i) {
-              var daysEl = step.querySelector('.timeline-days');
-              var targetVal = parseInt(daysEl.textContent, 10);
-              var startVal = i === 0 ? 398 : targetVal + 100;
-              var duration = 1800;
-              var delay = i * 400;
-              setTimeout(function() {
-                var startTime = null;
-                daysEl.textContent = startVal;
-                function animateDay(ts) {
-                  if (!startTime) startTime = ts;
-                  var progress = Math.min((ts - startTime) / duration, 1);
-                  var eased = 1 - Math.pow(1 - progress, 3);
-                  var current = Math.round(startVal + (targetVal - startVal) * eased);
-                  daysEl.textContent = current;
-                  if (progress < 1) requestAnimationFrame(animateDay);
-                }
-                requestAnimationFrame(animateDay);
-              }, delay);
-            });
-          }
-        }
       });
       // Counters
       slide.querySelectorAll('.counter-value').forEach(function(el) {
@@ -2745,11 +2873,16 @@
             // Animate flow ball along the path
             var color = flowColors[step] || '#0F62FE';
             if (step === 1) {
-              // Step 1: ball goes LEFT to PKI, pauses, then RIGHT to Web Servers
+              // Step 1: ball goes LEFT to PKI, pulses (cert generated!), then RIGHT to Web Servers
               animateFlowBall('archPathLeft', color, ballDuration, function() {
-                setTimeout(function() {
-                  animateFlowBall('archPathR1', color, ballDuration, null);
-                }, 200);
+                // Pulse at PKI — "Vault generates the certificate"
+                if (flowBall) {
+                  flowBall.classList.add('pulsing');
+                  setTimeout(function() {
+                    flowBall.classList.remove('pulsing');
+                    animateFlowBall('archPathR1', color, ballDuration, null);
+                  }, 700);
+                }
               });
             } else {
               animateFlowBall('archPathR' + step, color, ballDuration, null);
@@ -2829,6 +2962,42 @@
   updateProgress();
   triggerReveals(0);
 
+  // ── Why slide: sequential reason card spotlight ────
+  var WHY_CHAPTER = 3;
+  var whyReasons = document.querySelectorAll('.why-reason');
+  var whyTimers = [];
+  function clearWhyTimers() { whyTimers.forEach(function(t) { clearTimeout(t); }); whyTimers = []; }
+  function runWhySequence() {
+    clearWhyTimers();
+    whyReasons.forEach(function(el) { el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim'); });
+    // Fade all in as dim, then sequentially spotlight
+    whyReasons.forEach(function(el, i) {
+      whyTimers.push(setTimeout(function() {
+        el.classList.add('reason-dim');
+      }, 100 + i * 120));
+    });
+    var dwell = 900;
+    var seqStart = 100 + whyReasons.length * 120 + 200;
+    whyReasons.forEach(function(el, i) {
+      whyTimers.push(setTimeout(function() {
+        whyReasons.forEach(function(e) { e.classList.remove('reason-spotlight'); });
+        el.classList.add('reason-spotlight');
+      }, seqStart + i * dwell));
+    });
+    whyTimers.push(setTimeout(function() {
+      whyReasons.forEach(function(e) {
+        e.classList.remove('reason-spotlight');
+        e.classList.add('reason-all-on');
+      });
+    }, seqStart + whyReasons.length * dwell + 200));
+  }
+  function resetWhy() {
+    clearWhyTimers();
+    whyReasons.forEach(function(el) {
+      el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim');
+    });
+  }
+
   // Wrap navigateTo to handle chapter-specific state
   var origNavigateTo = navigateTo;
   navigateTo = function(idx) {
@@ -2843,6 +3012,12 @@
     // Reset benefit panels to first when arriving at benefits chapter
     if (idx === BENEFITS_CHAPTER) {
       expandBenefitPanel(0);
+    }
+    // Why slide sequence
+    if (idx === WHY_CHAPTER) {
+      setTimeout(runWhySequence, 300);
+    } else {
+      resetWhy();
     }
     // Start typed hostname when reaching CTA slide
     if (idx === totalChapters - 1 && !typedStarted) {
@@ -2958,7 +3133,7 @@
       var t = ((particlePhase + idx * 0.33) % 1);
       el.setAttribute('cx', cx + (nx - cx) * t);
       el.setAttribute('cy', cy + (ny - cy) * t);
-      el.setAttribute('r', 2 + Math.sin(t * Math.PI) * 2);
+      el.setAttribute('r', 2.5 + Math.sin(t * Math.PI) * 3);
       el.style.opacity = String(Math.sin(t * Math.PI) * 0.9);
     });
     requestAnimationFrame(animateParticles);
