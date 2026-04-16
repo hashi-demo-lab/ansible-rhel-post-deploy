@@ -1975,8 +1975,8 @@
       </div>
       <div class="why-reason" data-reason="4">
         <div class="reason-num">Reason 04</div>
-        <h3>Reduces Revocation Reliance</h3>
-        <p>CRL and OCSP checking are unreliable in practice. Short-lived certs expire before revocation even matters.</p>
+        <h3>Less Revocation Pressure</h3>
+        <p>Revocation becomes a bottleneck at scale. Short-lived certs reduce dependency on CRL and OCSP &mdash; they expire before revocation becomes critical.</p>
       </div>
     </div>
 
@@ -1997,7 +1997,7 @@
           <path d="M150.79 0 150.79 118.96 107.77 118.96 107.77 74.54 67.25 97.94 67.25 250.34 107.77 273.75 107.77 155.16 150.79 155.16 150.79 199.26 191.31 175.91 191.31 23.41 150.79 0Z" fill="currentColor"/>
           <path d="M150.79 273.8 258.56 211.64 258.56 211.59 258.56 62.31 218.09 38.91 218.09 188.24 150.79 227.09 150.79 273.8Z" fill="currentColor"/>
         </svg>
-        <div class="engine-role">Trust Engine</div>
+        <div class="engine-role">Trust Engine &middot; Your private certificate authority</div>
         <h3>HashiCorp Vault</h3>
         <ul>
           <li>Built-in PKI secrets engine</li>
@@ -2265,7 +2265,7 @@
           <rect x="45" y="190" width="230" height="65" rx="10" fill="white" stroke="oklch(82% 0.02 80)" stroke-width="1.2" filter="url(#shadow)"/>
           <text x="72" y="214" font-size="13" font-weight="700" fill="oklch(25% 0.01 55)">Auto-Tidy</text>
           <text x="72" y="229" font-size="10.5" fill="oklch(50% 0.01 55)">Cleans expired/revoked certs every 24h</text>
-          <text x="72" y="244" font-size="9" font-weight="600" fill="#DA1E28">&#x2713; Automated CRL &amp; cert cleanup</text>
+          <text x="72" y="244" font-size="9" font-weight="600" fill="#DA1E28">&#x2713; Self-maintaining PKI hygiene</text>
           <rect x="55" y="202" width="8" height="8" rx="2" fill="#DA1E28"/>
 
           <!-- 1. Daily Renewal Check -->
