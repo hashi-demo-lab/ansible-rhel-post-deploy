@@ -1748,9 +1748,9 @@
   <a href="#why" data-chapter="3"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Why</span></a>
   <a href="#together" data-chapter="4"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Together</span></a>
   <a href="#lifecycle" data-chapter="5"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Lifecycle</span></a>
-  <a href="#architecture" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
-  <a href="#resilience" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
-  <a href="#benefits" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#benefits" data-chapter="6"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Benefits</span></a>
+  <a href="#architecture" data-chapter="7"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Architecture</span></a>
+  <a href="#resilience" data-chapter="8"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Resilience</span></a>
   <a href="#outcomes" data-chapter="9"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Outcomes</span></a>
   <a href="#cta" data-chapter="10"><span class="dot"><svg viewBox="0 0 18 18"><circle class="progress" cx="9" cy="9" r="7"/></svg></span><span class="label">Close</span></a>
 </nav>
@@ -1855,9 +1855,12 @@
         <text x="52" y="134" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
         <text x="52" y="74" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
 
-        <!-- Danger zone fill (above 5,000 line) -->
-        <path d="M 60 130 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
-        <text x="72" y="42" font-size="8" fill="oklch(45% 0.12 25)" font-weight="600" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
+        <!-- Strain zone fill (above ~2,000 renewals — where manual processes break) -->
+        <path d="M 60 202 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
+
+        <!-- BEYOND MANUAL SCALE threshold line at ~2,000 renewals -->
+        <line x1="60" y1="202" x2="780" y2="202" stroke="oklch(45% 0.18 25)" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.7"/>
+        <text x="775" y="196" font-size="8" fill="oklch(45% 0.18 25)" font-weight="700" text-anchor="end" letter-spacing="0.08em">BEYOND MANUAL SCALE</text>
 
         <!-- OLD NORMAL reference line at ~917 renewals/year -->
         <line x1="60" y1="228" x2="780" y2="228" stroke="oklch(50% 0.02 55)" stroke-width="1" stroke-dasharray="2 5" opacity="0.5"/>
@@ -2109,6 +2112,62 @@
   </div>
 </section>
 
+<!-- ━━━ Who Benefits (moved: between Lifecycle and Architecture) ━━━ -->
+<section class="slide slide--benefits" id="benefits">
+  <div class="wrap">
+    <p class="section-label reveal">Three audiences</p>
+    <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
+
+    <div class="benefits-panels">
+      <div class="benefit-panel benefit-panel--security expanded reveal reveal-delay-2">
+        <div class="panel-stripe"></div>
+        <div class="panel-number">01</div>
+        <div class="panel-vlabel">Security &amp; Compliance</div>
+        <div class="panel-content">
+          <div class="persona-tag">Primary Stakeholder</div>
+          <h3>Security &amp; Compliance</h3>
+          <ul>
+            <li>Enforced short-lived certificates eliminate long-exposure risk</li>
+            <li>Complete audit trail satisfies SOC 2, ISO 27001, PCI-DSS</li>
+            <li>Policy-as-code ensures consistent certificate standards</li>
+            <li>Instant revocation capability for incident response</li>
+          </ul>
+        </div>
+      </div>
+      <div class="benefit-panel benefit-panel--platform reveal reveal-delay-3">
+        <div class="panel-stripe"></div>
+        <div class="panel-number">02</div>
+        <div class="panel-vlabel">Platform &amp; Ops</div>
+        <div class="panel-content">
+          <div class="persona-tag">Day-to-Day Operators</div>
+          <h3>Platform &amp; Ops</h3>
+          <ul>
+            <li>Zero-touch certificate renewals across thousands of hosts</li>
+            <li>No more 3 a.m. pages for expiring certificates</li>
+            <li>Idempotent playbooks eliminate configuration drift</li>
+            <li>Self-service workflows reduce ticket volume</li>
+          </ul>
+        </div>
+      </div>
+      <div class="benefit-panel benefit-panel--leadership reveal reveal-delay-4">
+        <div class="panel-stripe"></div>
+        <div class="panel-number">03</div>
+        <div class="panel-vlabel">Leadership</div>
+        <div class="panel-content">
+          <div class="persona-tag">Decision Makers</div>
+          <h3>Leadership</h3>
+          <ul>
+            <li>Reduce operational risk that directly impacts revenue</li>
+            <li>Demonstrate compliance readiness to auditors and boards</li>
+            <li>Future-proof for the 47-day certificate mandate</li>
+            <li>Consolidate tooling &mdash; fewer vendors, lower cost</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ━━━ CHAPTER 6: Automation Architecture ━━━ -->
 <section class="slide slide--architecture" id="architecture">
   <div class="wrap" style="width: min(95%, 90rem)">
@@ -2330,62 +2389,6 @@
     </div>
 
     <p class="resilience-motto reveal reveal-delay-5">Failures don&rsquo;t become outages.</p>
-  </div>
-</section>
-
-<!-- ━━━ CHAPTER 8: Who Benefits ━━━ -->
-<section class="slide slide--benefits" id="benefits">
-  <div class="wrap">
-    <p class="section-label reveal">Three audiences</p>
-    <h2 class="section-title reveal reveal-delay-1">Who Benefits</h2>
-
-    <div class="benefits-panels">
-      <div class="benefit-panel benefit-panel--security expanded reveal reveal-delay-2">
-        <div class="panel-stripe"></div>
-        <div class="panel-number">01</div>
-        <div class="panel-vlabel">Security &amp; Compliance</div>
-        <div class="panel-content">
-          <div class="persona-tag">Primary Stakeholder</div>
-          <h3>Security &amp; Compliance</h3>
-          <ul>
-            <li>Enforced short-lived certificates eliminate long-exposure risk</li>
-            <li>Complete audit trail satisfies SOC 2, ISO 27001, PCI-DSS</li>
-            <li>Policy-as-code ensures consistent certificate standards</li>
-            <li>Instant revocation capability for incident response</li>
-          </ul>
-        </div>
-      </div>
-      <div class="benefit-panel benefit-panel--platform reveal reveal-delay-3">
-        <div class="panel-stripe"></div>
-        <div class="panel-number">02</div>
-        <div class="panel-vlabel">Platform &amp; Ops</div>
-        <div class="panel-content">
-          <div class="persona-tag">Day-to-Day Operators</div>
-          <h3>Platform &amp; Ops</h3>
-          <ul>
-            <li>Zero-touch certificate renewals across thousands of hosts</li>
-            <li>No more 3 a.m. pages for expiring certificates</li>
-            <li>Idempotent playbooks eliminate configuration drift</li>
-            <li>Self-service workflows reduce ticket volume</li>
-          </ul>
-        </div>
-      </div>
-      <div class="benefit-panel benefit-panel--leadership reveal reveal-delay-4">
-        <div class="panel-stripe"></div>
-        <div class="panel-number">03</div>
-        <div class="panel-vlabel">Leadership</div>
-        <div class="panel-content">
-          <div class="persona-tag">Decision Makers</div>
-          <h3>Leadership</h3>
-          <ul>
-            <li>Reduce operational risk that directly impacts revenue</li>
-            <li>Demonstrate compliance readiness to auditors and boards</li>
-            <li>Future-proof for the 47-day certificate mandate</li>
-            <li>Consolidate tooling &mdash; fewer vendors, lower cost</li>
-          </ul>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -2782,7 +2785,7 @@
   assignListItemDelays();
 
   // ── Architecture diagram: phase progression ────────
-  var ARCH_CHAPTER = 6;
+  var ARCH_CHAPTER = 7;
   var archSvg = document.getElementById('archSvg');
   var archLabel = document.getElementById('archPhaseLabel');
   var archPhaseTyped = document.getElementById('archPhaseTyped');
@@ -2947,7 +2950,7 @@
   // ── Benefit panels: arrow-key progression ──────────
   var benefitPanels = document.querySelectorAll('.benefit-panel');
   var benefitIdx = 0; // which panel is expanded (0-2)
-  var BENEFITS_CHAPTER = 8;
+  var BENEFITS_CHAPTER = 6;
 
   function expandBenefitPanel(idx) {
     if (idx < 0) idx = 0;
