@@ -520,7 +520,7 @@
     }
 
     .growth-curve-wrap svg {
-      max-height: 20rem;
+      max-height: 26rem;
     }
 
     /* ── Growth Curve Chart ────────────────────────── */
@@ -1865,9 +1865,8 @@
 
     <div class="growth-curve-wrap reveal reveal-delay-3">
       <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width: 100%; font-family: 'Outfit', sans-serif;">
-        <!-- Y-axis label + basis -->
+        <!-- Y-axis label -->
         <text x="10" y="18" font-size="10" font-weight="700" fill="oklch(45% 0.01 55)" letter-spacing="0.05em">RENEWALS / YEAR</text>
-        <text x="10" y="30" font-size="8" font-weight="500" fill="oklch(55% 0.01 55)" letter-spacing="0.02em">1,000-cert fleet &middot; 365 &divide; TTL</text>
 
         <!-- Grid lines (full width) -->
         <line x1="60" y1="250" x2="780" y2="250" stroke="oklch(90% 0.005 55)" stroke-width="1"/>
@@ -1881,12 +1880,12 @@
         <text x="52" y="134" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
         <text x="52" y="74" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
 
-        <!-- Strain zone fill (above ~2,000 renewals — where manual processes break) -->
-        <path d="M 60 202 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
+        <!-- Danger zone fill (above ~1,800 renewals — manual processes break at current TTLs) -->
+        <path d="M 60 206 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
 
-        <!-- BEYOND MANUAL SCALE threshold line at ~2,000 renewals -->
-        <line x1="60" y1="202" x2="780" y2="202" stroke="oklch(45% 0.18 25)" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.7"/>
-        <text x="775" y="196" font-size="8" fill="oklch(45% 0.18 25)" font-weight="700" text-anchor="end" letter-spacing="0.08em">BEYOND MANUAL SCALE &middot; ~2,000/yr</text>
+        <!-- UNSUSTAINABLE MANUALLY threshold line at ~1,800 renewals (~NOW baseline) -->
+        <line x1="60" y1="206" x2="780" y2="206" stroke="oklch(45% 0.18 25)" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.7"/>
+        <text x="775" y="200" font-size="8" fill="oklch(45% 0.18 25)" font-weight="700" text-anchor="end" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
 
         <!-- OLD NORMAL reference line at ~917 renewals/year -->
         <line x1="60" y1="228" x2="780" y2="228" stroke="oklch(50% 0.02 55)" stroke-width="1" stroke-dasharray="2 5" opacity="0.5"/>
