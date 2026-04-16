@@ -509,18 +509,11 @@
     }
 
     /* ── 47-Day Shift Section ─────────────────────────── */
-    .slide--shift { padding-top: var(--space-m); padding-bottom: var(--space-m); }
-    .slide--shift .section-title { margin-bottom: var(--space-s); }
-
     .shift-lead {
       font-size: var(--step-0);
       color: var(--text);
       max-width: var(--measure);
-      margin-bottom: var(--space-xs);
-    }
-
-    .growth-curve-wrap svg {
-      max-height: 20rem;
+      margin-bottom: var(--space-s);
     }
 
     /* ── Growth Curve Chart ────────────────────────── */
@@ -599,34 +592,16 @@
       font-size: var(--step-0);
       font-weight: 700;
       color: var(--text);
-      margin: 0;
-      line-height: 1.3;
-    }
-
-    .shift-footer {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: var(--space-m);
-      align-items: center;
-      margin-top: var(--space-s);
-    }
-
-    @media (max-width: 768px) {
-      .shift-footer { grid-template-columns: 1fr; gap: var(--space-s); }
+      margin: var(--space-xs) 0;
+      max-width: var(--measure);
     }
 
     .shift-callout {
-      margin: 0;
-      padding: var(--space-s);
+      margin: var(--space-s) 0;
+      padding: var(--space-s) var(--space-s) var(--space-s) var(--space-s);
       border-left: 4px solid var(--accent);
       background: oklch(93% 0.015 270 / 0.3);
       border-radius: 0 0.5rem 0.5rem 0;
-    }
-
-    .shift-conclusion {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
     }
 
     .shift-callout .callout-label {
@@ -659,7 +634,7 @@
     .shift-source {
       font-size: 0.7rem;
       color: var(--text-faint);
-      margin: 0;
+      margin-top: var(--space-xs);
     }
 
     /* ── Why Shorter Lifetimes (Chapter 3b) ─────────── */
@@ -1860,7 +1835,7 @@
     <h2 class="section-title reveal reveal-delay-1">The 47-Day Era</h2>
 
     <p class="shift-lead reveal reveal-delay-2">
-      The CA/Browser Forum adopted Apple's proposal. All major browsers voted in favour. The first reduction took effect March 2026 &mdash; <strong>this is already happening.</strong>
+      The CA/Browser Forum adopted Apple's proposal &mdash; all major browsers voted in favour. The first reduction took effect March 2026. <strong>This is already happening.</strong>
     </p>
 
     <div class="growth-curve-wrap reveal reveal-delay-3">
@@ -1936,17 +1911,28 @@
       </svg>
     </div>
 
-    <div class="shift-footer">
-      <div class="shift-callout reveal reveal-delay-4">
-        <div class="callout-label">Key Insight</div>
-        <div class="callout-text">Public CA standard today &mdash; internal CA best practice tomorrow.</div>
-        <div class="callout-sub">The same expectation follows for your private CA, service mesh, and internal APIs. For a 1,000-cert fleet, renewals jump <strong>8&times;</strong> by 2029.</div>
+    <div class="shift-callout reveal reveal-delay-4">
+      <div class="callout-label">Key Insight</div>
+      <div class="callout-text">Public CA standard today &mdash; internal CA best practice tomorrow.</div>
+      <div class="callout-sub">This isn't just about public-facing certificates. When the industry standardises on short-lived certificates, the same expectation follows for internal systems &mdash; your private CA, your service mesh, your internal APIs. Here's what that looks like at scale for an organisation managing just 1,000 internal certificates:</div>
+    </div>
+
+    <div class="shift-stats">
+      <div class="shift-stat-block reveal reveal-up reveal-delay-5">
+        <div class="big-number" style="color: var(--text-faint);">~1,825</div>
+        <p><strong>Now (200-day max)</strong> &mdash; with 200-day lifetimes, ~5 certificates expire per day across a fleet of 1,000. That's ~1,825 renewals per year &mdash; already straining manual processes.</p>
       </div>
-      <div class="shift-conclusion reveal reveal-delay-5">
-        <p class="shift-insight">Manual processes cannot scale to 47-day cycles &mdash; automation becomes non-negotiable.</p>
-        <p class="shift-source">Source: CA/Browser Forum Ballot SC-081, April 2025</p>
+      <div class="shift-stat-block reveal reveal-up reveal-delay-6">
+        <div class="big-number"><span class="counter-value" data-target="7700" data-suffix="+">0</span></div>
+        <p><strong>By 2029</strong> &mdash; at 47-day lifetimes, that jumps to ~21 certificates expiring every single day. Over 7,700 renewals per year &mdash; an <strong>8&times; increase</strong>. No team can sustain that manually.</p>
       </div>
     </div>
+
+    <p class="shift-insight reveal reveal-delay-7">
+      Manual processes cannot scale to 47-day cycles &mdash; automation becomes non-negotiable.
+    </p>
+
+    <p class="shift-source reveal reveal-delay-7">Source: CA/Browser Forum Ballot SC-081, April 2025</p>
   </div>
 </section>
 
@@ -2771,7 +2757,7 @@
   }
 
   // ── Typed hostname effect ──────────────────────────
-  var hostname = '{{ inventory_hostname }}';
+  var hostname = 'web-server-01';
   var typedEl = document.getElementById('typedHostname');
   var charIndex = 0;
   var typedStarted = false;
