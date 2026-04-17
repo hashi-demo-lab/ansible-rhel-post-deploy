@@ -1,0 +1,95 @@
+<section class="slide slide--shift" id="shift">
+  <div class="wrap">
+    <p class="section-label reveal">The industry shift</p>
+    <h2 class="section-title reveal reveal-delay-1">The 47-Day Era</h2>
+
+    <p class="shift-lead reveal reveal-delay-2">
+      The CA/Browser Forum adopted Apple's proposal. All major browsers voted in favour. The first reduction took effect March 2026 &mdash; <strong>this is already happening.</strong>
+    </p>
+
+    <div class="growth-curve-wrap reveal reveal-delay-3">
+      <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width: 100%; font-family: 'IBM Plex Sans', sans-serif;">
+        <!-- Y-axis label -->
+        <text x="10" y="18" font-size="10" font-weight="700" fill="oklch(45% 0.01 55)" letter-spacing="0.05em">RENEWALS / YEAR</text>
+
+        <!-- Grid lines (full width) -->
+        <line x1="60" y1="250" x2="780" y2="250" stroke="oklch(90% 0.005 55)" stroke-width="1"/>
+        <line x1="60" y1="190" x2="780" y2="190" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="60" y1="130" x2="780" y2="130" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+        <line x1="60" y1="70" x2="780" y2="70" stroke="oklch(92% 0.005 55)" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis values -->
+        <text x="52" y="254" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">0</text>
+        <text x="52" y="194" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">2,500</text>
+        <text x="52" y="134" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">5,000</text>
+        <text x="52" y="74" font-size="9" fill="oklch(60% 0.008 55)" text-anchor="end">7,500</text>
+
+        <!-- Danger zone fill (above ~1,800 renewals — manual processes break at current TTLs) -->
+        <path d="M 60 206 H 780 V 28 H 60 Z" fill="oklch(42% 0.2 25 / 0.05)"/>
+
+        <!-- UNSUSTAINABLE MANUALLY threshold line at ~1,800 renewals (~NOW baseline) -->
+        <line x1="60" y1="206" x2="780" y2="206" stroke="oklch(45% 0.18 25)" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.7"/>
+        <text x="775" y="200" font-size="8" fill="oklch(45% 0.18 25)" font-weight="700" text-anchor="end" letter-spacing="0.08em">UNSUSTAINABLE MANUALLY</text>
+
+        <!-- OLD NORMAL reference line at ~917 renewals/year -->
+        <line x1="60" y1="228" x2="780" y2="228" stroke="oklch(50% 0.02 55)" stroke-width="1" stroke-dasharray="2 5" opacity="0.5"/>
+        <text x="775" y="224" font-size="8" fill="oklch(50% 0.02 55)" font-weight="600" text-anchor="end" letter-spacing="0.08em">OLD NORMAL &middot; ~917/yr</text>
+
+        <!-- Exponential growth curve — deep crimson for contrast on warm bg -->
+        <path class="growth-curve-path"
+              d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52"
+              fill="none" stroke="oklch(42% 0.2 25)" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Glow under curve -->
+        <path d="M 120 228 C 200 228, 310 208, 360 208 C 410 208, 480 162, 540 160 C 600 158, 650 75, 720 52 V 250 H 120 Z"
+              fill="url(#curveGlow)" opacity="0.25"/>
+        <defs>
+          <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="oklch(42% 0.2 25)" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="oklch(42% 0.2 25)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Data points -->
+        <circle class="growth-dot growth-dot-1" cx="120" cy="228" r="6" fill="oklch(50% 0.02 55)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-2" cx="360" cy="208" r="7" fill="oklch(55% 0.16 55)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-3" cx="540" cy="160" r="6" fill="var(--accent)" stroke="white" stroke-width="2"/>
+        <circle class="growth-dot growth-dot-4" cx="720" cy="52" r="8" fill="oklch(42% 0.2 25)" stroke="white" stroke-width="2"/>
+
+        <!-- Labels at each point -->
+        <g class="growth-label growth-label-1">
+          <text x="120" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">398 days</text>
+          <text x="120" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">Before 2026</text>
+          <text x="120" y="218" font-size="11" font-weight="800" fill="oklch(40% 0.02 55)" text-anchor="middle">~917</text>
+        </g>
+        <g class="growth-label growth-label-2">
+          <text x="360" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">200 days</text>
+          <text x="360" y="276" font-size="8" fill="oklch(45% 0.16 55)" text-anchor="middle" font-weight="700">NOW</text>
+          <text x="360" y="198" font-size="11" font-weight="800" fill="oklch(35% 0.01 55)" text-anchor="middle">~1,825</text>
+        </g>
+        <g class="growth-label growth-label-3">
+          <text x="540" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">100 days</text>
+          <text x="540" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">March 2027</text>
+          <text x="540" y="150" font-size="11" font-weight="800" fill="var(--accent)" text-anchor="middle">~3,650</text>
+        </g>
+        <g class="growth-label growth-label-4">
+          <text x="720" y="264" font-size="10" fill="oklch(50% 0.02 55)" text-anchor="middle">47 days</text>
+          <text x="720" y="276" font-size="8" fill="oklch(60% 0.01 55)" text-anchor="middle">March 2029</text>
+          <text x="720" y="42" font-size="14" font-weight="800" fill="oklch(42% 0.2 25)" text-anchor="middle">7,700+</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="shift-footer">
+      <div class="shift-callout reveal reveal-delay-4">
+        <div class="callout-label">Key Insight</div>
+        <div class="callout-text">Public CA standard today &mdash; internal CA best practice tomorrow.</div>
+        <div class="callout-sub">The same expectation follows for your private CA, service mesh, and internal APIs. For a 1,000-cert fleet, renewals jump <strong>8&times;</strong> by 2029.</div>
+      </div>
+      <div class="shift-conclusion reveal reveal-delay-5">
+        <p class="shift-insight">Manual processes cannot scale to 47-day cycles &mdash; automation becomes non-negotiable.</p>
+        <p class="shift-source">Source: CA/Browser Forum Ballot SC-081, April 2025</p>
+      </div>
+    </div>
+  </div>
+</section>

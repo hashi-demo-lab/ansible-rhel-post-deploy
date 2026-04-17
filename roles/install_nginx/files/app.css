@@ -1,0 +1,1781 @@
+/* ── Reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design Tokens ────────────────────────────────── */
+:root {
+  --bg:          oklch(97.5% 0.005 55);
+  --bg-alt:      oklch(95% 0.008 55);
+  --bg-warm:     oklch(96% 0.015 80);
+  --bg-cool:     oklch(96.5% 0.008 240);
+  --bg-light:    oklch(98.5% 0.003 55);
+  --text:        oklch(18% 0.01 55);
+  --text-muted:  oklch(45% 0.01 55);
+  --text-faint:  oklch(65% 0.008 55);
+  --vault-gold:  #FFD814;
+  --vault-dark:  #1A1A2E;
+  --redhat-red:  #EE0000;
+  --accent:      oklch(55% 0.15 270);
+  --border:      oklch(88% 0.008 55);
+
+  --step-0: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --step-1: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+  --step-2: clamp(1.75rem, 1.4rem + 1.75vw, 2.5rem);
+  --step-3: clamp(2.5rem, 1.8rem + 3.5vw, 4rem);
+  --step-4: clamp(3.5rem, 2.2rem + 6.5vw, 6.5rem);
+  --step-hero: clamp(3rem, 2rem + 5vw, 5.5rem);
+
+  --space-xs:  clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+  --space-s:   clamp(0.75rem, 0.6rem + 0.75vw, 1.25rem);
+  --space-m:   clamp(1.5rem, 1rem + 2.5vw, 3rem);
+  --space-l:   clamp(3rem, 2rem + 5vw, 6rem);
+  --space-xl:  clamp(5rem, 3rem + 10vw, 10rem);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --measure: 65ch;
+}
+
+/* ── Base ──────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+  height: 100%;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-size: var(--step-0);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+p { max-width: var(--measure); }
+
+/* ── Horizontal Slide Track ─────────────────────────── */
+.slide-track {
+  display: flex;
+  height: 100vh;
+  width: calc(11 * 100vw);
+  transition: transform 1.1s var(--ease-out-quart);
+  will-change: transform;
+}
+
+/* ── Progress Bar (top, horizontal) ─────────────────── */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, oklch(60% 0.16 80), var(--accent));
+  box-shadow: 0 0 8px oklch(55% 0.15 270 / 0.4);
+  z-index: 200;
+  width: 0%;
+  transition: width 0.4s var(--ease-out-expo);
+  will-change: width;
+}
+
+/* ── Chapter Side Navigation (left rail) ─────────────── */
+.chapter-nav {
+  position: fixed;
+  top: 50%;
+  left: clamp(0.6rem, 1.2vw, 1.2rem);
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.chapter-nav a {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--text-faint);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: color 0.3s var(--ease-out-expo);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.chapter-nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.chapter-nav a .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.chapter-nav a .dot svg {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+}
+.chapter-nav .dot svg circle.progress {
+  stroke-dasharray: 44;
+  stroke-dashoffset: 44;
+  transition: stroke-dashoffset 0.3s var(--ease-out-quart);
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 2;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.chapter-nav a .label {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.chapter-nav a:hover .label,
+.chapter-nav a.active .label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.chapter-nav a:hover .dot { background: var(--text-muted); }
+.chapter-nav a.active .dot {
+  background: var(--accent);
+  transform: scale(1.4);
+}
+.chapter-nav a.active { color: var(--text); }
+
+@media (max-width: 768px) {
+  .chapter-nav .label { display: none; }
+  .chapter-nav { gap: 0.6rem; left: 0.4rem; }
+}
+
+/* ── Slide (full-viewport section) ────────────────── */
+.slide {
+  width: 100vw;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-l) 0;
+  position: relative;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.wrap {
+  width: min(90%, 72rem);
+  margin-inline: auto;
+  padding-inline: var(--space-s);
+}
+
+/* ── Reveal Animations ────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateX(3rem);
+  transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Reveal variants — applied selectively to avoid uniform motion */
+.reveal-up { transform: translateY(2rem); }
+.reveal-up.visible { transform: translateY(0); }
+
+.reveal-scale { transform: scale(0.94); }
+.reveal-scale.visible { transform: scale(1); }
+
+.reveal-blur { filter: blur(8px); }
+.reveal-blur.visible { filter: blur(0); }
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
+.reveal-delay-7 { transition-delay: 0.7s; }
+.reveal-delay-8 { transition-delay: 0.8s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hero-word { opacity: 1 !important; transform: none !important; }
+  .scroll-hint { animation: none !important; }
+  .counter { transition: none !important; }
+}
+
+/* ── Slide Backgrounds ────────────────────────────── */
+.slide--hero { background: var(--bg); }
+.slide--risk { background: var(--bg-warm); }
+.slide--shift { background: var(--bg-warm); }
+.slide--why { background: var(--bg-cool); }
+.slide--together { background: var(--bg); }
+.slide--lifecycle { background: var(--bg-alt); }
+.slide--architecture { background: var(--bg-cool); }
+
+/* Architecture diagram: sequential line build for deploy phase */
+.arch-deploy-line {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
+}
+.arch-deploy-line.arch-line-visible {
+  opacity: 0.15;
+  transform: translateX(0);
+}
+.arch-deploy-line.arch-line-highlight {
+  opacity: 1;
+  transform: translateX(0);
+}
+.arch-deploy-line.arch-line-all-on {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Architecture diagram: animated flow ball */
+.arch-flow-ball {
+  filter: drop-shadow(0 0 6px var(--ball-color, #0F62FE));
+  opacity: 0;
+}
+.arch-flow-ball.flowing {
+  opacity: 1;
+}
+.arch-flow-ball.pulsing {
+  opacity: 1;
+  animation: ballPulse 0.7s ease-in-out;
+}
+@keyframes ballPulse {
+  0% { r: 5; filter: drop-shadow(0 0 6px var(--ball-color)); }
+  50% { r: 10; filter: drop-shadow(0 0 18px var(--ball-color)); }
+  100% { r: 5; filter: drop-shadow(0 0 6px var(--ball-color)); }
+}
+
+/* Architecture diagram phase highlighting */
+#archSvg .arch-monitor,
+#archSvg .arch-deploy {
+  transition: opacity 0.9s var(--ease-out-expo);
+  opacity: 1;
+}
+#archSvg.arch-highlight-monitor .arch-deploy,
+#archSvg.arch-highlight-deploy .arch-monitor {
+  opacity: 0.05;
+}
+#archSvg.arch-highlight-monitor .arch-monitor,
+#archSvg.arch-highlight-deploy .arch-deploy {
+  opacity: 1;
+  transition: opacity 0.9s var(--ease-out-expo) 0.15s;
+}
+
+.arch-phase-label {
+  position: absolute;
+  top: -3.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: clamp(1.15rem, 0.95rem + 0.9vw, 1.6rem);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-expo);
+}
+.arch-phase-label.visible { opacity: 1; }
+.arch-phase-label .typed,
+.arch-subtitle .typed {
+  border-right: 2px solid var(--vault-gold);
+  padding-right: 3px;
+  animation: blink 1s step-end infinite;
+}
+.arch-subtitle .typed.caret-off {
+  border-right-color: transparent;
+  animation: none;
+}
+.slide--resilience { background: var(--bg-cool); }
+.slide--outcomes { background: var(--bg); }
+.slide--benefits { background: var(--bg-warm); }
+.slide--cta { background: var(--bg-alt); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero-headline {
+  font-size: var(--step-hero);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-m);
+}
+
+.hero-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+}
+
+.hero-word.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-logos {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin-bottom: var(--space-m);
+}
+
+.hero-logos svg { height: clamp(2rem, 3vw, 3rem); }
+.hero-logos .hashicorp-logo { color: var(--text); }
+.hero-logos .logo-divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--border);
+}
+
+.hero-subtitle {
+  font-size: var(--step-1);
+  color: var(--text-muted);
+  margin-bottom: var(--space-l);
+}
+
+.scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-faint);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.scroll-hint .arrow {
+  display: inline-block;
+  animation: bounce-right 2s var(--ease-out-expo) infinite;
+}
+
+@keyframes bounce-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+
+/* ── Section Headers ──────────────────────────────── */
+.section-label {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--space-s);
+}
+
+.section-title {
+  font-size: var(--step-3);
+  font-weight: 700;
+  margin-bottom: var(--space-m);
+  max-width: 20ch;
+}
+
+/* ── Risk Section (Chapter 2) ─────────────────────── */
+.risk-hero-quote {
+  position: relative;
+  padding: var(--space-l) var(--space-l) var(--space-m);
+  margin-bottom: var(--space-m);
+  background: linear-gradient(135deg, oklch(16% 0.02 25), oklch(22% 0.03 25));
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.risk-hero-quote::before {
+  content: '\201C';
+  position: absolute;
+  top: -0.2em;
+  left: 0.6rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: clamp(8rem, 15vw, 14rem);
+  font-weight: 700;
+  color: var(--redhat-red);
+  opacity: 0.15;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.risk-hero-quote blockquote {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: clamp(1.15rem, 1rem + 0.8vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.5;
+  color: oklch(95% 0.005 55);
+  font-style: normal;
+  max-width: none;
+  position: relative;
+  z-index: 1;
+}
+
+.risk-hero-quote .incident-source {
+  font-size: 0.9rem;
+  color: oklch(80% 0.02 25);
+  font-weight: 600;
+  margin-top: var(--space-s);
+  font-style: normal;
+  position: relative;
+  z-index: 1;
+}
+
+.incident-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+  margin-bottom: var(--space-m);
+}
+
+.incident-card {
+  background: var(--bg-light);
+  padding: var(--space-s);
+  border-radius: 0.625rem;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.incident-card::before {
+  content: 'Incident';
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--redhat-red);
+  align-self: flex-start;
+}
+
+.incident-card strong {
+  display: block;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.incident-card span {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.risk-stat {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+}
+
+.risk-stat .counter-value { color: var(--redhat-red); }
+
+.risk-stat-source {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── 47-Day Shift Section ─────────────────────────── */
+.slide--shift { padding-top: var(--space-m); padding-bottom: var(--space-m); }
+.slide--shift .section-title { margin-bottom: var(--space-s); }
+
+.shift-lead {
+  font-size: var(--step-0);
+  color: var(--text);
+  max-width: var(--measure);
+  margin-bottom: var(--space-xs);
+}
+
+.growth-curve-wrap svg {
+  max-height: 26rem;
+}
+
+/* ── Growth Curve Chart ────────────────────────── */
+.growth-curve-wrap {
+  margin: var(--space-s) 0;
+  position: relative;
+}
+
+.growth-curve-wrap svg {
+  width: 100%;
+}
+
+.growth-curve-path {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  transition: stroke-dashoffset 4s var(--ease-out-quart);
+}
+
+.growth-curve-wrap.visible .growth-curve-path {
+  stroke-dashoffset: 0;
+}
+
+.growth-dot {
+  opacity: 0;
+  transform-origin: center;
+  transform: scale(0.7);
+  transition: opacity 0.7s var(--ease-out-quart), transform 0.7s var(--ease-out-quart);
+}
+
+.growth-curve-wrap.visible .growth-dot { opacity: 1; transform: scale(1); }
+.growth-curve-wrap.visible .growth-dot-1 { transition-delay: 0.5s; }
+.growth-curve-wrap.visible .growth-dot-2 { transition-delay: 1.3s; }
+.growth-curve-wrap.visible .growth-dot-3 { transition-delay: 2.1s; }
+.growth-curve-wrap.visible .growth-dot-4 { transition-delay: 3.0s; }
+
+.growth-label {
+  opacity: 0;
+  transition: opacity 0.7s var(--ease-out-quart);
+}
+.growth-curve-wrap.visible .growth-label { opacity: 1; }
+.growth-curve-wrap.visible .growth-label-1 { transition-delay: 0.75s; }
+.growth-curve-wrap.visible .growth-label-2 { transition-delay: 1.55s; }
+.growth-curve-wrap.visible .growth-label-3 { transition-delay: 2.35s; }
+.growth-curve-wrap.visible .growth-label-4 { transition-delay: 3.25s; }
+
+.shift-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-s);
+  margin: var(--space-s) 0;
+}
+
+.shift-stat-block {
+  padding: var(--space-s);
+  background: var(--bg-light);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.shift-stat-block .big-number {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.shift-stat-block p {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  margin-top: 0.35rem;
+  line-height: 1.5;
+}
+
+.shift-insight {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.shift-footer {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--space-m);
+  align-items: center;
+  margin-top: var(--space-s);
+}
+
+@media (max-width: 768px) {
+  .shift-footer { grid-template-columns: 1fr; gap: var(--space-s); }
+}
+
+.shift-callout {
+  margin: 0;
+  padding: var(--space-s) var(--space-m);
+  background: oklch(92% 0.03 270 / 0.55);
+  border: 1px solid oklch(80% 0.04 270 / 0.6);
+  border-radius: 0.75rem;
+}
+
+.shift-conclusion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.shift-callout .callout-label {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.shift-callout .callout-text {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.shift-callout .callout-sub {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  max-width: var(--measure);
+  line-height: 1.45;
+}
+
+.shift-source {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ── Why Shorter Lifetimes (Chapter 3b) ─────────── */
+.why-reasons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-s);
+  margin: var(--space-m) 0;
+}
+
+@media (max-width: 768px) {
+  .why-reasons { grid-template-columns: 1fr; }
+}
+
+.why-reason {
+  padding: var(--space-m);
+  background: var(--bg-light);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(1rem);
+  transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo), box-shadow 0.6s var(--ease-out-expo);
+}
+.why-reason.reason-dim {
+  opacity: 0.3;
+  transform: translateY(0);
+}
+.why-reason.reason-spotlight {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px oklch(55% 0.15 270 / 0.12);
+}
+.why-reason.reason-all-on {
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+}
+
+.why-reason .reason-num {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: clamp(2.5rem, 2rem + 1.5vw, 3.25rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  font-feature-settings: "tnum" 1;
+}
+
+.why-reason h3 {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.why-reason p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.why-precedent {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: var(--measure);
+}
+
+.why-precedent strong {
+  color: var(--text);
+}
+
+/* ── Better Together ──────────────────────────────── */
+.together-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-m);
+  align-items: center;
+  margin-top: var(--space-m);
+}
+
+@media (max-width: 768px) {
+  .together-grid {
+    grid-template-columns: 1fr;
+  }
+  .bridge-connector { display: none !important; }
+}
+
+.engine-card {
+  padding: var(--space-m);
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg-light);
+}
+
+.engine-card .engine-logo {
+  height: 2.5rem;
+  margin-bottom: var(--space-s);
+}
+
+.engine-card .engine-role {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.engine-card h3 {
+  font-size: var(--step-2);
+  font-weight: 700;
+  margin-bottom: var(--space-s);
+}
+
+.engine-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.engine-card ul li {
+  padding: 0.4rem 0;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.engine-card ul li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.5em;
+}
+
+.engine-card.vault ul li::before { background: oklch(60% 0.16 80); }
+.engine-card.ansible ul li::before { background: var(--redhat-red); }
+
+.bridge-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bridge-connector svg {
+  width: clamp(3rem, 6vw, 6rem);
+  color: var(--accent);
+}
+
+.bridge-connector span {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
+
+/* ── Lifecycle (Chapter 5) ────────────────────────── */
+.lifecycle-container {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-m);
+  margin-top: var(--space-s);
+  align-items: center;
+}
+
+.lifecycle-wheel-wrap {
+  position: relative;
+  width: clamp(400px, 50vw, 650px);
+  height: clamp(400px, 50vw, 650px);
+}
+
+.lifecycle-wheel-wrap svg {
+  width: 100%;
+  height: 100%;
+}
+
+.lifecycle-node {
+  cursor: pointer;
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+.lifecycle-node:hover .node-ring {
+  stroke-width: 4;
+}
+
+.lifecycle-node:focus {
+  outline: none;
+}
+
+.lifecycle-node:focus-visible .node-ring {
+  stroke-width: 4;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.lifecycle-node.active .node-ring {
+  stroke-width: 5;
+}
+
+.lifecycle-node .node-bg {
+  transition: opacity 0.3s ease;
+  opacity: 0.06;
+}
+
+.lifecycle-node:hover .node-bg,
+.lifecycle-node.active .node-bg {
+  opacity: 0.15;
+}
+
+/* Connector lines from center to nodes */
+.connector-line {
+  stroke: oklch(80% 0.008 55);
+  stroke-width: 1.5;
+  transition: stroke 0.4s var(--ease-out-expo), stroke-width 0.4s var(--ease-out-expo), filter 0.4s var(--ease-out-expo);
+  filter: none;
+}
+
+.connector-line.active,
+.connector-line.hovered {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--line-color, oklch(55% 0.15 270)));
+}
+
+.connector-particle {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.connector-particle.active,
+.connector-particle.hovered {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.lifecycle-detail {
+  min-width: 0;
+}
+
+.lifecycle-detail-panel {
+  display: none;
+  opacity: 0;
+  transform: translateX(1rem);
+}
+
+.lifecycle-detail-panel.active {
+  display: block;
+  opacity: 1;
+  transform: translateX(0);
+  animation: fadeSlideIn 0.4s var(--ease-out-expo);
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(1rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.lifecycle-detail-panel h3 {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.lifecycle-detail-panel .capability-number {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--text-faint);
+  margin-bottom: var(--space-xs);
+}
+
+.lifecycle-detail-panel p {
+  font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+  color: var(--text-muted);
+  max-width: none;
+  line-height: 1.7;
+  margin-bottom: var(--space-s);
+}
+
+.lifecycle-detail-panel ul {
+  list-style: none;
+  padding: 0;
+}
+
+.lifecycle-detail-panel ul li {
+  font-size: clamp(0.95rem, 0.85rem + 0.25vw, 1.1rem);
+  color: var(--text-muted);
+  padding: 0.4rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.lifecycle-detail-panel ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot-color, var(--text-faint));
+}
+
+.lifecycle-hint {
+  font-size: 0.875rem;
+  color: var(--text-faint);
+  margin-top: var(--space-s);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .lifecycle-container {
+    flex-direction: column;
+  }
+  .lifecycle-wheel-wrap {
+    width: 300px;
+    height: 300px;
+  }
+  .incident-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Resilience (Chapter 7) — Stacked Shield Layers ── */
+.resilience-stack {
+  position: relative;
+  margin-top: var(--space-s);
+  perspective: 800px;
+}
+
+.shield-layer {
+  position: relative;
+  padding: var(--space-s) var(--space-m);
+  border-radius: 1rem;
+  margin-bottom: -1rem;
+  opacity: 0;
+  transform: translateY(2rem);
+  transition: transform 0.7s var(--ease-out-expo), opacity 0.7s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
+}
+
+.shield-layer.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.shield-layer:nth-child(1).visible { transition-delay: 0.1s; }
+.shield-layer:nth-child(2).visible { transition-delay: 0.45s; }
+.shield-layer:nth-child(3).visible { transition-delay: 0.8s; }
+
+.shield-layer.visible:hover {
+  transform: translateY(-4px) scale(1.005);
+}
+
+.shield-layer:nth-child(1) {
+  background: linear-gradient(135deg, oklch(94% 0.02 240), oklch(96% 0.015 240));
+  border: 1px solid oklch(88% 0.03 240);
+  box-shadow: 0 8px 32px oklch(55% 0.05 240 / 0.12);
+  z-index: 3;
+}
+
+.shield-layer:nth-child(2) {
+  background: linear-gradient(135deg, oklch(93% 0.02 270), oklch(95.5% 0.015 270));
+  border: 1px solid oklch(87% 0.03 270);
+  box-shadow: 0 12px 40px oklch(55% 0.05 270 / 0.1);
+  z-index: 2;
+  margin-left: 1.5rem;
+  margin-right: -1.5rem;
+}
+
+.shield-layer:nth-child(3) {
+  background: linear-gradient(135deg, oklch(92% 0.02 160), oklch(95% 0.015 160));
+  border: 1px solid oklch(86% 0.03 160);
+  box-shadow: 0 16px 48px oklch(55% 0.05 160 / 0.08);
+  z-index: 1;
+  margin-left: 3rem;
+  margin-right: -3rem;
+  margin-bottom: 0;
+}
+
+.shield-layer .shield-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.shield-layer .shield-num {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 0.15rem;
+}
+
+.shield-layer h3 {
+  font-size: var(--step-1);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.shield-layer p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  max-width: 50ch;
+  line-height: 1.45;
+}
+
+.resilience-motto {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-top: calc(var(--space-s) + 1rem);
+  color: oklch(42% 0.13 258);
+}
+
+/* ── Outcomes (Chapter 7) ─────────────────────────── */
+.outcomes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-m);
+  margin-top: var(--space-m);
+}
+
+.outcome-item {
+  text-align: left;
+  position: relative;
+  padding-top: var(--space-s);
+}
+
+.outcome-item .outcome-ordinal {
+  display: block;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+}
+
+.outcome-item .outcome-value {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-3);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.outcome-item .outcome-bar {
+  display: block;
+  height: 3px;
+  width: 0;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+  transition: width 1.1s var(--ease-out-quart) 0.4s;
+}
+.outcome-item.visible .outcome-bar { width: 4rem; }
+
+.outcome-item:nth-child(1) .outcome-bar { background: oklch(55% 0.17 155); }
+.outcome-item:nth-child(2) .outcome-bar { background: oklch(55% 0.17 240); }
+.outcome-item:nth-child(3) .outcome-bar { background: oklch(60% 0.16 80); }
+.outcome-item:nth-child(4) .outcome-bar { background: var(--accent); }
+
+.outcome-item:nth-child(1) .outcome-ordinal { color: oklch(50% 0.15 155); }
+.outcome-item:nth-child(2) .outcome-ordinal { color: oklch(50% 0.15 240); }
+.outcome-item:nth-child(3) .outcome-ordinal { color: oklch(50% 0.14 80); }
+.outcome-item:nth-child(4) .outcome-ordinal { color: var(--accent); }
+
+.outcome-item .outcome-label {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Who Benefits (Chapter 8) — Expanding Panels ──── */
+.benefits-panels {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: var(--space-m);
+  height: clamp(26rem, 55vh, 38rem);
+}
+
+.benefit-panel {
+  flex: 1.5;
+  min-width: 0;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  /* Unified 0.7s anchor for all geometry changes so each transition lands on the same beat. */
+  transition: flex 0.7s var(--ease-out-quart), padding 0.7s var(--ease-out-quart);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--space-m) var(--space-m);
+  will-change: flex;
+}
+
+.benefit-panel.expanded {
+  flex: 5;
+  padding: var(--space-m) var(--space-l);
+}
+
+.benefit-panel--security {
+  background: linear-gradient(160deg, oklch(35% 0.1 270), oklch(25% 0.08 280));
+}
+
+.benefit-panel--platform {
+  background: linear-gradient(160deg, oklch(35% 0.08 170), oklch(25% 0.06 180));
+}
+
+.benefit-panel--leadership {
+  background: linear-gradient(160deg, oklch(40% 0.08 70), oklch(30% 0.06 60));
+}
+
+.benefit-panel .panel-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+}
+
+.benefit-panel--security .panel-stripe {
+  background: linear-gradient(90deg, oklch(60% 0.18 270), oklch(70% 0.14 300));
+}
+.benefit-panel--platform .panel-stripe {
+  background: linear-gradient(90deg, oklch(60% 0.15 170), oklch(65% 0.12 190));
+}
+.benefit-panel--leadership .panel-stripe {
+  background: linear-gradient(90deg, oklch(70% 0.14 80), oklch(75% 0.12 55));
+}
+
+.benefit-panel .panel-number {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: clamp(5rem, 10vh, 9rem);
+  font-weight: 700;
+  color: oklch(100% 0 0 / 0.06);
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.benefit-panel .panel-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  /* Collapse direction: max-height rides the 0.7s geometry beat; opacity fades fast
+     (0.2s) so the content is out of the way before the panel actually narrows. */
+  transition: max-height 0.7s var(--ease-out-quart), opacity 0.2s var(--ease-out-quart);
+}
+
+.benefit-panel.expanded .panel-content {
+  max-height: 30rem;
+  opacity: 1;
+  /* Expand direction: max-height rides the same 0.7s beat; opacity waits 0.3s
+     then fades in over 0.4s so content arrives AS the panel settles, not during the shove. */
+  transition: max-height 0.7s var(--ease-out-quart), opacity 0.4s 0.3s var(--ease-out-quart);
+}
+
+.benefit-panel .persona-tag {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: oklch(75% 0.03 0);
+  margin-bottom: 0.4rem;
+}
+
+.benefit-panel h3 {
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: oklch(95% 0.005 55);
+  margin-bottom: var(--space-xs);
+}
+
+/* Vertical label visible when collapsed */
+.benefit-panel .panel-vlabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: clamp(0.8rem, 1vw, 1.1rem);
+  font-weight: 700;
+  color: oklch(90% 0.005 55);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  opacity: 1;
+  /* Appearing (panel collapsing): wait 0.35s then fade in so the vlabel arrives
+     as the panel has settled into its narrow state. */
+  transition: opacity 0.3s 0.35s var(--ease-out-quart);
+  pointer-events: none;
+  max-width: none;
+}
+
+.benefit-panel.expanded .panel-vlabel {
+  opacity: 0;
+  /* Disappearing (panel expanding): hide fast to get out of the way. */
+  transition: opacity 0.2s var(--ease-out-quart);
+}
+
+.benefit-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefit-panel ul li {
+  padding: 0.5rem 0;
+  font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+  line-height: 1.5;
+  color: oklch(82% 0.01 55);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.benefit-panel ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.benefit-panel--security ul li::before { background: oklch(70% 0.15 270); }
+.benefit-panel--platform ul li::before { background: oklch(65% 0.12 170); }
+.benefit-panel--leadership ul li::before { background: oklch(75% 0.12 80); }
+
+@media (max-width: 768px) {
+  .benefits-panels {
+    flex-direction: column;
+    height: auto;
+  }
+  .benefit-panel {
+    flex: none !important;
+    min-height: 5rem;
+  }
+  .benefit-panel .panel-content {
+    max-height: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ── CTA (Chapter 9) — Journey Path ─────────────── */
+.cta-journey {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: var(--space-m) 0;
+  position: relative;
+}
+
+.cta-journey::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), oklch(55% 0.12 270), oklch(60% 0.1 240));
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.journey-step {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 0 var(--space-s);
+}
+
+.journey-milestone {
+  width: clamp(3.5rem, 6vw, 5rem);
+  height: clamp(3.5rem, 6vw, 5rem);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-m);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: white;
+  position: relative;
+  transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s var(--ease-out-expo);
+}
+
+.journey-milestone:hover {
+  transform: scale(1.1);
+}
+
+.journey-step:nth-child(1) .journey-milestone {
+  background: linear-gradient(135deg, oklch(50% 0.15 270), oklch(55% 0.12 290));
+  box-shadow: 0 6px 24px oklch(50% 0.15 270 / 0.3);
+}
+
+.journey-step:nth-child(2) .journey-milestone {
+  background: linear-gradient(135deg, oklch(50% 0.12 240), oklch(55% 0.15 260));
+  box-shadow: 0 6px 24px oklch(50% 0.12 240 / 0.3);
+}
+
+.journey-step:nth-child(3) .journey-milestone {
+  background: linear-gradient(135deg, oklch(50% 0.12 200), oklch(55% 0.1 220));
+  box-shadow: 0 6px 24px oklch(50% 0.12 200 / 0.3);
+}
+
+.journey-arrow {
+  position: absolute;
+  top: 50%;
+  right: -0.75rem;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  z-index: 2;
+  color: var(--accent);
+}
+
+.journey-step:last-child .journey-arrow {
+  display: none;
+}
+
+.journey-step h3 {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.journey-step p {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  max-width: 28ch;
+  margin-inline: auto;
+}
+
+@media (max-width: 768px) {
+  .cta-journey {
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+  .cta-journey::before {
+    width: 3px;
+    height: 100%;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .journey-arrow { display: none !important; }
+}
+
+.cta-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin-top: var(--space-l);
+  flex-wrap: wrap;
+}
+
+.cta-footer svg { height: 2rem; }
+.cta-footer .hashicorp-logo { color: var(--text); }
+
+/* ── CTA Proof block ─────────────────────────── */
+.cta-proof {
+  margin-top: var(--space-m);
+  padding: var(--space-m);
+  background: linear-gradient(180deg, oklch(97% 0.025 80 / 0.55), oklch(96% 0.015 80 / 0.2));
+  border: 1px solid oklch(82% 0.06 80 / 0.45);
+  border-radius: 0.875rem;
+  max-width: 48rem;
+}
+
+.cta-proof-label {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: oklch(50% 0.14 80);
+  margin-bottom: 0.5rem;
+}
+
+.cta-proof-text {
+  font-size: var(--step-0);
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: var(--space-s);
+  max-width: 50ch;
+}
+
+.cta-proof-text strong {
+  font-weight: 700;
+}
+
+.cta-proof-host {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  background: oklch(18% 0.01 55);
+  border-radius: 0.5rem;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.cta-proof-host-label {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: oklch(60% 0.16 80);
+}
+
+.cta-proof-host-value {
+  font-size: 0.875rem;
+  color: oklch(92% 0.005 55);
+}
+
+.cta-proof-host .typed {
+  border-right: 2px solid oklch(60% 0.16 80);
+  padding-right: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+.cta-hostname {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: oklch(42% 0.01 55);
+  margin-top: var(--space-m);
+}
+
+.cta-hostname .typed {
+  border-right: 2px solid var(--vault-gold);
+  padding-right: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+/* key-hint removed */
+
+/* ── Animation: Hero Signature Load Sequence ────── */
+.hero-logos {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.5s var(--ease-out-expo), transform 0.5s var(--ease-out-expo);
+}
+.hero-logos.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.hero-logos svg:first-child {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.5s var(--ease-out-expo) 0.1s, transform 0.5s var(--ease-out-expo) 0.1s;
+}
+.hero-logos.show svg:first-child {
+  opacity: 1;
+  transform: scale(1);
+}
+.hero-logos .logo-divider {
+  opacity: 0;
+  transform: scaleY(0);
+  transition: opacity 0.3s var(--ease-out-expo) 0.3s, transform 0.3s var(--ease-out-expo) 0.3s;
+}
+.hero-logos.show .logo-divider {
+  opacity: 1;
+  transform: scaleY(1);
+}
+.hero-logos svg:last-of-type {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.5s var(--ease-out-expo) 0.4s, transform 0.5s var(--ease-out-expo) 0.4s;
+}
+.hero-logos.show svg:last-of-type {
+  opacity: 1;
+  transform: scale(1);
+}
+.hero-subtitle {
+  opacity: 0;
+  transform: translateX(1.5rem);
+}
+.hero-subtitle.hero-sub-show {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+}
+.scroll-hint {
+  opacity: 0;
+}
+.scroll-hint.hero-hint-show {
+  opacity: 1;
+  transition: opacity 0.6s var(--ease-out-expo);
+}
+
+/* ── Animation: Card Hover Effects ───────────────── */
+.shift-stat-block,
+.incident-card,
+.engine-card {
+  transition: transform 0.3s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart);
+}
+.shift-stat-block:hover,
+.incident-card:hover,
+.engine-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px oklch(0% 0 0 / 0.08);
+}
+
+/* ── Animation: Lifecycle Wheel Enhancements ───── */
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 0px currentColor); }
+  50% { filter: drop-shadow(0 0 8px currentColor); }
+}
+.lifecycle-node.active {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes flowDash {
+  to { stroke-dashoffset: -20; }
+}
+#arcs path {
+  animation: flowDash 3s linear infinite;
+}
+
+/* Particle flow animation along connectors */
+@keyframes particleFlow {
+  0% { offset-distance: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* ── Animation: Staggered List Item Reveals ────── */
+.engine-card li,
+.lifecycle-detail-panel li {
+  opacity: 0;
+  transform: translateX(-12px);
+  transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+}
+.engine-card.visible li,
+.lifecycle-detail-panel.active li {
+  opacity: 1;
+  transform: translateX(0);
+}
+.engine-card li,
+.lifecycle-detail-panel li {
+  transition-delay: calc(var(--li-i, 0) * 80ms);
+}
+
+/* ── Animation: Bridge Connector Line Draw ──────── */
+.bridge-connector svg line {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  transition: stroke-dashoffset 0.8s var(--ease-out-expo);
+}
+.bridge-connector.visible svg line {
+  stroke-dashoffset: 0;
+}
+.bridge-connector svg circle {
+  opacity: 0;
+  transform-origin: center;
+  transform: scale(0);
+  transition: opacity 0.4s var(--ease-out-expo) 0.8s, transform 0.4s var(--ease-out-expo) 0.8s;
+}
+.bridge-connector.visible svg circle {
+  opacity: 1;
+  transform: scale(1);
+}
+.bridge-connector svg circle:nth-child(3) {
+  transition-delay: 0.6s;
+}
+.bridge-connector svg circle:nth-child(4) {
+  transition-delay: 1s;
+}
+@keyframes bridgePulse {
+  0%, 100% { filter: drop-shadow(0 0 0px var(--accent)); }
+  50% { filter: drop-shadow(0 0 6px var(--accent)); }
+}
+.bridge-connector.visible svg circle:nth-child(3) {
+  animation: bridgePulse 2s ease-in-out infinite 1.2s;
+}
+
+
+/* ── Animation: Outcome Values Parallax ──────────── */
+.outcome-value {
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+
+/* ── Animation: Shield layer stagger ──────────────── */
+.shield-layer {
+  opacity: 0;
+  transform: translateX(2rem);
+  transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo);
+}
+.shield-layer.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.shield-layer:nth-child(1) { transition-delay: 0s; }
+.shield-layer:nth-child(2) { transition-delay: 0.15s; }
+.shield-layer:nth-child(3) { transition-delay: 0.3s; }
+
+/* ── Animation: Benefit panel expand on click ─────── */
+
+/* ── Animation: Journey milestone pulse ───────────── */
+.journey-step.visible .journey-milestone {
+  animation: milestonePop 0.5s var(--ease-out-expo) forwards;
+}
+@keyframes milestonePop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Animation: prefers-reduced-motion overrides ── */
+@media (prefers-reduced-motion: reduce) {
+  .hero-logos,
+  .hero-logos svg,
+  .hero-logos .logo-divider,
+  .hero-subtitle,
+  .scroll-hint {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .shift-stat-block,
+  .incident-card,
+  .engine-card,
+  .benefit-panel,
+  .shield-layer {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .shift-stat-block:hover,
+  .incident-card:hover,
+  .engine-card:hover,
+  .benefit-panel:hover,
+  .shield-layer:hover {
+    transform: none !important;
+  }
+  .benefit-panel ul {
+    grid-template-rows: 1fr !important;
+    opacity: 1 !important;
+  }
+  .benefit-panel .persona-tag {
+    opacity: 1 !important;
+  }
+  .lifecycle-node.active { animation: none !important; }
+  #arcs path { animation: none !important; }
+  .engine-card li,
+  .lifecycle-detail-panel li {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .bridge-connector svg line,
+  .bridge-connector svg circle {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+  .chapter-nav .dot svg circle.progress { transition: none !important; }
+  .slide-track { transition: none !important; }
+  .journey-step.visible .journey-milestone { animation: none !important; opacity: 1 !important; }
+}
+
+/* ── Mobile Consolidation ───────────────────────── */
+@media (max-width: 768px) {
+  .outcomes-grid { grid-template-columns: 1fr 1fr; gap: var(--space-s); }
+  .why-reasons { grid-template-columns: 1fr; }
+  .shift-stats { grid-template-columns: 1fr; }
+  .slide { padding: var(--space-m) 0; overflow-y: auto; }
+  .growth-curve-wrap svg { min-width: 500px; }
+  .growth-curve-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #archSvg { min-width: 640px; }
+  .slide--architecture .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cta-proof { padding: var(--space-s); }
+  .cta-proof-host { flex-wrap: wrap; }
+  .resilience-stack .shield-layer { margin-left: 0 !important; margin-right: 0 !important; }
+}
+
+@media (max-width: 480px) {
+  .hero-headline { font-size: clamp(2.25rem, 8vw, 3.5rem); }
+  .outcomes-grid { grid-template-columns: 1fr; }
+  .chapter-nav { display: none; }
+  .progress-bar { height: 4px; }
+}

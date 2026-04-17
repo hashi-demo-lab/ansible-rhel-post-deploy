@@ -1,0 +1,26 @@
+<section class="slide slide--resilience" id="resilience">
+  <div class="wrap">
+    <p class="section-label reveal">When things go wrong</p>
+    <h2 class="section-title reveal reveal-delay-1">Built-In Resilience</h2>
+
+    <div class="resilience-stack">
+      <div class="shield-layer">
+        <span class="shield-num">Layer 01</span>
+        <h3>Blast Radius Control</h3>
+        <p>Canary deployments and rolling updates limit the impact of any certificate issue to a small subset of hosts before fleet-wide rollout.</p>
+      </div>
+      <div class="shield-layer">
+        <span class="shield-num">Layer 02</span>
+        <h3>Automatic Rollback</h3>
+        <p>Health checks validate every deployment. On failure, Ansible restores the previous certificate automatically &mdash; no human intervention needed.</p>
+      </div>
+      <div class="shield-layer">
+        <span class="shield-num">Layer 03</span>
+        <h3>Separation of Concerns</h3>
+        <p>Vault owns trust and policy. AAP owns execution and orchestration. Neither can exceed its authority. Security and operations stay cleanly separated.</p>
+      </div>
+    </div>
+
+    <p class="resilience-motto reveal reveal-delay-5">Failures don&rsquo;t become outages.</p>
+  </div>
+</section>

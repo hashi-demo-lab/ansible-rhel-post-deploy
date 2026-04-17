@@ -1,0 +1,87 @@
+<section class="slide slide--lifecycle" id="lifecycle">
+  <div class="wrap" style="width: min(95%, 90rem)">
+    <p class="section-label reveal">Beyond the happy path</p>
+    <h2 class="section-title reveal reveal-delay-1">The Complete Lifecycle</h2>
+    <p class="text-muted reveal reveal-delay-1" style="margin-bottom: var(--space-s); color: var(--text-faint); font-size: 0.9rem;">Click any capability to explore</p>
+
+    <div class="lifecycle-container reveal reveal-delay-2">
+      <div class="lifecycle-wheel-wrap">
+        <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" id="lifecycleWheel">
+          <!-- Connector lines from center to nodes (drawn by JS) -->
+          <g id="connectorLines"></g>
+
+          <!-- Dashed arc connectors -->
+          <g id="arcs" stroke-dasharray="6 4" stroke-width="1.5" fill="none" opacity="0.3">
+          </g>
+
+          <!-- Center hub (static, no spin) -->
+          <g id="lifecycleHub">
+            <circle cx="250" cy="250" r="58" fill="oklch(95% 0.008 55)" stroke="oklch(88% 0.008 55)" stroke-width="1.5"/>
+            <text x="250" y="242" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">Vault PKI</text>
+            <text x="250" y="258" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="oklch(45% 0.01 55)">+</text>
+            <text x="250" y="274" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="15" fill="oklch(18% 0.01 55)">AAP</text>
+          </g>
+
+          <!-- Nodes will be created by JS -->
+        </svg>
+      </div>
+
+      <div class="lifecycle-detail">
+        <div class="lifecycle-detail-panel active" data-cap="issue">
+          <div class="capability-number">01 / 05</div>
+          <h3 style="color: #0F62FE;">Issue &amp; Deploy</h3>
+          <p>Vault generates short-lived X.509 certificates on demand. AAP deploys to target services with automatic reload.</p>
+          <ul style="--dot-color: #0F62FE;">
+            <li>Policy-as-code &mdash; CN, TTL, key type enforced by Vault</li>
+            <li>Service-aware &mdash; PEM for nginx, PKCS12 for Tomcat</li>
+            <li>TLS-verified before marking complete</li>
+          </ul>
+        </div>
+
+        <div class="lifecycle-detail-panel" data-cap="monitor">
+          <div class="capability-number">02 / 05</div>
+          <h3 style="color: #009D9A;">Monitor</h3>
+          <p>Fleet-wide expiry tracking with configurable thresholds. Proactive, not reactive.</p>
+          <ul style="--dot-color: #009D9A;">
+            <li>Configurable thresholds per environment</li>
+            <li>Compliance-ready reporting on demand</li>
+            <li>Read-only &mdash; safe to schedule daily</li>
+          </ul>
+        </div>
+
+        <div class="lifecycle-detail-panel" data-cap="renew">
+          <div class="capability-number">03 / 05</div>
+          <h3 style="color: #198038;">Renew</h3>
+          <p>Automatic replacement: issue, backup, deploy, verify &mdash; zero human intervention.</p>
+          <ul style="--dot-color: #198038;">
+            <li>Only renews hosts that need it</li>
+            <li>Backup-first &mdash; existing cert preserved</li>
+            <li>Schedulable &mdash; run nightly, forget about it</li>
+          </ul>
+        </div>
+
+        <div class="lifecycle-detail-panel" data-cap="revoke">
+          <div class="capability-number">04 / 05</div>
+          <h3 style="color: #DA1E28;">Revoke</h3>
+          <p>Instant revocation through Vault&rsquo;s PKI engine. Always deliberate, never automated.</p>
+          <ul style="--dot-color: #DA1E28;">
+            <li>Takes effect immediately in Vault</li>
+            <li>Every revocation audited with timestamp</li>
+            <li>CRL tidy cleans up expired entries</li>
+          </ul>
+        </div>
+
+        <div class="lifecycle-detail-panel" data-cap="rollback">
+          <div class="capability-number">05 / 05</div>
+          <h3 style="color: #B28600;">Rollback</h3>
+          <p>Automatic restore from timestamped backup if deployment or verification fails.</p>
+          <ul style="--dot-color: #B28600;">
+            <li>Auto-triggered by block/rescue on failure</li>
+            <li>Manual option for emergency recovery</li>
+            <li>TLS-verified after rollback completes</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

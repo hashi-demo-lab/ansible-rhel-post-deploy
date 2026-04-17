@@ -28,6 +28,26 @@
     enabled: true
     state: started
 
+- name: Create assets directory for split CSS/JS
+  ansible.builtin.file:
+    path: /usr/share/nginx/html/assets
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy static CSS and JS assets
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/usr/share/nginx/html/assets/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - app.css
+    - app.js
+  notify: Reload nginx
+
 - name: Deploy Better Together landing page
   ansible.builtin.template:
     src: index.html.j2
@@ -60,8 +80,8 @@
   ansible.builtin.uri:
     url: "http://localhost"
     status_code: [200, 301, 403]
-  register: nginx_check
+  register: install_nginx_check
 
 - name: Display nginx status
   ansible.builtin.debug:
-    msg: "Nginx is running on {{ inventory_hostname }} - HTTP status: {{ nginx_check.status }}"
+    msg: "Nginx is running on {{ inventory_hostname }} - HTTP status: {{ install_nginx_check.status }}"
