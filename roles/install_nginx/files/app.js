@@ -169,6 +169,18 @@
         return;
       }
 
+      // On Why chapter, step through reasons before advancing
+      if (currentChapter === WHY_CHAPTER) {
+        if (forward) {
+          if (whyIdx < whyReasons.length) { setWhyStep(whyIdx + 1); return; }
+          navigateTo(currentChapter + 1);
+        } else {
+          if (whyIdx > 1) { setWhyStep(whyIdx - 1); return; }
+          navigateTo(currentChapter - 1);
+        }
+        return;
+      }
+
       navigateTo(forward ? currentChapter + 1 : currentChapter - 1);
       return;
     }
@@ -213,6 +225,12 @@
         }
       }
 
+      // On Why chapter, step through reasons
+      if (currentChapter === WHY_CHAPTER) {
+        if (forward && whyIdx < whyReasons.length) { setWhyStep(whyIdx + 1); return; }
+        if (backward && whyIdx > 1) { setWhyStep(whyIdx - 1); return; }
+      }
+
       navigateTo(forward ? currentChapter + 1 : currentChapter - 1);
     }, 50);
   }, { passive: false });
@@ -243,6 +261,10 @@
           expandBenefitPanel(benefitIdx - 1);
           return;
         }
+      }
+      if (currentChapter === WHY_CHAPTER) {
+        if (forward && whyIdx < whyReasons.length) { setWhyStep(whyIdx + 1); return; }
+        if (!forward && whyIdx > 1) { setWhyStep(whyIdx - 1); return; }
       }
       navigateTo(forward ? currentChapter + 1 : currentChapter - 1);
     }
@@ -510,37 +532,50 @@
   updateProgress();
   triggerReveals(0);
 
-  // ── Why slide: sequential reason card spotlight ────
+  // ── Why slide: manual step-through of reasons ─────
+  // Presenter-controlled: arrival fades 4 cards in as dim and spotlights reason 1.
+  // Each forward input (arrow/wheel/swipe) moves the spotlight to the next reason;
+  // previously-discussed cards keep a "visited" treatment. Past the last reason,
+  // the chapter advances. Backward input retreats through reasons, then out of
+  // the chapter at reason 1.
   var WHY_CHAPTER = 3;
   var whyReasons = document.querySelectorAll('.why-reason');
-  var whyTimers = [];
-  function clearWhyTimers() { whyTimers.forEach(function(t) { clearTimeout(t); }); whyTimers = []; }
-  function runWhySequence() {
-    clearWhyTimers();
-    whyReasons.forEach(function(el) { el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim'); });
-    // Fade all in as dim, then sequentially spotlight
-    whyReasons.forEach(function(el, i) {
-      whyTimers.push(setTimeout(function() {
-        el.classList.add('reason-dim');
-      }, 100 + i * 120));
-    });
-    var dwell = 900;
-    var seqStart = 100 + whyReasons.length * 120 + 200;
-    whyReasons.forEach(function(el, i) {
-      whyTimers.push(setTimeout(function() {
-        whyReasons.forEach(function(e) { e.classList.remove('reason-spotlight'); });
-        el.classList.add('reason-spotlight');
-      }, seqStart + i * dwell));
-    });
-    whyTimers.push(setTimeout(function() {
-      whyReasons.forEach(function(e) {
-        e.classList.remove('reason-spotlight');
-        e.classList.add('reason-all-on');
-      });
-    }, seqStart + whyReasons.length * dwell + 200));
+  var whyEnterTimers = [];
+  var whyIdx = 0; // 0 = not entered, 1..N = currently spotlit reason
+
+  function clearWhyEnterTimers() {
+    whyEnterTimers.forEach(function(t) { clearTimeout(t); });
+    whyEnterTimers = [];
   }
+
+  function setWhyStep(idx) {
+    clearWhyEnterTimers(); // manual advance overrides any in-flight stagger
+    if (idx < 1) idx = 1;
+    if (idx > whyReasons.length) idx = whyReasons.length;
+    whyIdx = idx;
+    whyReasons.forEach(function(el, i) {
+      el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim');
+      if (i + 1 < idx) el.classList.add('reason-all-on');      // already discussed
+      else if (i + 1 === idx) el.classList.add('reason-spotlight'); // current
+      else el.classList.add('reason-dim');                     // not yet discussed
+    });
+  }
+
+  function enterWhy() {
+    // Stagger-fade cards in as dim, then spotlight reason 1 and wait for the
+    // presenter's first advance input.
+    clearWhyEnterTimers();
+    whyIdx = 0;
+    whyReasons.forEach(function(el) { el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim'); });
+    whyReasons.forEach(function(el, i) {
+      whyEnterTimers.push(setTimeout(function() { el.classList.add('reason-dim'); }, 100 + i * 120));
+    });
+    whyEnterTimers.push(setTimeout(function() { setWhyStep(1); }, 100 + whyReasons.length * 120 + 200));
+  }
+
   function resetWhy() {
-    clearWhyTimers();
+    clearWhyEnterTimers();
+    whyIdx = 0;
     whyReasons.forEach(function(el) {
       el.classList.remove('reason-spotlight', 'reason-all-on', 'reason-dim');
     });
@@ -564,9 +599,9 @@
     if (idx === BENEFITS_CHAPTER) {
       expandBenefitPanel(0);
     }
-    // Why slide sequence
+    // Why slide: start at reason 1 on arrival; clear state when leaving.
     if (idx === WHY_CHAPTER) {
-      setTimeout(runWhySequence, 300);
+      setTimeout(enterWhy, 300);
     } else {
       resetWhy();
     }
