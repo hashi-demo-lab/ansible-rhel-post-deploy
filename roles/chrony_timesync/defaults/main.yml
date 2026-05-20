@@ -1,0 +1,16 @@
+---
+# Bank's authoritative time sources — typically GPS-backed stratum-1.
+chrony_servers:
+  - ntp1.hashibank.local
+  - ntp2.hashibank.local
+  - ntp3.hashibank.local
+
+# Acceptable max offset before chrony refuses to step the clock.
+# 0.001s = 1ms — tight enough for trade timestamping, loose enough that
+# a freshly-cloned VM with a drifted RTC can still converge.
+chrony_makestep_threshold: 1.0
+chrony_makestep_limit: 3
+
+# Allow NTP queries only from monitoring subnets
+chrony_allow_networks:
+  - 10.0.0.0/8

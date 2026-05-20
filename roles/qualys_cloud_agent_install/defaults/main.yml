@@ -1,0 +1,11 @@
+---
+qualys_agent_version: "5.4.0.0"
+qualys_agent_rpm_url: "https://artifactory.hashibank.local/qualys/qualys-cloud-agent-{{ qualys_agent_version }}.x86_64.rpm"
+
+# Qualys POD (geographic region the bank's subscription lives in)
+qualys_server_uri: "https://qagpublic.qg2.apac.qualys.com/CloudAgent/"
+
+# Activation ID and Customer ID come from Vault
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_qualys_secret_path: qualys/activation

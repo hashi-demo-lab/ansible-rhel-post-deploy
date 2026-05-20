@@ -1,0 +1,18 @@
+---
+# Curated set of CIS Level 1 / DISA STIG controls for RHEL 9. Each block can
+# be toggled individually so the demo can show selective remediation.
+cis_kernel_params: true
+cis_password_policy: true
+cis_ssh_hardening: true
+cis_auditd_rules: true
+cis_filesystem_perms: true
+cis_disable_unused_filesystems: true
+
+# Password policy (PCI-DSS / APRA CPS 234-aligned defaults)
+cis_password_min_len: 14
+cis_password_max_days: 90
+cis_password_min_days: 1
+cis_password_warn_age: 7
+
+# auditd rules path
+cis_auditd_rules_path: /etc/audit/rules.d/99-bank-baseline.rules

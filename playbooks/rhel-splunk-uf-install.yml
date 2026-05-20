@@ -1,0 +1,11 @@
+---
+# Installs the Splunk Universal Forwarder and points it at the bank's
+# SIEM indexers. Default monitors capture /var/log, auditd, and the
+# systemd journal — the inputs a bank SOC team typically requires.
+- name: Install and configure Splunk Universal Forwarder
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - splunk_uf_install

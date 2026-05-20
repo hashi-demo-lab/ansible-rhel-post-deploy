@@ -1,0 +1,10 @@
+---
+# Installs the Qualys Cloud Agent for continuous vulnerability + policy
+# scanning. Activation ID and customer ID come from Vault.
+- name: Install Qualys Cloud Agent
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - qualys_cloud_agent_install

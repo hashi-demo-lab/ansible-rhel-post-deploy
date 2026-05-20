@@ -1,0 +1,23 @@
+---
+# F5 BIG-IP cluster fronting bank web tier
+f5_host: "f5-bigip.hashibank.local"
+f5_validate_certs: false
+
+# Default pool — typically resolved from group_vars by security_profile.
+# Map each profile to its pool name so drain knows where to detach.
+lb_pool_map:
+  web-server: "/Common/pool-web-prod"
+  app-server: "/Common/pool-app-prod"
+  db-server: "/Common/pool-db-prod"
+
+# Drain timing — give in-flight connections a graceful exit window.
+lb_drain_grace_seconds: 60
+lb_drain_timeout_seconds: 300
+
+# Vault path for F5 service account
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_f5_secret_path: f5/automation
+
+# Skip the real F5 call but keep the audit trail
+lb_simulate: true

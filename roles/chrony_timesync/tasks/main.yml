@@ -1,0 +1,37 @@
+---
+- name: Install chrony
+  ansible.builtin.dnf:
+    name: chrony
+    state: present
+
+- name: Deploy chrony.conf
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: chrony
+    mode: '0644'
+    backup: true
+  notify: Restart chronyd
+
+- name: Ensure chronyd is enabled and started
+  ansible.builtin.systemd:
+    name: chronyd
+    enabled: true
+    state: started
+
+- name: Force tracking refresh
+  ansible.builtin.command:
+    cmd: chronyc -a 'burst 4/4'
+  changed_when: false
+  failed_when: false
+
+- name: Show current time sync state
+  ansible.builtin.command:
+    cmd: chronyc tracking
+  register: chrony_tracking
+  changed_when: false
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "{{ chrony_tracking.stdout_lines }}"

@@ -1,0 +1,11 @@
+---
+# Opens a ServiceNow change record per planned VM. Runs before VM creation,
+# so it targets localhost (the AAP control node) and reads inventory metadata
+# from the hostvars supplied by Terraform.
+- name: Open ServiceNow change record for planned VM
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  roles:
+    - cmdb_change_open

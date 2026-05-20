@@ -1,0 +1,40 @@
+---
+- name: Install Qualys Cloud Agent package
+  ansible.builtin.dnf:
+    name: "{{ qualys_agent_rpm_url }}"
+    state: present
+    disable_gpg_check: true
+
+- name: Read Qualys activation credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_qualys_secret_path }}"
+    validate_certs: false
+  register: qualys_creds
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Activate Qualys Cloud Agent
+  ansible.builtin.command:
+    cmd: >-
+      /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh
+      ActivationId={{ qualys_creds.secret.activation_id }}
+      CustomerId={{ qualys_creds.secret.customer_id }}
+      ServerUri={{ qualys_server_uri }}
+    creates: /etc/qualys/cloud-agent/qagent-log.conf
+  no_log: true
+
+- name: Ensure qualys-cloud-agent is enabled and started
+  ansible.builtin.systemd:
+    name: qualys-cloud-agent
+    enabled: true
+    state: started
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "Qualys Cloud Agent activated and forwarding to {{ qualys_server_uri }} from {{ inventory_hostname }}"

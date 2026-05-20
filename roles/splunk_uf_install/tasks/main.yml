@@ -1,0 +1,92 @@
+---
+- name: Ensure splunk group exists
+  ansible.builtin.group:
+    name: "{{ splunk_group }}"
+    state: present
+    system: true
+
+- name: Ensure splunk user exists
+  ansible.builtin.user:
+    name: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+    system: true
+    home: "{{ splunk_install_dir }}"
+    shell: /sbin/nologin
+    create_home: false
+
+- name: Install Splunk Universal Forwarder package
+  ansible.builtin.dnf:
+    name: "{{ splunk_uf_rpm_url }}"
+    state: present
+    disable_gpg_check: true
+
+- name: Read Splunk credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_splunk_secret_path }}"
+    validate_certs: false
+  register: splunk_creds
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Seed user-seed.conf for first start
+  ansible.builtin.copy:
+    dest: "{{ splunk_install_dir }}/etc/system/local/user-seed.conf"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+    mode: '0600'
+    content: |
+      [user_info]
+      USERNAME = admin
+      PASSWORD = {{ splunk_creds.secret.admin_password }}
+  no_log: true
+
+- name: Configure outputs.conf (forward to bank indexers)
+  ansible.builtin.copy:
+    dest: "{{ splunk_install_dir }}/etc/system/local/outputs.conf"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+    mode: '0640'
+    content: |
+      [tcpout]
+      defaultGroup = bank_indexers
+      [tcpout:bank_indexers]
+      server = {{ splunk_indexers | join(',') }}
+      useACK = true
+      [tcpout-server]
+
+- name: Configure default inputs.conf monitors
+  ansible.builtin.copy:
+    dest: "{{ splunk_install_dir }}/etc/system/local/inputs.conf"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+    mode: '0640'
+    content: |
+      [default]
+      host = {{ inventory_hostname }}
+      {% for m in splunk_monitors %}
+      [monitor://{{ m.source }}]
+      index = {{ m.index }}
+      sourcetype = {{ m.sourcetype }}
+
+      {% endfor %}
+
+- name: Accept license and enable boot-start
+  ansible.builtin.command:
+    cmd: "{{ splunk_install_dir }}/bin/splunk enable boot-start -systemd-managed 1 -user {{ splunk_user }} --accept-license --answer-yes --no-prompt"
+    creates: /etc/systemd/system/SplunkForwarder.service
+
+- name: Ensure SplunkForwarder is enabled and running
+  ansible.builtin.systemd:
+    name: SplunkForwarder
+    enabled: true
+    state: started
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "Splunk UF forwarding to {{ splunk_indexers | length }} indexer(s) from {{ inventory_hostname }}"

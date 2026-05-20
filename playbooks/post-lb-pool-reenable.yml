@@ -1,0 +1,11 @@
+---
+# Re-enables the VM in its F5 pool after a Terraform update and triggers
+# a Qualys rescan so the CMDB-of-record posture is refreshed. Localhost-
+# delegated; calls F5 iControl REST and the Qualys API via Vault creds.
+- name: Re-enable VM in F5 pool and trigger compliance rescan
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  roles:
+    - lb_pool_reenable

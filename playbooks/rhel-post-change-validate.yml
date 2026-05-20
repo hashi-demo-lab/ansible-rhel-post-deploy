@@ -1,0 +1,12 @@
+---
+# Validates a VM after a Terraform update: TCP ports, systemd unit health,
+# auditd, time sync, AD join status, and an HTTP smoke test against the
+# app endpoint. Designed to fail the playbook (and therefore the
+# Terraform action) if anything regressed.
+- name: Post-change validation
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - post_change_validate

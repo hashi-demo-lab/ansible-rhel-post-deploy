@@ -1,0 +1,11 @@
+---
+# Reserves an IP and DNS entry in the bank's IPAM (Infoblox-style) before
+# vSphere builds the VM. Localhost-delegated; uses inventory host metadata
+# (subnet, ad_domain) injected by Terraform via aap_host variables.
+- name: Reserve IP and DNS record in IPAM
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  roles:
+    - ipam_reserve

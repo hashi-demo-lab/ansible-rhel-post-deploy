@@ -1,0 +1,11 @@
+---
+# Drains a VM out of its F5 BIG-IP pool before maintenance so in-flight
+# connections finish cleanly. Localhost-delegated; uses the F5 iControl
+# REST API with credentials read from Vault.
+- name: Drain VM from F5 pool before change
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  roles:
+    - lb_pool_drain

@@ -1,0 +1,60 @@
+---
+- name: Check expected TCP ports
+  ansible.builtin.wait_for:
+    host: "{{ inventory_hostname }}"
+    port: "{{ item }}"
+    timeout: 10
+  loop: "{{ validate_tcp_ports }}"
+  register: _tcp_results
+  failed_when:
+    - validate_fail_on_tcp
+    - _tcp_results.failed | default(false)
+  ignore_errors: "{{ not validate_fail_on_tcp }}"
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Confirm expected systemd units are active
+  ansible.builtin.assert:
+    that:
+      - "ansible_facts.services[item ~ '.service'].state == 'running'"
+    fail_msg: "Unit {{ item }} is not running on {{ inventory_hostname }}"
+    success_msg: "Unit {{ item }} is running on {{ inventory_hostname }}"
+  loop: "{{ validate_systemd_units }}"
+  when: validate_fail_on_systemd
+
+- name: HTTP smoke test
+  ansible.builtin.uri:
+    url: "{{ validate_http_url }}"
+    status_code: "{{ validate_http_status_codes }}"
+    timeout: 10
+  register: _http_result
+  failed_when:
+    - validate_fail_on_http
+    - _http_result.status not in validate_http_status_codes
+  ignore_errors: "{{ not validate_fail_on_http }}"
+
+- name: Check chrony clock offset
+  ansible.builtin.shell:
+    cmd: "chronyc tracking | awk '/System time/ {print $4}'"
+  register: _clock_offset
+  changed_when: false
+  failed_when: false
+
+- name: Assert clock offset within tolerance
+  ansible.builtin.assert:
+    that:
+      - (_clock_offset.stdout | float) <= validate_max_clock_offset_seconds
+    fail_msg: "Clock offset {{ _clock_offset.stdout }}s exceeds tolerance"
+  when:
+    - validate_fail_on_clock
+    - _clock_offset.stdout | length > 0
+
+- name: Summary
+  ansible.builtin.debug:
+    msg:
+      - "Validation complete for {{ inventory_hostname }}"
+      - "TCP ports OK: {{ validate_tcp_ports }}"
+      - "Systemd units OK: {{ validate_systemd_units }}"
+      - "HTTP status: {{ _http_result.status | default('skipped') }}"
+      - "Clock offset (s): {{ _clock_offset.stdout | default('skipped') | trim }}"

@@ -1,0 +1,11 @@
+---
+# Takes a vSphere snapshot of each VM before a Terraform update applies.
+# Localhost-delegated; calls the vSphere REST API using credentials from
+# Vault. Snapshots auto-expire to keep storage in check.
+- name: Take pre-change vSphere snapshot
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  roles:
+    - vsphere_snapshot

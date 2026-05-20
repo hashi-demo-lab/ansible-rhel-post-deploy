@@ -1,0 +1,115 @@
+---
+- name: Apply kernel hardening sysctls
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-bank-baseline.conf
+  loop:
+    - { name: kernel.randomize_va_space,            value: '2' }
+    - { name: net.ipv4.conf.all.send_redirects,     value: '0' }
+    - { name: net.ipv4.conf.default.send_redirects, value: '0' }
+    - { name: net.ipv4.conf.all.accept_redirects,   value: '0' }
+    - { name: net.ipv4.conf.all.accept_source_route, value: '0' }
+    - { name: net.ipv4.tcp_syncookies,              value: '1' }
+    - { name: fs.suid_dumpable,                     value: '0' }
+  when: cis_kernel_params
+
+- name: Disable unused filesystems
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/99-bank-baseline.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      install cramfs   /bin/true
+      install freevxfs /bin/true
+      install jffs2    /bin/true
+      install hfs      /bin/true
+      install hfsplus  /bin/true
+      install udf      /bin/true
+  when: cis_disable_unused_filesystems
+
+- name: Enforce password aging policy
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }}\t{{ item.value }}"
+    state: present
+  loop:
+    - { key: PASS_MAX_DAYS, value: "{{ cis_password_max_days }}" }
+    - { key: PASS_MIN_DAYS, value: "{{ cis_password_min_days }}" }
+    - { key: PASS_WARN_AGE, value: "{{ cis_password_warn_age }}" }
+  when: cis_password_policy
+
+- name: Enforce minimum password length via pwquality
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwquality.conf
+    regexp: '^minlen'
+    line: "minlen = {{ cis_password_min_len }}"
+    create: true
+    mode: '0644'
+  when: cis_password_policy
+
+- name: Harden SSH daemon
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?{{ item.key }}\\s"
+    line: "{{ item.key }} {{ item.value }}"
+    validate: '/usr/sbin/sshd -t -f %s'
+  loop:
+    - { key: PermitRootLogin,            value: 'no' }
+    - { key: PasswordAuthentication,     value: 'no' }
+    - { key: PermitEmptyPasswords,       value: 'no' }
+    - { key: X11Forwarding,              value: 'no' }
+    - { key: MaxAuthTries,               value: '4' }
+    - { key: ClientAliveInterval,        value: '300' }
+    - { key: ClientAliveCountMax,        value: '0' }
+    - { key: LoginGraceTime,             value: '60' }
+    - { key: Banner,                     value: '/etc/issue.net' }
+  when: cis_ssh_hardening
+  notify: Restart sshd
+
+- name: Drop bank-baseline auditd rules
+  ansible.builtin.copy:
+    dest: "{{ cis_auditd_rules_path }}"
+    owner: root
+    group: root
+    mode: '0640'
+    content: |
+      ## Account, group and authentication events
+      -w /etc/group       -p wa -k identity
+      -w /etc/passwd      -p wa -k identity
+      -w /etc/shadow      -p wa -k identity
+      -w /etc/sudoers     -p wa -k scope
+      -w /etc/sudoers.d/  -p wa -k scope
+      ## Time
+      -w /etc/localtime   -p wa -k time-change
+      ## Network config
+      -w /etc/hosts       -p wa -k network
+      -w /etc/sysconfig/network -p wa -k network
+      ## Privileged commands (sample — extend per bank baseline)
+      -a always,exit -F path=/usr/bin/sudo  -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged
+      -a always,exit -F path=/usr/bin/su    -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged
+      ## Immutable — must be last
+      -e 2
+  when: cis_auditd_rules
+  notify: Reload auditd
+
+- name: Lock down sensitive file permissions
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/passwd,  mode: '0644' }
+    - { path: /etc/group,   mode: '0644' }
+    - { path: /etc/shadow,  mode: '0000' }
+    - { path: /etc/gshadow, mode: '0000' }
+  when: cis_filesystem_perms
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "CIS / STIG baseline applied to {{ inventory_hostname }}"

@@ -1,0 +1,11 @@
+---
+# Applies a curated CIS Level 1 / DISA STIG-aligned baseline for RHEL 9.
+# Focuses on the controls bank auditors actually check: kernel params,
+# password policy, SSH hardening, auditd rules, file permissions.
+- name: Apply CIS / STIG baseline hardening
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - cis_hardening
