@@ -17,3 +17,6 @@ falcon_tags:
   - "Provisioner/HCP_Terraform"
 
 falcon_apd_enabled: false   # Falcon ProxyDisable. Set true behind air-gap zones.
+
+# Skip the real RPM install + Vault read but keep the audit trail
+falcon_simulate: true

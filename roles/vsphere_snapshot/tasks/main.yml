@@ -1,4 +1,8 @@
 ---
+- name: Build snapshot name with timestamp
+  ansible.builtin.set_fact:
+    _snapshot_name: "{{ snapshot_name_prefix }}-{{ lookup('pipe','date +%Y%m%dT%H%M%SZ') }}"
+
 - name: Read vCenter credentials from Vault
   community.hashi_vault.vault_kv2_get:
     url: "{{ vault_addr }}"
@@ -10,12 +14,9 @@
     validate_certs: false
   register: vsphere_creds
   no_log: true
+  when: not vsphere_simulate
 
-- name: Build snapshot name with timestamp
-  ansible.builtin.set_fact:
-    _snapshot_name: "{{ snapshot_name_prefix }}-{{ ansible_date_time.iso8601_basic_short | default(lookup('pipe','date +%Y%m%dT%H%M%SZ')) }}"
-
-- name: Take vSphere snapshot of {{ inventory_hostname }}
+- name: Take vSphere snapshot of {{ inventory_hostname }} (real)
   community.vmware.vmware_guest_snapshot:
     hostname: "{{ vsphere_hostname }}"
     username: "{{ vsphere_creds.secret.username }}"
@@ -30,7 +31,16 @@
     memory_dump: "{{ snapshot_include_memory }}"
     quiesce: "{{ snapshot_quiesce }}"
   no_log: true
+  when: not vsphere_simulate
+
+- name: Take vSphere snapshot (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED vSphere snapshot for {{ inventory_hostname }}"
+      - "datacenter={{ vsphere_datacenter }}  folder={{ vsphere_folder }}"
+      - "snapshot_name={{ _snapshot_name }}  quiesce={{ snapshot_quiesce }}  ttl={{ snapshot_ttl_hours }}h"
+  when: vsphere_simulate
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "Snapshot {{ _snapshot_name }} taken for {{ inventory_hostname }} (expires in {{ snapshot_ttl_hours }}h)"
+    msg: "Snapshot {{ _snapshot_name }} {{ 'simulated' if vsphere_simulate else 'taken' }} for {{ inventory_hostname }} (expires in {{ snapshot_ttl_hours }}h)"

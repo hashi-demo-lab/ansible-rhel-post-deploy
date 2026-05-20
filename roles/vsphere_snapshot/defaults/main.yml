@@ -15,3 +15,6 @@ snapshot_ttl_hours: 24            # operator should garbage-collect after change
 vault_addr: "https://vault.hashicorp.local:8200"
 vault_kv_mount: secrets
 vault_vsphere_secret_path: vsphere/automation
+
+# Skip the real vSphere REST call but keep the audit trail
+vsphere_simulate: true

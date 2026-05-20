@@ -1,5 +1,5 @@
 ---
-ad_domain: "{{ inventory_hostname.split('.')[1:] | join('.') if '.' in inventory_hostname else 'hashicorp.local' }}"
+ad_domain: "{{ ad_domain | default('hashicorp.local') }}"
 ad_ou: "OU=Linux Servers,OU=Servers,DC=hashicorp,DC=local"
 ad_admins_group: "linux-admins"
 ad_sudoers_group: "linux-sudoers"
@@ -20,3 +20,6 @@ ad_packages:
   - krb5-workstation
   - openldap-clients
   - authselect
+
+# Skip the real domain join + Vault read but keep the audit trail
+ad_join_simulate: true

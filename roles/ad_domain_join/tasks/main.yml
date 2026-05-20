@@ -1,25 +1,39 @@
 ---
+- name: AD domain join (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED AD domain join for {{ inventory_hostname }}"
+      - "domain: {{ ad_domain }}"
+      - "ou: {{ ad_ou }}"
+      - "would install: {{ ad_packages }}"
+      - "would permit groups: {{ ad_admins_group }}@{{ ad_domain }}, {{ ad_sudoers_group }}@{{ ad_domain }}"
+  when: ad_join_simulate
+
 - name: Install AD integration packages
   ansible.builtin.dnf:
     name: "{{ ad_packages }}"
     state: present
+  when: not ad_join_simulate
 
 - name: Configure authselect for SSSD with mkhomedir
   ansible.builtin.command:
     cmd: authselect select sssd with-mkhomedir --force
   changed_when: true
+  when: not ad_join_simulate
 
 - name: Enable oddjobd for home directory creation
   ansible.builtin.systemd:
     name: oddjobd
     enabled: true
     state: started
+  when: not ad_join_simulate
 
 - name: Check current realm membership
   ansible.builtin.command:
     cmd: realm list
   register: realm_list
   changed_when: false
+  when: not ad_join_simulate
 
 - name: Read AD service account credentials from Vault
   community.hashi_vault.vault_kv2_get:
@@ -34,7 +48,9 @@
   delegate_to: localhost
   become: false
   no_log: true
-  when: ad_domain not in realm_list.stdout
+  when:
+    - not ad_join_simulate
+    - ad_domain not in realm_list.stdout
 
 - name: Join Active Directory domain
   ansible.builtin.expect:
@@ -42,13 +58,17 @@
     responses:
       "Password.*": "{{ ad_creds.secret.password }}"
   no_log: true
-  when: ad_domain not in realm_list.stdout
+  when:
+    - not ad_join_simulate
+    - ad_domain not in realm_list.stdout
 
 - name: Restrict logins to specific AD groups
   ansible.builtin.command:
     cmd: "realm permit -g {{ ad_admins_group }}@{{ ad_domain }} {{ ad_sudoers_group }}@{{ ad_domain }}"
   changed_when: true
-  when: ad_domain not in realm_list.stdout
+  when:
+    - not ad_join_simulate
+    - ad_domain not in realm_list.stdout
 
 - name: Grant sudo to the AD sudoers group
   ansible.builtin.copy:
@@ -59,13 +79,15 @@
     content: |
       %{{ ad_sudoers_group | replace(' ', '\\ ') }}@{{ ad_domain }} ALL=(ALL) ALL
     validate: '/usr/sbin/visudo -cf %s'
+  when: not ad_join_simulate
 
 - name: Ensure sssd is enabled and started
   ansible.builtin.systemd:
     name: sssd
     enabled: true
     state: started
+  when: not ad_join_simulate
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} joined to {{ ad_domain }}"
+    msg: "{{ inventory_hostname }} {{ 'AD join simulated' if ad_join_simulate else 'joined to ' ~ ad_domain }}"

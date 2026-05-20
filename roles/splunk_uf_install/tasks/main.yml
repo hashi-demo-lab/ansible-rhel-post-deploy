@@ -1,9 +1,19 @@
 ---
+- name: Splunk UF install (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED Splunk UF install on {{ inventory_hostname }}"
+      - "package: {{ splunk_uf_rpm_url }}"
+      - "indexers: {{ splunk_indexers | join(',') }}"
+      - "monitors: {{ splunk_monitors | map(attribute='source') | list }}"
+  when: splunk_simulate
+
 - name: Ensure splunk group exists
   ansible.builtin.group:
     name: "{{ splunk_group }}"
     state: present
     system: true
+  when: not splunk_simulate
 
 - name: Ensure splunk user exists
   ansible.builtin.user:
@@ -13,12 +23,14 @@
     home: "{{ splunk_install_dir }}"
     shell: /sbin/nologin
     create_home: false
+  when: not splunk_simulate
 
 - name: Install Splunk Universal Forwarder package
   ansible.builtin.dnf:
     name: "{{ splunk_uf_rpm_url }}"
     state: present
     disable_gpg_check: true
+  when: not splunk_simulate
 
 - name: Read Splunk credentials from Vault
   community.hashi_vault.vault_kv2_get:
@@ -33,6 +45,7 @@
   delegate_to: localhost
   become: false
   no_log: true
+  when: not splunk_simulate
 
 - name: Seed user-seed.conf for first start
   ansible.builtin.copy:
@@ -45,6 +58,7 @@
       USERNAME = admin
       PASSWORD = {{ splunk_creds.secret.admin_password }}
   no_log: true
+  when: not splunk_simulate
 
 - name: Configure outputs.conf (forward to bank indexers)
   ansible.builtin.copy:
@@ -59,6 +73,7 @@
       server = {{ splunk_indexers | join(',') }}
       useACK = true
       [tcpout-server]
+  when: not splunk_simulate
 
 - name: Configure default inputs.conf monitors
   ansible.builtin.copy:
@@ -75,18 +90,21 @@
       sourcetype = {{ m.sourcetype }}
 
       {% endfor %}
+  when: not splunk_simulate
 
 - name: Accept license and enable boot-start
   ansible.builtin.command:
     cmd: "{{ splunk_install_dir }}/bin/splunk enable boot-start -systemd-managed 1 -user {{ splunk_user }} --accept-license --answer-yes --no-prompt"
     creates: /etc/systemd/system/SplunkForwarder.service
+  when: not splunk_simulate
 
 - name: Ensure SplunkForwarder is enabled and running
   ansible.builtin.systemd:
     name: SplunkForwarder
     enabled: true
     state: started
+  when: not splunk_simulate
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "Splunk UF forwarding to {{ splunk_indexers | length }} indexer(s) from {{ inventory_hostname }}"
+    msg: "Splunk UF {{ 'simulated' if splunk_simulate else ('forwarding to ' ~ splunk_indexers | length ~ ' indexer(s)') }} on {{ inventory_hostname }}"

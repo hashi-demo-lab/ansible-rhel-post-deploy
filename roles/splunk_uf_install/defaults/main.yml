@@ -25,3 +25,6 @@ splunk_monitors:
   - { source: /var/log,           index: linux_os,     sourcetype: auto }
   - { source: /var/log/audit,     index: linux_audit,  sourcetype: linux_audit }
   - { source: /var/log/secure,    index: linux_secure, sourcetype: linux_secure }
+
+# Skip the real RPM install + Vault read but keep the audit trail
+splunk_simulate: true

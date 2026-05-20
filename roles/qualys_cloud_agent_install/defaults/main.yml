@@ -9,3 +9,6 @@ qualys_server_uri: "https://qagpublic.qg2.apac.qualys.com/CloudAgent/"
 vault_addr: "https://vault.hashicorp.local:8200"
 vault_kv_mount: secrets
 vault_qualys_secret_path: qualys/activation
+
+# Skip the real RPM install + Vault read but keep the audit trail
+qualys_simulate: true

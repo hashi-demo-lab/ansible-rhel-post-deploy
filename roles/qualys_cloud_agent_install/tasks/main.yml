@@ -1,9 +1,18 @@
 ---
+- name: Qualys Cloud Agent install (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED Qualys Cloud Agent install on {{ inventory_hostname }}"
+      - "package: {{ qualys_agent_rpm_url }}"
+      - "server_uri: {{ qualys_server_uri }}"
+  when: qualys_simulate
+
 - name: Install Qualys Cloud Agent package
   ansible.builtin.dnf:
     name: "{{ qualys_agent_rpm_url }}"
     state: present
     disable_gpg_check: true
+  when: not qualys_simulate
 
 - name: Read Qualys activation credentials from Vault
   community.hashi_vault.vault_kv2_get:
@@ -18,6 +27,7 @@
   delegate_to: localhost
   become: false
   no_log: true
+  when: not qualys_simulate
 
 - name: Activate Qualys Cloud Agent
   ansible.builtin.command:
@@ -28,13 +38,15 @@
       ServerUri={{ qualys_server_uri }}
     creates: /etc/qualys/cloud-agent/qagent-log.conf
   no_log: true
+  when: not qualys_simulate
 
 - name: Ensure qualys-cloud-agent is enabled and started
   ansible.builtin.systemd:
     name: qualys-cloud-agent
     enabled: true
     state: started
+  when: not qualys_simulate
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "Qualys Cloud Agent activated and forwarding to {{ qualys_server_uri }} from {{ inventory_hostname }}"
+    msg: "Qualys Cloud Agent {{ 'simulated' if qualys_simulate else 'activated against ' ~ qualys_server_uri }} on {{ inventory_hostname }}"
