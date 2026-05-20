@@ -3,27 +3,37 @@
   ansible.builtin.set_fact:
     _snapshot_name: "{{ snapshot_name_prefix }}-{{ lookup('pipe','date +%Y%m%dT%H%M%SZ') }}"
 
-- name: Read vCenter credentials from Vault
-  community.hashi_vault.vault_kv2_get:
+- name: Read vCenter LDAP dynamic credentials from Vault
+  community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
     role_id: "{{ role_id }}"
     secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_vsphere_secret_path }}"
+    path: "{{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
     validate_certs: false
-  register: vsphere_creds
+  register: vsphere_creds_raw
   no_log: true
   when: not vsphere_simulate
 
-- name: Take vSphere snapshot of {{ inventory_hostname }} (real)
+# vault_read returns the full Vault response under .data — Vault wraps
+# the secret in its own data key, so the lease shape is
+# vsphere_creds_raw.data.data.{username,password}. Pin to _facts so a
+# version drift in the module surfaces here, not deeper in the role.
+- name: Extract vSphere username/password from the lease
+  ansible.builtin.set_fact:
+    _vsphere_user: "{{ vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username) }}"
+    _vsphere_pass: "{{ vsphere_creds_raw.data.data.password | default(vsphere_creds_raw.data.password) }}"
+  no_log: true
+  when: not vsphere_simulate
+
+- name: Take vSphere snapshot of {{ inventory_hostname }}
   community.vmware.vmware_guest_snapshot:
     hostname: "{{ vsphere_hostname }}"
-    username: "{{ vsphere_creds.secret.username }}"
-    password: "{{ vsphere_creds.secret.password }}"
+    username: "{{ _vsphere_user }}"
+    password: "{{ _vsphere_pass }}"
     validate_certs: false
     datacenter: "{{ vsphere_datacenter }}"
-    folder: "{{ vsphere_folder }}"
+    folder: "{{ vsphere_folder | default(omit, true) }}"
     name: "{{ inventory_hostname }}"
     state: present
     snapshot_name: "{{ _snapshot_name }}"
@@ -32,15 +42,16 @@
     quiesce: "{{ snapshot_quiesce }}"
   no_log: true
   when: not vsphere_simulate
+  delegate_to: localhost
 
 - name: Take vSphere snapshot (simulated)
   ansible.builtin.debug:
     msg:
       - "SIMULATED vSphere snapshot for {{ inventory_hostname }}"
-      - "datacenter={{ vsphere_datacenter }}  folder={{ vsphere_folder }}"
+      - "vCenter={{ vsphere_hostname }}  datacenter={{ vsphere_datacenter }}"
       - "snapshot_name={{ _snapshot_name }}  quiesce={{ snapshot_quiesce }}  ttl={{ snapshot_ttl_hours }}h"
   when: vsphere_simulate
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "Snapshot {{ _snapshot_name }} {{ 'simulated' if vsphere_simulate else 'taken' }} for {{ inventory_hostname }} (expires in {{ snapshot_ttl_hours }}h)"
+    msg: "Snapshot {{ _snapshot_name }} {{ 'simulated' if vsphere_simulate else 'taken' }} for {{ inventory_hostname }}"

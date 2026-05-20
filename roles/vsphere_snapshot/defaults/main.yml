@@ -1,8 +1,9 @@
 ---
-# vSphere connection details
-vsphere_hostname: "vcenter.hashibank.local"
-vsphere_datacenter: "Sydney-DC"
-vsphere_folder: "/Sydney-DC/vm/HashiCorp"
+# vSphere connection — pointed at the GCVE-hosted vCenter the workspace
+# already builds VMs against.
+vsphere_hostname: "vcsa-98975.fe9dbbb3.asia-southeast1.gve.goog"
+vsphere_datacenter: "Datacenter"
+vsphere_folder: ""                # search whole DC; VM module places at root
 
 # Snapshot policy
 snapshot_name_prefix: "pre-tf-change"
@@ -11,10 +12,12 @@ snapshot_include_memory: false
 snapshot_quiesce: true
 snapshot_ttl_hours: 24            # operator should garbage-collect after change window
 
-# Vault path for vCenter service account
+# vCenter credentials come from Vault's LDAP secrets engine — dynamic,
+# leased account scoped via the vsphere_access role.
 vault_addr: "https://vault.hashicorp.local:8200"
-vault_kv_mount: secrets
-vault_vsphere_secret_path: vsphere/automation
+vault_ldap_mount: "ldap"
+vault_vsphere_ldap_role: "dynamic/vsphere_access"
 
-# Skip the real vSphere REST call but keep the audit trail
-vsphere_simulate: true
+# Flip true if you want the playbook to print payload + exit clean instead
+# of actually hitting vCenter. Default false so the action does real work.
+vsphere_simulate: false
