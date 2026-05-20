@@ -1,0 +1,24 @@
+---
+# TCP ports we expect to be answering after a change
+validate_tcp_ports:
+  - 22
+  - 80
+
+# Systemd units we expect to be active. Extend per security_profile via
+# group_vars (e.g. nginx for web-server, postgresql-15 for db-server).
+validate_systemd_units:
+  - sshd
+  - chronyd
+
+# HTTP endpoint smoke test
+validate_http_url: "http://{{ inventory_hostname }}/"
+validate_http_status_codes: [200, 301, 302, 403]
+
+# Allowable clock skew vs chrony stratum
+validate_max_clock_offset_seconds: 1.0
+
+# Fail the play (and the action) on any of these
+validate_fail_on_tcp: true
+validate_fail_on_systemd: true
+validate_fail_on_http: true
+validate_fail_on_clock: false

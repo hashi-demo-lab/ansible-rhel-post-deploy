@@ -1,0 +1,55 @@
+---
+- name: Install Falcon sensor package
+  ansible.builtin.dnf:
+    name: "{{ falcon_sensor_rpm_url }}"
+    state: present
+    disable_gpg_check: true
+
+- name: Read Falcon CID from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_falcon_secret_path }}"
+    validate_certs: false
+  register: falcon_creds
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Set Falcon CID
+  ansible.builtin.command:
+    cmd: "/opt/CrowdStrike/falconctl -s --cid={{ falcon_creds.secret.cid }}"
+  changed_when: true
+  no_log: true
+
+- name: Apply Falcon sensor grouping tags
+  ansible.builtin.command:
+    cmd: "/opt/CrowdStrike/falconctl -s --tags={{ falcon_tags | join(',') }}"
+  changed_when: true
+
+- name: Apply Falcon ProxyDisable when required
+  ansible.builtin.command:
+    cmd: "/opt/CrowdStrike/falconctl -s --apd={{ 'TRUE' if falcon_apd_enabled else 'FALSE' }}"
+  changed_when: true
+
+- name: Ensure falcon-sensor service is enabled and started
+  ansible.builtin.systemd:
+    name: falcon-sensor
+    enabled: true
+    state: started
+
+- name: Verify sensor registered (check Agent ID exists)
+  ansible.builtin.command:
+    cmd: /opt/CrowdStrike/falconctl -g --aid
+  register: falcon_aid
+  changed_when: false
+  retries: 6
+  delay: 10
+  until: "'aid=' in falcon_aid.stdout"
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "Falcon sensor registered on {{ inventory_hostname }} ({{ falcon_aid.stdout | trim }})"

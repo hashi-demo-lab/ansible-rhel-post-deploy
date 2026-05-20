@@ -1,0 +1,97 @@
+---
+- name: Resolve target pool from security profile
+  ansible.builtin.set_fact:
+    _lb_pool: "{{ lb_pool_map[security_profile] | default(lb_pool_map['web-server']) }}"
+    _lb_member: "{{ inventory_hostname }}:80"
+
+- name: Read F5 credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_f5_secret_path }}"
+    validate_certs: false
+  register: f5_creds
+  no_log: true
+  when: not lb_simulate
+
+- name: Re-enable pool member (real)
+  ansible.builtin.uri:
+    url: "https://{{ f5_host }}/mgmt/tm/ltm/pool/{{ _lb_pool | replace('/', '~') }}/members/~Common~{{ _lb_member }}"
+    method: PATCH
+    user: "{{ f5_creds.secret.username }}"
+    password: "{{ f5_creds.secret.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      session: user-enabled
+      state: user-up
+    validate_certs: "{{ f5_validate_certs }}"
+  no_log: true
+  when: not lb_simulate
+
+- name: Re-enable pool member (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED F5 re-enable of {{ _lb_member }} into pool {{ _lb_pool }}"
+      - "Would PATCH state=user-up on https://{{ f5_host }}"
+  when: lb_simulate
+
+- name: Wait for member to report monitor:up (real)
+  ansible.builtin.uri:
+    url: "https://{{ f5_host }}/mgmt/tm/ltm/pool/{{ _lb_pool | replace('/', '~') }}/members/~Common~{{ _lb_member }}/stats"
+    method: GET
+    user: "{{ f5_creds.secret.username }}"
+    password: "{{ f5_creds.secret.password }}"
+    force_basic_auth: true
+    validate_certs: "{{ f5_validate_certs }}"
+  register: _member_stats
+  retries: "{{ lb_reenable_health_retries }}"
+  delay: "{{ lb_reenable_health_delay }}"
+  until: >-
+    _member_stats.json | to_json | regex_search('"monitorStatus":\\s*{\\s*"description":\\s*"up"')
+  no_log: true
+  when: not lb_simulate
+
+- name: Read Qualys API credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_qualys_secret_path }}"
+    validate_certs: false
+  register: qualys_api_creds
+  no_log: true
+  when:
+    - qualys_rescan_trigger
+    - not lb_simulate
+
+- name: Trigger Qualys on-demand scan (real)
+  ansible.builtin.uri:
+    url: "{{ qualys_api_url }}/api/2.0/fo/scan/?action=launch&scan_title=post-change-{{ inventory_hostname }}&ip={{ ansible_host | default(inventory_hostname) }}"
+    method: POST
+    user: "{{ qualys_api_creds.secret.username }}"
+    password: "{{ qualys_api_creds.secret.password }}"
+    force_basic_auth: true
+    headers:
+      X-Requested-With: ansible
+    validate_certs: false
+  no_log: true
+  when:
+    - qualys_rescan_trigger
+    - not lb_simulate
+
+- name: Trigger Qualys rescan (simulated)
+  ansible.builtin.debug:
+    msg: "SIMULATED Qualys rescan triggered for {{ inventory_hostname }}"
+  when:
+    - qualys_rescan_trigger
+    - lb_simulate
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "{{ _lb_member }} re-enabled in {{ _lb_pool }} and compliance rescan {{ 'triggered' if qualys_rescan_trigger else 'skipped' }}"

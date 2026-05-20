@@ -1,0 +1,11 @@
+---
+# Configures chrony against the bank's stratum-1 NTP servers. Financial
+# workloads (trade timestamping, fraud correlation) require strict time
+# sync; this also enables hardware timestamping where supported.
+- name: Configure chrony for regulated time synchronisation
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - chrony_timesync

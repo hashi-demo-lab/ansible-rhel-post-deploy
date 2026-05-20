@@ -1,0 +1,19 @@
+---
+# Falcon sensor RPM hosted on the bank's internal Artifactory mirror.
+falcon_sensor_version: "7.10.0-16303"
+falcon_sensor_rpm_url: "https://artifactory.hashibank.local/crowdstrike/falcon-sensor-{{ falcon_sensor_version }}.el9.x86_64.rpm"
+
+# CrowdStrike CID lives in Vault — never in code.
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_falcon_secret_path: crowdstrike/falcon
+
+# Tagging — banks usually require business unit + environment tags so EDR
+# alerts land with the right team.
+falcon_tags:
+  - "Business_Unit/Retail_Banking"
+  - "Env/{{ env | default('dev') }}"
+  - "Site/{{ site | default('sydney') }}"
+  - "Provisioner/HCP_Terraform"
+
+falcon_apd_enabled: false   # Falcon ProxyDisable. Set true behind air-gap zones.

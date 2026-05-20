@@ -1,0 +1,22 @@
+---
+ad_domain: "{{ inventory_hostname.split('.')[1:] | join('.') if '.' in inventory_hostname else 'hashicorp.local' }}"
+ad_ou: "OU=Linux Servers,OU=Servers,DC=hashicorp,DC=local"
+ad_admins_group: "linux-admins"
+ad_sudoers_group: "linux-sudoers"
+
+# Service account credentials for the domain join — never on disk.
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_ad_secret_path: ad/join-account
+
+ad_packages:
+  - realmd
+  - sssd
+  - sssd-tools
+  - adcli
+  - oddjob
+  - oddjob-mkhomedir
+  - samba-common-tools
+  - krb5-workstation
+  - openldap-clients
+  - authselect

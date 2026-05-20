@@ -1,0 +1,18 @@
+---
+# Infoblox WAPI endpoint. Override per environment.
+infoblox_wapi_url: "https://ipam.hashibank.local/wapi/v2.12"
+infoblox_default_network_view: "default"
+
+# Map of site -> network CIDR the host should be allocated from.
+# Production demo would resolve this via group_vars or a CMDB lookup.
+ipam_site_networks:
+  sydney:    "10.10.20.0/24"
+  melbourne: "10.20.20.0/24"
+
+# Vault path for Infoblox API credentials
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_infoblox_secret_path: infoblox/api
+
+# Skip the real WAPI call but keep the audit trail
+ipam_simulate: true

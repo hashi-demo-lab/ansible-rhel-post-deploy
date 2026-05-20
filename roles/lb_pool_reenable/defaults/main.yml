@@ -1,0 +1,26 @@
+---
+# F5 BIG-IP cluster fronting bank web tier
+f5_host: "f5-bigip.hashibank.local"
+f5_validate_certs: false
+
+lb_pool_map:
+  web-server: "/Common/pool-web-prod"
+  app-server: "/Common/pool-app-prod"
+  db-server: "/Common/pool-db-prod"
+
+# How many monitor cycles to wait before declaring the member healthy
+lb_reenable_health_retries: 12
+lb_reenable_health_delay: 5
+
+# Trigger a Qualys rescan once back in pool so posture data is fresh
+qualys_rescan_trigger: true
+qualys_api_url: "https://qualysapi.qg2.apac.qualys.com"
+
+# Vault paths
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_f5_secret_path: f5/automation
+vault_qualys_secret_path: qualys/api
+
+# Skip real API calls but keep the audit trail
+lb_simulate: true

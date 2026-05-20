@@ -1,0 +1,11 @@
+---
+# Joins the VM to the bank's Active Directory domain using realmd + SSSD
+# and configures sudoers via an AD group. Service-account credentials are
+# read from Vault — no static bind passwords on the box.
+- name: Join host to Active Directory
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - ad_domain_join

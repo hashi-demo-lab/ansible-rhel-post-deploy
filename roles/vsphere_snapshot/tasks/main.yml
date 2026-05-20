@@ -1,0 +1,36 @@
+---
+- name: Read vCenter credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_vsphere_secret_path }}"
+    validate_certs: false
+  register: vsphere_creds
+  no_log: true
+
+- name: Build snapshot name with timestamp
+  ansible.builtin.set_fact:
+    _snapshot_name: "{{ snapshot_name_prefix }}-{{ ansible_date_time.iso8601_basic_short | default(lookup('pipe','date +%Y%m%dT%H%M%SZ')) }}"
+
+- name: Take vSphere snapshot of {{ inventory_hostname }}
+  community.vmware.vmware_guest_snapshot:
+    hostname: "{{ vsphere_hostname }}"
+    username: "{{ vsphere_creds.secret.username }}"
+    password: "{{ vsphere_creds.secret.password }}"
+    validate_certs: false
+    datacenter: "{{ vsphere_datacenter }}"
+    folder: "{{ vsphere_folder }}"
+    name: "{{ inventory_hostname }}"
+    state: present
+    snapshot_name: "{{ _snapshot_name }}"
+    description: "{{ snapshot_description }} (TTL {{ snapshot_ttl_hours }}h)"
+    memory_dump: "{{ snapshot_include_memory }}"
+    quiesce: "{{ snapshot_quiesce }}"
+  no_log: true
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "Snapshot {{ _snapshot_name }} taken for {{ inventory_hostname }} (expires in {{ snapshot_ttl_hours }}h)"

@@ -1,0 +1,58 @@
+---
+- name: Build change record payload
+  ansible.builtin.set_fact:
+    _snow_payload:
+      short_description: "Provision {{ inventory_hostname }} ({{ env | default('dev') }} / {{ site | default('sydney') }})"
+      description: |
+        Automated change opened by HCP Terraform action.aap_job_launch.
+        Workspace: {{ tfc_workspace_name | default('better-together-vm-lifecycle-dev') }}
+        Host: {{ inventory_hostname }}
+        OS: {{ os_type | default('linux') }} / {{ linux_distribution | default('rhel') }}
+        Storage profile: {{ storage_profile | default('standard') }}
+        Backup policy: {{ backup_policy | default('daily') }}
+      assignment_group: "{{ servicenow_change_assignment_group }}"
+      category: "{{ servicenow_change_category }}"
+      risk: "{{ servicenow_change_risk }}"
+      impact: "{{ servicenow_change_impact }}"
+      type: "{{ servicenow_change_type }}"
+      u_terraform_run_id: "{{ tfc_run_id | default('n/a') }}"
+
+- name: Read ServiceNow OAuth credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_servicenow_secret_path }}"
+    validate_certs: false
+  register: snow_creds
+  no_log: true
+  when: not servicenow_simulate
+
+- name: Open change record (real)
+  ansible.builtin.uri:
+    url: "{{ servicenow_instance_url }}/api/now/table/{{ servicenow_change_table }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ snow_creds.secret.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body: "{{ _snow_payload }}"
+    status_code: 201
+    return_content: true
+  register: snow_response
+  no_log: true
+  when: not servicenow_simulate
+
+- name: Open change record (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED ServiceNow change open for {{ inventory_hostname }}"
+      - "POST {{ servicenow_instance_url }}/api/now/table/{{ servicenow_change_table }}"
+      - "{{ _snow_payload }}"
+  when: servicenow_simulate
+
+- name: Show change number
+  ansible.builtin.debug:
+    msg: "ServiceNow change {{ snow_response.json.result.number | default('CHG-SIM-' ~ (1000 | random)) }} opened for {{ inventory_hostname }}"

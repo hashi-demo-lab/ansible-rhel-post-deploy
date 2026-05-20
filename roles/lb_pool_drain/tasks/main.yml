@@ -1,0 +1,49 @@
+---
+- name: Resolve target pool from security profile
+  ansible.builtin.set_fact:
+    _lb_pool: "{{ lb_pool_map[security_profile] | default(lb_pool_map['web-server']) }}"
+    _lb_member: "{{ inventory_hostname }}:80"
+
+- name: Read F5 credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_f5_secret_path }}"
+    validate_certs: false
+  register: f5_creds
+  no_log: true
+  when: not lb_simulate
+
+- name: Set pool member to forced-offline (drain) (real)
+  ansible.builtin.uri:
+    url: "https://{{ f5_host }}/mgmt/tm/ltm/pool/{{ _lb_pool | replace('/', '~') }}/members/~Common~{{ _lb_member }}"
+    method: PATCH
+    user: "{{ f5_creds.secret.username }}"
+    password: "{{ f5_creds.secret.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      session: user-disabled
+      state: user-down
+    validate_certs: "{{ f5_validate_certs }}"
+  no_log: true
+  when: not lb_simulate
+
+- name: Drain pool member (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED F5 drain of {{ _lb_member }} from pool {{ _lb_pool }}"
+      - "Would PATCH state=user-down on https://{{ f5_host }}"
+  when: lb_simulate
+
+- name: Wait for in-flight connections to drain
+  ansible.builtin.pause:
+    seconds: "{{ lb_drain_grace_seconds }}"
+  when: lb_drain_grace_seconds | int > 0
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "{{ _lb_member }} drained from {{ _lb_pool }}"

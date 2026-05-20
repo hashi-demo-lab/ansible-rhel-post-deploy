@@ -1,0 +1,27 @@
+---
+# Splunk Universal Forwarder package — bank's internal Satellite/Artifactory.
+splunk_uf_version: "9.2.1-78803f08aabb"
+splunk_uf_rpm_url: "https://artifactory.hashibank.local/splunk/splunkforwarder-{{ splunk_uf_version }}-Linux-x86_64.rpm"
+
+# SIEM indexers — typically a load-balanced VIP per region.
+splunk_indexers:
+  - "splunk-idx-01.hashibank.local:9997"
+  - "splunk-idx-02.hashibank.local:9997"
+  - "splunk-idx-03.hashibank.local:9997"
+
+splunk_deployment_server: "splunk-ds.hashibank.local:8089"
+
+# Vault path for the Splunk admin password and pass4SymmKey
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_splunk_secret_path: splunk/uf
+
+splunk_install_dir: /opt/splunkforwarder
+splunk_user: splunk
+splunk_group: splunk
+
+# Default monitors covering the bank SOC's required log inputs.
+splunk_monitors:
+  - { source: /var/log,           index: linux_os,     sourcetype: auto }
+  - { source: /var/log/audit,     index: linux_audit,  sourcetype: linux_audit }
+  - { source: /var/log/secure,    index: linux_secure, sourcetype: linux_secure }

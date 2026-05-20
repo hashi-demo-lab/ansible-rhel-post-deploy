@@ -1,0 +1,17 @@
+---
+# vSphere connection details
+vsphere_hostname: "vcenter.hashibank.local"
+vsphere_datacenter: "Sydney-DC"
+vsphere_folder: "/Sydney-DC/vm/HashiCorp"
+
+# Snapshot policy
+snapshot_name_prefix: "pre-tf-change"
+snapshot_description: "Automated snapshot taken by AAP before HCP Terraform update"
+snapshot_include_memory: false
+snapshot_quiesce: true
+snapshot_ttl_hours: 24            # operator should garbage-collect after change window
+
+# Vault path for vCenter service account
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_vsphere_secret_path: vsphere/automation

@@ -1,0 +1,10 @@
+---
+# Installs the CrowdStrike Falcon sensor and registers it with the bank's
+# tenant using the Customer ID (CID) pulled at runtime from Vault.
+- name: Install CrowdStrike Falcon EDR agent
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - crowdstrike_falcon_install

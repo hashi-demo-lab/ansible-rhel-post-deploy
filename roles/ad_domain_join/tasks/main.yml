@@ -1,0 +1,71 @@
+---
+- name: Install AD integration packages
+  ansible.builtin.dnf:
+    name: "{{ ad_packages }}"
+    state: present
+
+- name: Configure authselect for SSSD with mkhomedir
+  ansible.builtin.command:
+    cmd: authselect select sssd with-mkhomedir --force
+  changed_when: true
+
+- name: Enable oddjobd for home directory creation
+  ansible.builtin.systemd:
+    name: oddjobd
+    enabled: true
+    state: started
+
+- name: Check current realm membership
+  ansible.builtin.command:
+    cmd: realm list
+  register: realm_list
+  changed_when: false
+
+- name: Read AD service account credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_ad_secret_path }}"
+    validate_certs: false
+  register: ad_creds
+  delegate_to: localhost
+  become: false
+  no_log: true
+  when: ad_domain not in realm_list.stdout
+
+- name: Join Active Directory domain
+  ansible.builtin.expect:
+    command: "realm join --user={{ ad_creds.secret.username }} --computer-ou='{{ ad_ou }}' {{ ad_domain }}"
+    responses:
+      "Password.*": "{{ ad_creds.secret.password }}"
+  no_log: true
+  when: ad_domain not in realm_list.stdout
+
+- name: Restrict logins to specific AD groups
+  ansible.builtin.command:
+    cmd: "realm permit -g {{ ad_admins_group }}@{{ ad_domain }} {{ ad_sudoers_group }}@{{ ad_domain }}"
+  changed_when: true
+  when: ad_domain not in realm_list.stdout
+
+- name: Grant sudo to the AD sudoers group
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/50-ad-sudoers
+    owner: root
+    group: root
+    mode: '0440'
+    content: |
+      %{{ ad_sudoers_group | replace(' ', '\\ ') }}@{{ ad_domain }} ALL=(ALL) ALL
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Ensure sssd is enabled and started
+  ansible.builtin.systemd:
+    name: sssd
+    enabled: true
+    state: started
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} joined to {{ ad_domain }}"

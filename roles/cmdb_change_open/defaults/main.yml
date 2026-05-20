@@ -1,0 +1,19 @@
+---
+# ServiceNow target. Override in AAP survey or job template extra_vars.
+servicenow_instance_url: "https://hashibank.service-now.com"
+servicenow_change_table: "change_request"
+
+# Vault path for ServiceNow OAuth credentials
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_servicenow_secret_path: servicenow/oauth
+
+# Change record defaults — bank CAB usually mandates these fields
+servicenow_change_assignment_group: "Platform - Linux"
+servicenow_change_category: "Infrastructure"
+servicenow_change_risk: "moderate"
+servicenow_change_impact: "3"
+servicenow_change_type: "standard"
+
+# Set to true in non-prod to skip the real API call but keep the audit trail
+servicenow_simulate: true

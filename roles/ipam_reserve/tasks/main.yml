@@ -1,0 +1,47 @@
+---
+- name: Resolve network for site
+  ansible.builtin.set_fact:
+    _ipam_network: "{{ ipam_site_networks[site | default('sydney')] }}"
+    _ipam_fqdn: "{{ inventory_hostname }}.{{ ad_domain | default('hashicorp.local') }}"
+
+- name: Read Infoblox credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_infoblox_secret_path }}"
+    validate_certs: false
+  register: ipam_creds
+  no_log: true
+  when: not ipam_simulate
+
+- name: Reserve next available IP in Infoblox (real)
+  ansible.builtin.uri:
+    url: "{{ infoblox_wapi_url }}/record:host"
+    method: POST
+    user: "{{ ipam_creds.secret.username }}"
+    password: "{{ ipam_creds.secret.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ _ipam_fqdn }}"
+      ipv4addrs:
+        - ipv4addr: "func:nextavailableip:{{ _ipam_network }}"
+      view: "{{ infoblox_default_network_view }}"
+      configure_for_dns: true
+      comment: "Reserved by HCP Terraform / AAP for {{ inventory_hostname }}"
+    status_code: 201
+    validate_certs: false
+  register: ipam_response
+  no_log: true
+  when: not ipam_simulate
+
+- name: Reserve IP (simulated)
+  ansible.builtin.debug:
+    msg:
+      - "SIMULATED IPAM reservation for {{ _ipam_fqdn }}"
+      - "Network: {{ _ipam_network }}"
+      - "Would POST to {{ infoblox_wapi_url }}/record:host with nextavailableip"
+  when: ipam_simulate

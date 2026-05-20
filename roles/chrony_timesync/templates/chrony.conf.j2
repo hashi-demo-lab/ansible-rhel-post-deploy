@@ -1,0 +1,16 @@
+# Managed by ansible — ansible-rhel-post-deploy/roles/chrony_timesync
+{% for s in chrony_servers %}
+server {{ s }} iburst minpoll 4 maxpoll 6
+{% endfor %}
+
+driftfile /var/lib/chrony/drift
+makestep {{ chrony_makestep_threshold }} {{ chrony_makestep_limit }}
+rtcsync
+{% for net in chrony_allow_networks %}
+allow {{ net }}
+{% endfor %}
+keyfile /etc/chrony.keys
+ntsdumpdir /var/lib/chrony
+leapsectz right/UTC
+logdir /var/log/chrony
+log measurements statistics tracking
