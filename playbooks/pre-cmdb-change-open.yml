@@ -6,6 +6,7 @@
   hosts: all
   gather_facts: false
   connection: local
+  become: false
 
   roles:
     - cmdb_change_open

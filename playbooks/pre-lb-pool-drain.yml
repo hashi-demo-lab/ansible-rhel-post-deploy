@@ -6,6 +6,7 @@
   hosts: all
   gather_facts: false
   connection: local
+  become: false
 
   roles:
     - lb_pool_drain
