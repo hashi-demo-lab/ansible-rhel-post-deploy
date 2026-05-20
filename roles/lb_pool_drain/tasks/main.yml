@@ -1,7 +1,12 @@
 ---
 - name: Resolve target pool from security profile
   ansible.builtin.set_fact:
-    _lb_pool: "{{ lb_pool_map[security_profile] | default(lb_pool_map['web-server']) }}"
+    # security_profile / env / site live in the aap_host variables block but
+    # action_trigger fires BEFORE aap_host updates — on a fresh roll-out the
+    # action sees the previous variable schema. Default tolerantly so the
+    # role never fails on a missing hostvar.
+    _security_profile: "{{ security_profile | default('web-server') }}"
+    _lb_pool: "{{ lb_pool_map[security_profile | default('web-server')] | default(lb_pool_map['web-server']) }}"
     _lb_member: "{{ inventory_hostname }}:80"
 
 - name: Read F5 credentials from Vault

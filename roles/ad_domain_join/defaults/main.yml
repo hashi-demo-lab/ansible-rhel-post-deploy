@@ -1,5 +1,8 @@
 ---
-ad_domain: "{{ ad_domain | default('hashicorp.local') }}"
+# Fallback when the host doesn't yet carry an ad_domain hostvar from
+# aap_host. Use ad_domain_target throughout the role so this default
+# doesn't shadow itself in Jinja.
+ad_domain_target: "{{ ad_domain | default('hashicorp.local') }}"
 ad_ou: "OU=Linux Servers,OU=Servers,DC=hashicorp,DC=local"
 ad_admins_group: "linux-admins"
 ad_sudoers_group: "linux-sudoers"

@@ -3,10 +3,10 @@
   ansible.builtin.debug:
     msg:
       - "SIMULATED AD domain join for {{ inventory_hostname }}"
-      - "domain: {{ ad_domain }}"
+      - "domain: {{ ad_domain_target }}"
       - "ou: {{ ad_ou }}"
       - "would install: {{ ad_packages }}"
-      - "would permit groups: {{ ad_admins_group }}@{{ ad_domain }}, {{ ad_sudoers_group }}@{{ ad_domain }}"
+      - "would permit groups: {{ ad_admins_group }}@{{ ad_domain_target }}, {{ ad_sudoers_group }}@{{ ad_domain_target }}"
   when: ad_join_simulate
 
 - name: Install AD integration packages
@@ -50,25 +50,25 @@
   no_log: true
   when:
     - not ad_join_simulate
-    - ad_domain not in realm_list.stdout
+    - ad_domain_target not in realm_list.stdout
 
 - name: Join Active Directory domain
   ansible.builtin.expect:
-    command: "realm join --user={{ ad_creds.secret.username }} --computer-ou='{{ ad_ou }}' {{ ad_domain }}"
+    command: "realm join --user={{ ad_creds.secret.username }} --computer-ou='{{ ad_ou }}' {{ ad_domain_target }}"
     responses:
       "Password.*": "{{ ad_creds.secret.password }}"
   no_log: true
   when:
     - not ad_join_simulate
-    - ad_domain not in realm_list.stdout
+    - ad_domain_target not in realm_list.stdout
 
 - name: Restrict logins to specific AD groups
   ansible.builtin.command:
-    cmd: "realm permit -g {{ ad_admins_group }}@{{ ad_domain }} {{ ad_sudoers_group }}@{{ ad_domain }}"
+    cmd: "realm permit -g {{ ad_admins_group }}@{{ ad_domain_target }} {{ ad_sudoers_group }}@{{ ad_domain_target }}"
   changed_when: true
   when:
     - not ad_join_simulate
-    - ad_domain not in realm_list.stdout
+    - ad_domain_target not in realm_list.stdout
 
 - name: Grant sudo to the AD sudoers group
   ansible.builtin.copy:
@@ -77,7 +77,7 @@
     group: root
     mode: '0440'
     content: |
-      %{{ ad_sudoers_group | replace(' ', '\\ ') }}@{{ ad_domain }} ALL=(ALL) ALL
+      %{{ ad_sudoers_group | replace(' ', '\\ ') }}@{{ ad_domain_target }} ALL=(ALL) ALL
     validate: '/usr/sbin/visudo -cf %s'
   when: not ad_join_simulate
 
@@ -90,4 +90,4 @@
 
 - name: Summary
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} {{ 'AD join simulated' if ad_join_simulate else 'joined to ' ~ ad_domain }}"
+    msg: "{{ inventory_hostname }} {{ 'AD join simulated' if ad_join_simulate else 'joined to ' ~ ad_domain_target }}"
