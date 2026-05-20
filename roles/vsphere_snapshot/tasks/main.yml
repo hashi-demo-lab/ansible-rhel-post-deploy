@@ -39,7 +39,7 @@
     password: "{{ _vsphere_pass }}"
     validate_certs: false
     datacenter: "{{ vsphere_datacenter }}"
-    folder: "{{ vsphere_folder | default(omit, true) }}"
+    folder: "{{ vsphere_folder }}"
     name: "{{ inventory_hostname }}"
     state: present
     snapshot_name: "{{ _snapshot_name }}"
