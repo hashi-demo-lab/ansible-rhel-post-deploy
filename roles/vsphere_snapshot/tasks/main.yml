@@ -19,7 +19,7 @@
   register: vsphere_creds_raw
   run_once: true
   delegate_to: localhost
-  no_log: false  # TEMP: keep visible while wiring is being validated
+  no_log: true
   when: not vsphere_simulate
 
 # Extract once + propagate to every host so the per-host snapshot task
@@ -46,7 +46,7 @@
     description: "{{ snapshot_description }} (TTL {{ snapshot_ttl_hours }}h)"
     memory_dump: "{{ snapshot_include_memory }}"
     quiesce: "{{ snapshot_quiesce }}"
-  no_log: false  # TEMP: surface vCenter errors during wiring
+  no_log: true
   when: not vsphere_simulate
   delegate_to: localhost
 

@@ -3,10 +3,9 @@
 # already builds VMs against.
 vsphere_hostname: "vcsa-98975.fe9dbbb3.asia-southeast1.gve.goog"
 vsphere_datacenter: "Datacenter"
-# vmware_guest_snapshot requires name + folder together, so name a real
-# folder. The VM module places VMs at the datacenter root, which is
-# the implicit "/{datacenter}/vm" folder in vSphere.
-vsphere_folder: "/Datacenter/vm"
+# Match the folder_path default in terraform-vsphere-single-virtual-machine
+# so the snapshot module finds the VM exactly where the module placed it.
+vsphere_folder: "Demo Workloads"
 
 # Snapshot policy
 snapshot_name_prefix: "pre-tf-change"
