@@ -7,6 +7,12 @@
   gather_facts: false
   connection: local
   become: false
+  vars:
+    # connection: local otherwise discovers /usr/libexec/platform-python on
+    # the EE base image — which doesn't have the hvac/PyVmomi libs the
+    # community.hashi_vault and community.vmware collections need. Pin to
+    # the Python ansible-playbook is running with (the runner venv).
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
   roles:
     - vsphere_snapshot
