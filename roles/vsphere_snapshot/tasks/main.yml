@@ -12,7 +12,7 @@
     path: "{{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
     validate_certs: false
   register: vsphere_creds_raw
-  no_log: true
+  no_log: false  # TEMP: surface the Vault error during initial wiring
   when: not vsphere_simulate
 
 # vault_read returns the full Vault response under .data — Vault wraps
