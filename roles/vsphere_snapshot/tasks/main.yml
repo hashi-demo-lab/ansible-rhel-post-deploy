@@ -3,7 +3,12 @@
   ansible.builtin.set_fact:
     _snapshot_name: "{{ snapshot_name_prefix }}-{{ lookup('pipe','date +%Y%m%dT%H%M%SZ') }}"
 
-- name: Read vCenter LDAP dynamic credentials from Vault
+# Single Vault lease shared across all hosts in the play. Each call to
+# ldap/creds/vsphere_access creates a fresh dynamic AD account; running
+# it once stops two parallel hosts colliding on the same templated
+# username (problem 6005 ENTRY_EXISTS in AD when the LDAP dynamic-role
+# username_template hashes to the same string).
+- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
   community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
@@ -12,17 +17,18 @@
     path: "{{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
     validate_certs: false
   register: vsphere_creds_raw
-  no_log: false  # TEMP: surface the Vault error during initial wiring
+  run_once: true
+  delegate_to: localhost
+  no_log: false  # TEMP: keep visible while wiring is being validated
   when: not vsphere_simulate
 
-# vault_read returns the full Vault response under .data — Vault wraps
-# the secret in its own data key, so the lease shape is
-# vsphere_creds_raw.data.data.{username,password}. Pin to _facts so a
-# version drift in the module surfaces here, not deeper in the role.
+# Extract once + propagate to every host so the per-host snapshot task
+# can reference the same lease.
 - name: Extract vSphere username/password from the lease
   ansible.builtin.set_fact:
-    _vsphere_user: "{{ vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username) }}"
+    _vsphere_user: "{{ (vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username)) ~ '@' ~ ad_domain | default('hashicorp.local') }}"
     _vsphere_pass: "{{ vsphere_creds_raw.data.data.password | default(vsphere_creds_raw.data.password) }}"
+  run_once: true
   no_log: true
   when: not vsphere_simulate
 
@@ -40,7 +46,7 @@
     description: "{{ snapshot_description }} (TTL {{ snapshot_ttl_hours }}h)"
     memory_dump: "{{ snapshot_include_memory }}"
     quiesce: "{{ snapshot_quiesce }}"
-  no_log: true
+  no_log: false  # TEMP: surface vCenter errors during wiring
   when: not vsphere_simulate
   delegate_to: localhost
 
