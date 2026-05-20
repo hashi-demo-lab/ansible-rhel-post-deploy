@@ -16,7 +16,9 @@ snapshot_ttl_hours: 24            # operator should garbage-collect after change
 # leased account scoped via the vsphere_access role.
 vault_addr: "https://vault.hashicorp.local:8200"
 vault_ldap_mount: "ldap"
-vault_vsphere_ldap_role: "dynamic/vsphere_access"
+# Role name as defined in the LDAP secrets engine. The Vault UI groups
+# this under a "dynamic" pane, but the API role name itself is flat.
+vault_vsphere_ldap_role: "vsphere_access"
 
 # Flip true if you want the playbook to print payload + exit clean instead
 # of actually hitting vCenter. Default false so the action does real work.
