@@ -5,12 +5,12 @@
       - servicenow_password | length > 0
     fail_msg: "servicenow_password is empty — set it as a sensitive extra_var on the job template"
 
-- name: Build a stable correlation ID for incident <-> CR linkage
+- name: Build a short timestamp for ticket subject lines
   ansible.builtin.set_fact:
-    _correlation_id: "tfc-drift-{{ tfc_workspace_id }}-{{ ansible_date_time.epoch | default(lookup('pipe','date +%s')) }}"
+    _ts: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
 
 # ─── Incident ────────────────────────────────────────────────────────────
-- name: Open ServiceNow incident for the drift
+- name: Open ServiceNow incident for the detected VM drift
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/incident"
     method: POST
@@ -22,32 +22,37 @@
       Content-Type: "application/json"
     body_format: json
     body:
-      short_description: "Drift detected in HCP Terraform workspace {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
+      short_description: "VM configuration drift — {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
       description: |
-        Automated incident — opened by Ansible Automation Platform via
-        Event-Driven Ansible in response to a drift event from HCP
-        Terraform.
+        AUTOMATED INCIDENT — opened by Ansible Automation Platform via
+        Event-Driven Ansible after HCP Terraform detected drift on a
+        managed VM workload.
 
-        Workspace      : {{ tfc_workspace_name }}  ({{ tfc_workspace_id }})
-        Organization   : {{ tfc_organization_name }}
-        Resources drift: {{ tfc_resources_drifted }}
-        Assessment URL : {{ tfc_assessment_result_url }}
+        Likely drift category : VM compute / size / configuration change
+                                (e.g. someone resized vCPU or memory
+                                directly in vCenter outside Terraform)
 
-        A related Change Request will be raised for CAB approval.
-        Once the CR is approved, AAP will fire the remediation
-        terraform apply.
+        HCP Terraform workspace : {{ tfc_workspace_name }}
+        Workspace ID            : {{ tfc_workspace_id }}
+        Organization            : {{ tfc_organization_name }}
+        Resources drifted       : {{ tfc_resources_drifted }}
+        Assessment result       : {{ tfc_assessment_result_url }}
+
+        A related Change Request will be opened for CAB approval.
+        Once approved, AAP will fire the remediation `terraform apply`
+        against the workspace above.
       category: "{{ servicenow_category }}"
       impact: "{{ servicenow_change_impact }}"
       urgency: "{{ servicenow_change_impact }}"
-      correlation_id: "{{ _correlation_id }}"
-      correlation_display: "HCP Terraform drift"
+      correlation_id: "{{ tfc_workspace_id }}"
+      correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
     status_code: 201
     return_content: true
   register: incident_response
   no_log: true
 
 # ─── Change Request ──────────────────────────────────────────────────────
-- name: Open ServiceNow change request for the drift remediation
+- name: Open ServiceNow change request for the remediation
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/change_request"
     method: POST
@@ -59,31 +64,40 @@
       Content-Type: "application/json"
     body_format: json
     body:
-      short_description: "Remediate HCP Terraform drift in {{ tfc_workspace_name }}"
+      short_description: "Reconcile VM compute drift via Terraform — {{ tfc_workspace_name }}"
       description: |
-        Remediation Change Request — created by AAP / EDA in response
-        to a drift event from HCP Terraform.
+        REMEDIATION CHANGE REQUEST — created by AAP / EDA in response to
+        a drift event from HCP Terraform.
 
-        Workspace      : {{ tfc_workspace_name }}  ({{ tfc_workspace_id }})
-        Organization   : {{ tfc_organization_name }}
-        Resources drift: {{ tfc_resources_drifted }}
-        Assessment URL : {{ tfc_assessment_result_url }}
-        Linked incident: {{ incident_response.json.result.number }}
+        Scope          : Re-apply the declared VM configuration in
+                         HCP Terraform to reverse any out-of-band changes
+                         (e.g. CPU / memory / tags edited directly in
+                         vCenter, or via vMotion / a console operator).
+        Method         : On approval, AAP fires `terraform apply` against
+                         workspace {{ tfc_workspace_name }} via the
+                         HCP Terraform API. Sentinel policy still gates
+                         the apply.
+        Reversibility  : Snapshot taken automatically on the previous
+                         lifecycle change (see linked incident notes).
 
-        On approval, AAP will trigger a `terraform apply` against
-        the workspace above via the HCP Terraform API.
+        HCP Terraform workspace : {{ tfc_workspace_name }}
+        Workspace ID            : {{ tfc_workspace_id }}
+        Organization            : {{ tfc_organization_name }}
+        Resources drifted       : {{ tfc_resources_drifted }}
+        Assessment result       : {{ tfc_assessment_result_url }}
+        Linked incident         : {{ incident_response.json.result.number }}
 
-        # CORRELATION DATA — DO NOT EDIT — used by the EDA callback
-        # to identify the workspace to apply.
-        # tfc_workspace_id={{ tfc_workspace_id }}
+        CAB approver action: open this CR in ServiceNow and click
+        "Approve" — the SN business rule will then post the approval
+        event back to AAP/EDA, which will trigger the remediation apply.
       type: "{{ servicenow_change_type }}"
       category: "{{ servicenow_category }}"
       risk: "{{ servicenow_change_risk }}"
       impact: "{{ servicenow_change_impact }}"
-      correlation_id: "{{ _correlation_id }}"
-      correlation_display: "HCP Terraform drift remediation"
-      u_tfc_workspace_id: "{{ tfc_workspace_id }}"
-      u_tfc_workspace_name: "{{ tfc_workspace_name }}"
+      # Standard SN correlation fields — the SN business rule on the
+      # CR's approval transition reads these and forwards them to EDA.
+      correlation_id: "{{ tfc_workspace_id }}"
+      correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
     status_code: 201
     return_content: true
   register: cr_response
@@ -92,9 +106,9 @@
 - name: Show ticket details (demo visibility)
   ansible.builtin.debug:
     msg:
-      - "ServiceNow tickets opened for drift on {{ tfc_workspace_name }}:"
-      - "  Incident : {{ incident_response.json.result.number }}  (sys_id {{ incident_response.json.result.sys_id }})"
-      - "  Change   : {{ cr_response.json.result.number }}  (sys_id {{ cr_response.json.result.sys_id }})"
+      - "ServiceNow tickets opened for {{ tfc_workspace_name }} drift:"
+      - "  Incident : {{ incident_response.json.result.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ incident_response.json.result.sys_id }})"
+      - "  Change   : {{ cr_response.json.result.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ cr_response.json.result.sys_id }})"
       - "  Approval : {{ cr_response.json.result.approval }}  (waiting for CAB)"
-      - "  Correlation ID: {{ _correlation_id }}"
-      - "  Next step : CAB approval in ServiceNow triggers the EDA webhook back to AAP"
+      - "  correlation_id: {{ tfc_workspace_id }}"
+      - "  Next step : approve the CR in ServiceNow — SN business rule fires the EDA webhook back to AAP"
