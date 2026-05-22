@@ -1,7 +1,10 @@
 ---
 # Reboots each VM via VMware Tools (graceful, in-guest reboot).
 - name: Reboot VMs via VMware Tools
-  hosts: all
+  # Defaults to "all" so legacy callers keep current behaviour. TFC
+  # actions wrap this with extra_vars `target_host: <hostname>` to
+  # scope to a single VM.
+  hosts: "{{ target_host | default('all') }}"
   gather_facts: false
   connection: local
   become: false

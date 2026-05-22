@@ -1,7 +1,10 @@
 ---
 # Powers on each VM in inventory via vCenter.
 - name: Power on VMs via vCenter
-  hosts: all
+  # Defaults to "all" so legacy callers keep current behaviour. TFC
+  # actions wrap this with extra_vars `target_host: <hostname>` to
+  # scope to a single VM.
+  hosts: "{{ target_host | default('all') }}"
   gather_facts: false
   connection: local
   become: false

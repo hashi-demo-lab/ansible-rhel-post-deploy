@@ -2,7 +2,10 @@
 # Removes ALL snapshots from each VM. Cleanup after a change window
 # closes — vSphere consolidates the disk chain after this.
 - name: Remove all snapshots from VMs
-  hosts: all
+  # Defaults to "all" so legacy callers keep current behaviour. TFC
+  # actions wrap this with extra_vars `target_host: <hostname>` to
+  # scope to a single VM.
+  hosts: "{{ target_host | default('all') }}"
   gather_facts: false
   connection: local
   become: false

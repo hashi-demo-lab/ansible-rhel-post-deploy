@@ -3,7 +3,11 @@
 # Localhost-delegated; pulls vCenter creds from Vault's LDAP dynamic
 # secrets engine.
 - name: Power off VMs via vCenter
-  hosts: all
+  # Defaults to "all" so legacy callers (no extra_var) keep current
+  # behaviour. TFC actions wrap this with extra_vars `target_host:
+  # <hostname>` to scope to a single VM. See better-together-vm-lifecycle
+  # main.tf — action.aap_job_launch.vsphere_power_off.
+  hosts: "{{ target_host | default('all') }}"
   gather_facts: false
   connection: local
   become: false

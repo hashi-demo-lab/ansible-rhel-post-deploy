@@ -2,7 +2,10 @@
 # Reverts each VM to a named snapshot (or the most recently created one
 # if no name supplied). Pairs with pre-vsphere-snapshot for rollback.
 - name: Revert VMs to a snapshot
-  hosts: all
+  # Defaults to "all" so legacy callers keep current behaviour. TFC
+  # actions wrap this with extra_vars `target_host: <hostname>` to
+  # scope to a single VM.
+  hosts: "{{ target_host | default('all') }}"
   gather_facts: false
   connection: local
   become: false
