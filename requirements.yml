@@ -13,3 +13,4 @@ collections:
   # has an ansible.builtin.pip task to install it at runtime if the
   # EE doesn't already ship it.
   - name: hashicorp.terraform
+    version: "2.0.0"
