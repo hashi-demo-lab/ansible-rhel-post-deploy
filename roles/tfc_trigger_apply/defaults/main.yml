@@ -25,3 +25,15 @@ tfc_poll_max_attempts: 60          # 10 minutes default
 # payload (event.payload.approver, event.payload.cr_number).
 tfc_approver: ""
 tfc_cr_number: ""
+# Sys-id of the approved CR. When set, the audit comment includes a
+# deep link (nav_to.do?uri=change_request.do?sys_id=…). When empty the
+# comment falls back to the CR number alone.
+tfc_cr_sys_id: ""
+
+# ServiceNow lookup for the audit comment. When servicenow_instance_url
+# is set AND the SN creds Vault path resolves, the role queries SN for
+# the incident sibling of the CR (matched by correlation_id) and
+# includes a clickable link in the run's audit comment. Failure to look
+# up does NOT fail the play — the comment falls back to "no incident".
+servicenow_instance_url: "https://dev389292.service-now.com"
+vault_servicenow_secret_path: "servicenow/dev"
