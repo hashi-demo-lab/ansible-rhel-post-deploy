@@ -19,7 +19,7 @@
   register: vsphere_creds_raw
   run_once: true
   delegate_to: localhost
-  no_log: true
+  no_log: false  # TEMP: diagnose Vault read failure on run-RX1LXVUjd3ZutwJa
   when: not vsphere_simulate
 
 # Extract once + propagate to every host so the per-host snapshot task
