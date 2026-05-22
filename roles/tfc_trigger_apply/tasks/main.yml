@@ -1,10 +1,28 @@
 ---
-- name: Sanity-check inputs
+- name: Sanity-check workspace id
   ansible.builtin.assert:
     that:
-      - tfc_token | length > 0
       - tfc_workspace_id | length > 0
-    fail_msg: "tfc_token and tfc_workspace_id must both be set (extra_vars from EDA)"
+    fail_msg: "tfc_workspace_id must be set (extra_var from EDA)"
+
+- name: Read HCP Terraform API token from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_tfc_secret_path }}"
+    validate_certs: false
+  register: tfc_creds
+  no_log: true
+
+- name: Note we have the token (demo visibility — no secret printed)
+  ansible.builtin.debug:
+    msg:
+      - "HCP Terraform token read from Vault"
+      - "  path : {{ vault_kv_mount }}/{{ vault_tfc_secret_path }}"
+      - "  api  : {{ tfc_api_url }}"
 
 # ─── Create the run ──────────────────────────────────────────────────────
 - name: Create a new HCP Terraform run on workspace {{ tfc_workspace_id }}
@@ -12,7 +30,7 @@
     url: "{{ tfc_api_url }}/runs"
     method: POST
     headers:
-      Authorization: "Bearer {{ tfc_token }}"
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
@@ -49,7 +67,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
     method: GET
     headers:
-      Authorization: "Bearer {{ tfc_token }}"
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
   register: run_poll
   retries: "{{ tfc_poll_max_attempts }}"
   delay: "{{ tfc_poll_interval_seconds }}"
@@ -72,7 +90,7 @@
 
 - name: Fail if plan errored
   ansible.builtin.fail:
-    msg: "TFC run {{ _tfc_run_id }} errored at plan — see {{ tfc_api_url | regex_replace('/api/v2$', '') }}/app/{{ run_poll.json.data.attributes['organization'] | default('?') }}/runs/{{ _tfc_run_id }}"
+    msg: "TFC run {{ _tfc_run_id }} errored at plan"
   when: run_poll.json.data.attributes.status in ['errored', 'canceled', 'discarded']
 
 # ─── Confirm apply (skipped if workspace has auto-apply on) ─────────────
@@ -81,7 +99,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/actions/apply"
     method: POST
     headers:
-      Authorization: "Bearer {{ tfc_token }}"
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
@@ -103,7 +121,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
     method: GET
     headers:
-      Authorization: "Bearer {{ tfc_token }}"
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
   register: apply_poll
   retries: "{{ tfc_poll_max_attempts }}"
   delay: "{{ tfc_poll_interval_seconds }}"

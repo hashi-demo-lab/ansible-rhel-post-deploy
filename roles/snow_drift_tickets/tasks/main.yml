@@ -1,21 +1,31 @@
 ---
-- name: Sanity-check that the SN password is set
-  ansible.builtin.assert:
-    that:
-      - servicenow_password | length > 0
-    fail_msg: "servicenow_password is empty — set it as a sensitive extra_var on the job template"
+- name: Read ServiceNow credentials from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_servicenow_secret_path }}"
+    validate_certs: false
+  register: snow_creds
+  no_log: true
 
-- name: Build a short timestamp for ticket subject lines
-  ansible.builtin.set_fact:
-    _ts: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+- name: Show what Vault returned (demo visibility — no secrets)
+  ansible.builtin.debug:
+    msg:
+      - "ServiceNow credentials read from Vault"
+      - "  path     : {{ vault_kv_mount }}/{{ vault_servicenow_secret_path }}"
+      - "  username : {{ snow_creds.secret.username }}"
+      - "  instance : {{ servicenow_instance_url }}"
 
 # ─── Incident ────────────────────────────────────────────────────────────
 - name: Open ServiceNow incident for the detected VM drift
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/incident"
     method: POST
-    user: "{{ servicenow_username }}"
-    password: "{{ servicenow_password }}"
+    user: "{{ snow_creds.secret.username }}"
+    password: "{{ snow_creds.secret.password }}"
     force_basic_auth: true
     headers:
       Accept: "application/json"
@@ -56,8 +66,8 @@
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/change_request"
     method: POST
-    user: "{{ servicenow_username }}"
-    password: "{{ servicenow_password }}"
+    user: "{{ snow_creds.secret.username }}"
+    password: "{{ snow_creds.secret.password }}"
     force_basic_auth: true
     headers:
       Accept: "application/json"

@@ -2,12 +2,11 @@
 # ServiceNow target. Override at the JT level for any other instance.
 servicenow_instance_url: "https://dev389292.service-now.com"
 
-# Auth — for the dev instance we use a basic auth admin user. In a real
-# bank rollout these come from Vault (KV or OAuth client credentials).
-# Setting them as `survey` or extra_vars on the JT lets you mark the
-# password sensitive in the AAP UI.
-servicenow_username: "admin"
-servicenow_password: ""        # MUST be supplied via JT extra_vars (sensitive)
+# Vault path for ServiceNow credentials. Expected KV v2 secret shape:
+#   { username: <admin or service account>, password: <password> }
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_servicenow_secret_path: "servicenow/dev"
 
 # CR / incident defaults — match the dev instance's available choices.
 servicenow_assignment_group: ""             # left blank for dev

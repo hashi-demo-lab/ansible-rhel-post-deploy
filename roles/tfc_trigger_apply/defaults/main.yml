@@ -2,14 +2,15 @@
 # HCP Terraform endpoint
 tfc_api_url: "https://app.terraform.io/api/v2"
 
-# Token used to create the run. Set as a sensitive extra_var on the JT,
-# or wire an AAP credential — never commit a real token.
-tfc_token: ""
+# Vault path for the HCP Terraform user/team API token. KV v2 secret
+# expected shape:  { token: <hcp tf token> }
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_kv_mount: secrets
+vault_tfc_secret_path: "tfc/api"
 
 # Workspace identification — populated by the EDA action_args when the
-# rulebook fires this JT (extra_vars). The CR carries u_tfc_workspace_id
-# in its custom field, the SN business rule posts that to EDA, and EDA
-# passes it through here.
+# rulebook fires this JT (extra_vars). The CR carries the workspace ID
+# in its correlation_id field; SN business rule forwards it here.
 tfc_workspace_id: ""
 
 # Run config
