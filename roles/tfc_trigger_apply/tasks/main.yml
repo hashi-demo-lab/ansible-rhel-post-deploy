@@ -39,6 +39,60 @@
       - "  path : {{ vault_kv_mount }}/{{ vault_tfc_secret_path }}"
       - "  api  : {{ tfc_api_url }}"
 
+# ─── ServiceNow incident lookup (for the audit comment) ─────────────────
+# Find the incident that drift-create-snow-tickets opened alongside this
+# CR — both records share the workspace_id in their correlation_id. Best
+# effort: any failure here is logged and ignored, so a SN outage doesn't
+# block the TFC apply.
+- name: Read ServiceNow credentials from Vault (for incident lookup)
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    engine_mount_point: "{{ vault_kv_mount }}"
+    path: "{{ vault_servicenow_secret_path }}"
+    validate_certs: false
+  register: sn_creds
+  no_log: true
+  failed_when: false
+
+- name: Look up the related incident on ServiceNow (best-effort)
+  ansible.builtin.uri:
+    url: "{{ servicenow_instance_url }}/api/now/table/incident?sysparm_query=correlation_id={{ tfc_workspace_id }}&sysparm_limit=1&sysparm_fields=number,sys_id"
+    method: GET
+    user: "{{ sn_creds.secret.username }}"
+    password: "{{ sn_creds.secret.password }}"
+    force_basic_auth: true
+    headers:
+      Accept: "application/json"
+    return_content: true
+    status_code: [200]
+    validate_certs: false
+  register: sn_incident_lookup
+  failed_when: false
+  no_log: true
+  when:
+    - sn_creds.secret is defined
+    - servicenow_instance_url | length > 0
+    - tfc_workspace_id | length > 0
+
+- name: Resolve incident number + sys_id for the audit comment
+  ansible.builtin.set_fact:
+    _sn_incident_number: "{{ (sn_incident_lookup.json.result | first).number | default('') }}"
+    _sn_incident_sys_id: "{{ (sn_incident_lookup.json.result | first).sys_id | default('') }}"
+  when:
+    - sn_incident_lookup is defined
+    - sn_incident_lookup.status | default(0) == 200
+    - (sn_incident_lookup.json.result | default([])) | length > 0
+
+- name: Note incident lookup outcome (demo visibility)
+  ansible.builtin.debug:
+    msg: >-
+      ServiceNow incident lookup
+      {{ 'OK: ' ~ (_sn_incident_number | default('?')) if (_sn_incident_number | default('')) | length > 0
+         else 'no matching incident — audit comment will omit incident line' }}
+
 # ─── Create the run (direct API, sends message reliably) ────────────────
 - name: Create a new HCP Terraform run on workspace {{ tfc_workspace_id }}
   ansible.builtin.uri:
@@ -77,6 +131,26 @@
       - "  message   : {{ tfc_run_message }}"
 
 # ─── Audit comment on the run ───────────────────────────────────────────
+# Build clickable CR and incident links when sys_ids are known. Falls
+# back to plain CR-number text when EDA didn't pass cr_sys_id (older
+# rulebook) and to no-incident-line when SN lookup failed or returned
+# nothing.
+- name: Build SN deep-link fragments for the audit comment
+  ansible.builtin.set_fact:
+    _cr_link: >-
+      {%- if (tfc_cr_sys_id | default('')) | length > 0 -%}
+      [{{ tfc_cr_number }}]({{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ tfc_cr_sys_id }})
+      {%- elif (tfc_cr_number | default('')) | length > 0 -%}
+      {{ tfc_cr_number }}
+      {%- else -%}
+      (not provided)
+      {%- endif -%}
+    _incident_link: >-
+      {%- if (_sn_incident_sys_id | default('')) | length > 0 -%}
+      [{{ _sn_incident_number }}]({{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ _sn_incident_sys_id }})
+      {%- else -%}
+      {%- endif -%}
+
 - name: Post audit comment on the run
   ansible.builtin.uri:
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/comments"
@@ -92,10 +166,11 @@
           body: |
             **Drift remediation — authorised via ServiceNow CAB approval**
 
-            - ServiceNow CR : {{ tfc_cr_number | default('(not provided)') }}
-            - Approved by   : {{ tfc_approver | default('(unknown)') }}
-            - Triggered by  : AAP / Event-Driven Ansible (activation `snow-cr-approval`)
-            - Job template  : `tfc-trigger-apply`
+            - Change       : {{ _cr_link }}
+            - Incident     : {{ _incident_link | default('(no related incident found)', true) }}
+            - Approved by  : {{ tfc_approver | default('(unknown)') }}
+            - Triggered by : AAP / Event-Driven Ansible (activation `snow-cr-approval`)
+            - Job template : `tfc-trigger-apply`
     status_code: 201
   no_log: true
 
