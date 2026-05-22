@@ -1,10 +1,37 @@
-# Closed-loop drift remediation with HCP Terraform, AAP/EDA & ServiceNow
+# Closed-loop drift remediation — TFC × AAP/EDA × ServiceNow
 
 End-to-end technical reference for the workflow that detects out-of-band
 changes to vSphere VMs managed by HCP Terraform, opens a ServiceNow
 incident + change request for CAB approval, and — once approved —
 fires the remediation `terraform apply` automatically through
 Event-Driven Ansible (EDA).
+
+This is the doc to read **before** modifying anything. Every moving
+part (cloudflare tunnel, port-forward, SN business rule, AAP cred,
+ansible.cfg quirk, upstream bug) is captured below so you can pick up
+the demo cold.
+
+---
+
+## TL;DR — pre-flight checklist
+
+If you've just opened a fresh session and want to run the demo, verify
+the following in order:
+
+| # | Thing | Where to check | Healthy state |
+|---|-------|---------------|---------------|
+| 1 | TFC → EDA cloudflare tunnel (port 5004) | `app.terraform.io/.../notification-configurations/nc-2Q8Lhk54ahNRVoRd` | URL set, enabled = true |
+| 2 | SN → EDA cloudflare tunnel (port 5005) | local `cloudflared` + `oc port-forward` running | tunnel URL responds 200 to `POST /` |
+| 3 | EDA activation 17 (`tfc-notification-drift`) | `aap-aap…/decisions/rulebook-activations/17/details` | status `running`, git_hash matches `terraform-eda-example` HEAD |
+| 4 | EDA activation 18 (`snow-cr-approval`) | activation 18 details | status `running`, git_hash matches HEAD |
+| 5 | AAP project 57 (`ansible-rhel-post-deploy`) | controller projects UI | last sync `successful`, git_hash matches HEAD |
+| 6 | Vault paths populated | `secrets/servicenow/dev`, `secrets/tfc/api` | both have non-PLACEHOLDER values |
+| 7 | SN business rules in place | dev389292 → `sys_script` | `Notify EDA on CR approval` (single, not duplicate!) + `AAP drift remediation - auto-approve secondary approvers` both `active=true` |
+| 8 | SN Outbound REST | dev389292 → `sys_rest_message` | `AAP EDA - CR approval` exists, endpoint = current tunnel #2 URL |
+
+If any of these is off, jump to the relevant component section.
+
+---
 
 ## 1. What it does
 
@@ -17,16 +44,11 @@ Banks running RHEL workloads on vSphere need to:
 4. **Apply** the declared state back over the drift, automatically,
    right after the human approval lands.
 
-The flow shown below ties HCP Terraform's drift detection to AAP/EDA
-and back to HCP Terraform, with ServiceNow as the approval gate in
-the middle.
-
 ## 2. Architecture
 
 ```
                                                             ╔═══════════════════════════╗
                                                             ║   HCP Terraform Cloud     ║
-                                                            ║                           ║
                                                             ║  workspace                ║
                                                             ║  better-together-vm-      ║
                                                             ║  lifecycle-dev            ║
@@ -34,29 +56,30 @@ the middle.
                                                             ╚═════════╤═════════════════╝
                                                                       │
                               ┌────[1] drift assessment ──────────────┘
-                              │       webhook (HMAC)
+                              │       webhook (HMAC-signed)
                               ▼
               ┌───────────────────────────────────────┐
-              │ cloudflared tunnel #1 (long-running)  │  https://depot-molecules-award-submit.trycloudflare.com
-              │ → AAP EDA event stream "tfe notifs"   │
+              │ cloudflare tunnel #1 (long-running)   │  https://depot-molecules-award-submit.trycloudflare.com
+              │ TFC notif config nc-2Q8Lhk54ahNRVoRd  │
+              │ tunnels →  activation 17 webhook:5004 │
               └───────────────┬───────────────────────┘
-                              │
                               ▼
               ┌───────────────────────────────────────┐
               │ EDA activation #17                    │
               │  tfc-notification-drift               │
               │  rulebook  tfc-notification-rules     │
               │  rule "Drift Detected" →              │
-              │                                       │
               └───────────────┬───────────────────────┘
                               │ run_job_template
                               ▼
               ┌───────────────────────────────────────┐                ┌───────────────┐
-              │ AAP JT 90  drift-create-snow-tickets  │  ─ Vault ───>  │ HashiCorp     │
-              │  role:  snow_drift_tickets            │  vault_kv2_get │ Vault         │
-              │  POSTs Incident + Change Request      │                │  KV v2 mount  │
-              └───────────────┬───────────────────────┘                │   /secrets    │
-                              │ REST API                                └───────┬───────┘
+              │ AAP JT 90  drift-create-snow-tickets  │ ─ Vault ─────> │ HashiCorp     │
+              │  role: snow_drift_tickets             │ kv_v2 read     │ Vault         │
+              │  POSTs incident + Change Request      │                │  /secrets/*   │
+              │  + assignment_group=Software          │                └───────┬───────┘
+              │  + assigned_to=david.loo              │                        │
+              └───────────────┬───────────────────────┘                        │
+                              │ REST API                                       │
                               ▼                                                │
               ╔═══════════════════════════════════════╗                        │
               ║ ServiceNow dev389292                  ║                        │
@@ -64,30 +87,51 @@ the middle.
               ║  Incident INC0010xxx                  ║                        │
               ║  Change Request CHG0030xxx (Normal)   ║                        │
               ║   ├─ correlation_id     = ws-…        ║                        │
-              ║   ├─ correlation_display = ws name   ║                         │
+              ║   ├─ correlation_display = ws name    ║                        │
+              ║   ├─ assignment_group = Software      ║                        │
+              ║   ├─ assigned_to     = david.loo      ║                        │
               ║   └─ approval state: → not_requested  ║                        │
               ║                                       ║                        │
-              ║  Business Rules (auto-installed):     ║                        │
-              ║   [a] AAP drift auto-approve secondary║                        │
-              ║       CAB-group approvers             ║                        │
-              ║   [b] Notify EDA on CR approval       ║                        │
+              ║  Active business rules:               ║                        │
+              ║   • Notify EDA on CR approval         ║                        │
+              ║     (on change_request, fires on      ║                        │
+              ║      approvalCHANGESTOapproved)       ║                        │
+              ║   • AAP drift remediation - auto-     ║                        │
+              ║     approve secondary approvers       ║                        │
+              ║     (on sysapproval_approver, fires   ║                        │
+              ║      on insert/update of state)       ║                        │
               ║                                       ║                        │
-              ║   [3] Human approves CR in UI         ║                        │
-              ║       (single click — Change Mgr)     ║                        │
-              ║       approval flips to "approved"    ║                        │
-              ║   [b] business rule fires Outbound    ║                        │
-              ║       REST Message "AAP EDA – CR      ║                        │
-              ║       approval"                       ║                        │
+              ║   [3] Operator clicks Request Approval║                        │
+              ║       SN creates ~11 approval records ║                        │
+              ║       auto-approve rule resolves      ║                        │
+              ║       CAB-group ones, leaves Change   ║                        │
+              ║       Manager (david.loo) pending     ║                        │
+              ║                                       ║                        │
+              ║   [4] Operator clicks Approve         ║                        │
+              ║       on david.loo's approval task    ║                        │
+              ║       → CR.approval = approved        ║                        │
+              ║                                       ║                        │
+              ║   [5] Notify EDA business rule fires  ║                        │
+              ║       Guards:                         ║                        │
+              ║       a) no pending approvals         ║                        │
+              ║       b) non-CAB approver found       ║                        │
+              ║       resolves approver from          ║                        │
+              ║       sysapproval_approver record     ║                        │
+              ║       (david.loo / "David Loo")       ║                        │
+              ║                                       ║                        │
+              ║   POSTs Outbound REST →               ║                        │
+              ║   "AAP EDA - CR approval"             ║                        │
               ╚════════════════╤══════════════════════╝                        │
                                │  POST {cr_number,                             │
-                               │        correlation_id (ws-…),                 │
-                               │        approver, …}                           │
+                               │        correlation_id,                        │
+                               │        approver, approver_display, …}         │
                                ▼                                               │
               ┌───────────────────────────────────────┐                        │
-              │ cloudflared tunnel #2 (port 5005)     │                        │
-              │ → activation #18 webhook on 5005      │                        │
+              │ cloudflare tunnel #2 (manual)         │                        │
+              │  https://*.trycloudflare.com          │                        │
+              │  (URL changes on every restart!)      │                        │
+              │  tunnels → activation 18 webhook:5005 │                        │
               └───────────────┬───────────────────────┘                        │
-                              │                                                │
                               ▼                                                │
               ┌───────────────────────────────────────┐                        │
               │ EDA activation #18                    │                        │
@@ -95,21 +139,20 @@ the middle.
               │  rulebook  snow-cr-approval-rules     │                        │
               │  rule "CR Approved → trigger apply" → │                        │
               └───────────────┬───────────────────────┘                        │
-                              │ run_job_template                               │
+                              │ run_job_template + extra_vars                  │
                               ▼                                                │
               ┌───────────────────────────────────────┐                        │
               │ AAP JT 91  tfc-trigger-apply          │ ─ Vault ────────────── │
-              │  role:  tfc_trigger_apply             │ vault_kv2_get          │
-              │  [a] POST /runs        → create       │                        │
-              │  [b] POST /comments    → audit trail  │                        │
-              │  [c] poll plan         → wait         │                        │
-              │  [d] optionally confirm → apply       │                        │
-              │  [e] poll apply        → terminal     │                        │
+              │  role: tfc_trigger_apply              │ kv_v2 read             │
+              │  [a] POST /runs       → create + msg  │                        │
+              │  [b] POST /comments   → audit trail   │                        │
+              │  [c] poll plan        → wait          │                        │
+              │  [d] confirm-apply if needed          │                        │
+              │  [e] poll apply       → terminal      │                        │
               └───────────────┬───────────────────────┘                        │
                               │ HCP TF REST API                                │
-                              │                                                │
                               ▼                                                │
-                       ╚════════════════╗                                      │
+                       ╔════════════════╗                                      │
                        ║  HCP Terraform ║ ← run queued, applied                │
                        ║  applies VM    ║   drift reconciled                   │
                        ║  config back   ║                                      │
@@ -127,33 +170,57 @@ the middle.
 | Workspace | `better-together-vm-lifecycle-dev` |
 | Workspace ID | `ws-JxUw2w1CoWwCRwZe` |
 | Auto-apply | **true** — runs apply automatically once plan succeeds |
-| Notification config | `EDA drift notification` (id `nc-2Q8Lhk54ahNRVoRd`) <br>triggers: `assessment:drifted` <br>destination URL: `https://depot-molecules-award-submit.trycloudflare.com` |
-| Health assessments | Required (this is what produces the `assessment:drifted` event) |
+| Notification config | `EDA drift notification` (id `nc-2Q8Lhk54ahNRVoRd`) <br>triggers: `assessment:drifted` <br>destination URL: cloudflare tunnel #1 |
+| Health assessments | required (this is what produces the `assessment:drifted` event) |
 
-### 3.2 Cloudflare quick tunnels (two of them)
+### 3.2 Cloudflare tunnels (two of them)
 
-Both are `trycloudflare.com` quick tunnels (no Cloudflare account needed)
-serving as a public ingress in front of internal AAP EDA event streams.
+Both are `trycloudflare.com` **quick tunnels** — free, no Cloudflare
+account required, BUT **ephemeral**. The URL changes every time
+`cloudflared` is restarted.
 
-| Direction | Public URL | Tunnels to | Used by |
-|-----------|------------|------------|---------|
-| TFC → EDA | `https://depot-molecules-award-submit.trycloudflare.com` | EDA event stream `tfe notifications` (HMAC, port 5004) | Workspace notification config |
-| SN → EDA | `https://guns-plains-main-grocery.trycloudflare.com` | activation 18 webhook source, port 5005 | SN Outbound REST Message |
+| # | Direction | Public URL (current) | Tunnels to | Used by |
+|---|-----------|----------------------|------------|---------|
+| 1 | TFC → EDA | `https://depot-molecules-award-submit.trycloudflare.com` | activation 17 webhook source, port 5004 (HMAC) | TFC workspace notification config `nc-2Q8Lhk54ahNRVoRd` |
+| 2 | SN → EDA | `https://guns-plains-main-grocery.trycloudflare.com` (will change on restart) | activation 18 webhook source, port 5005 (no auth) | SN Outbound REST Message `AAP EDA - CR approval` |
 
-**Both URLs are ephemeral.** They survive only while the `cloudflared`
-processes are running. If a process dies, the URL changes and the
-corresponding notification config / Outbound REST endpoint must be
-updated.
+**How tunnel #2 is set up** (the one you'll most likely have to
+restart):
+
+```bash
+# 1. Find the activation-job pod for activation 18 (pod name changes
+#    every time the activation restarts)
+POD=$(oc -n aap get pods -o name | grep activation-job-18 | head -1 | sed 's|pod/||')
+
+# 2. Port-forward 5005 from that pod (kill any existing first)
+pkill -f 'port-forward.*5005'
+oc -n aap port-forward pod/$POD 5005:5005 &
+
+# 3. Start the cloudflare quick tunnel against localhost:5005
+cloudflared tunnel --url http://localhost:5005
+
+# Note the new https://*.trycloudflare.com URL it prints, then update
+# the SN Outbound REST Message endpoint:
+curl -u "admin:pwKi%D6I9-Ja" -X PATCH \
+  https://dev389292.service-now.com/api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b \
+  -H 'Content-Type: application/json' \
+  -d "{\"rest_endpoint\": \"<new-url>\"}"
+```
+
+Both `cloudflared` processes must stay running for the loop to work.
+For a long demo session, run them in `tmux` / `screen` or move to a
+named Cloudflare tunnel.
 
 ### 3.3 AAP / EDA — IDs
 
 | Object | Type | ID | Notes |
 |--------|------|----|----|
-| `ansible-rhel-post-deploy` | AAP project | 57 | Source: `github.com/hashi-demo-lab/ansible-rhel-post-deploy` |
-| `terraform_eda_run_task` | EDA project | 1 | Source: `github.com/tfo-apj-demos/terraform-eda-example` |
+| `ansible-rhel-post-deploy` | AAP project | 57 | Source `github.com/hashi-demo-lab/ansible-rhel-post-deploy` |
+| `terraform_eda_run_task` | EDA project | 1 | Source `github.com/tfo-apj-demos/terraform-eda-example` |
 | Execution Environment | AAP EE | 4 | `quay.io/aaroneautomate/hashi-demo-ee:latest` — has `community.hashi_vault`, `community.vmware` |
 | GCVE Decision Environment | EDA DE | 3 | Used by EDA activations |
-| `HashiCorp Vault Access` | AAP cred | 19 | AppRole — injects `role_id`/`secret_id` env vars |
+| `HashiCorp Vault Access` | AAP cred | 19 | AppRole — injects `role_id` / `secret_id` env vars |
+| `Local Automation Hub` | AAP cred | 27 | Galaxy NG token at `/api/galaxy/v3/auth/token/` — attached to org 1's `galaxy_credentials` |
 | `AAP` | EDA cred | 7 | "Red Hat AAP" credential — lets EDA call the AAP controller |
 | `drift-create-snow-tickets` | AAP JT | 90 | inventory 363 baked in, Vault cred 19 attached |
 | `tfc-trigger-apply` | AAP JT | 91 | inventory 363 baked in, Vault cred 19 attached |
@@ -164,14 +231,31 @@ updated.
 
 ### 3.4 ServiceNow dev389292
 
+URL: `https://dev389292.service-now.com`  
+Admin login: `admin / pwKi%D6I9-Ja` (dev only — public PDI)
+
 | Object | Type | sys_id | Notes |
 |--------|------|--------|----|
-| `AAP EDA - CR approval` | Outbound REST Message | `20cbe2f8938583105e8930018bba103b` | Endpoint = SN→EDA tunnel URL |
-| POST function | sys_rest_message_fn | `46db6e3c938583105e8930018bba103f` | Body template with `${cr_number}`, `${correlation_id}`, etc. |
-| Content-Type header | sys_rest_message_fn_headers | `12db6e3c938583105e8930018bba1048` | `application/json` |
-| `Notify EDA on CR approval` | Business Rule (sys_script) | `611c66f8938583105e8930018bba101f` | Fires `after` an `update` on `change_request` when `approvalCHANGESTOapproved` |
-| `AAP drift remediation - auto-approve secondary approvers` | Business Rule | `e15213f4938983105e8930018bba101b` | Auto-approves any CAB-group approval on drift CRs (correlation_id starts `ws-`) |
-| Normal change model | chg_model | `007c4001c343101035ae3f52c1d3aeb2` | OOTB. Used as `chg_model` on drift CRs. |
+| `AAP EDA - CR approval` | Outbound REST Message | `20cbe2f8938583105e8930018bba103b` | endpoint = tunnel #2 URL |
+| POST function | sys_rest_message_fn | `46db6e3c938583105e8930018bba103f` | body sends `cr_number`, `cr_sys_id`, `correlation_id`, `workspace_name`, `approver`, `approver_display`, `approval_state` |
+| `Content-Type: application/json` header | sys_rest_message_fn_headers | `12db6e3c938583105e8930018bba1048` | on the POST function |
+| **`Notify EDA on CR approval`** | Business Rule (sys_script) | `611c66f8938583105e8930018bba101f` | table `change_request`, `when: after`, `action_update: true`, filter `approvalCHANGESTOapproved`. Body has TWO guards (see § 5.1) |
+| **`AAP drift remediation - auto-approve secondary approvers`** | Business Rule (sys_script) | `e15213f4938983105e8930018bba101b` | table `sysapproval_approver`, when `after`, filter `state=requested`. Auto-approves CAB-group approvers on drift CRs |
+| Normal change model | chg_model | `007c4001c343101035ae3f52c1d3aeb2` | OOTB — used as `chg_model` on drift CRs |
+| Software group | sys_user_group | `8a4dde73c6112278017a6a4baf547aa7` | default `assignment_group` for drift CRs |
+| David Loo | sys_user | `5137153cc611227c000bbd1bd8cd2007` | default `assigned_to` for drift CRs; also the configured Change Manager approver on Normal CRs |
+| CAB Approval group | sys_user_group | `b85d44954a3623120004689b2d5dd60a` | members get the CAB approval task; the auto-approve rule resolves them automatically |
+
+> **Don't duplicate the business rules.** Earlier we accidentally had
+> two active `Notify EDA on CR approval` rules — the V1 (using
+> `gs.getUserName()`) plus the upgraded V3 (with guards). That caused
+> the **4 EDA fires per CR approval** symptom. Always update via
+> PATCH against the known sys_ids; if you ever do create a duplicate,
+> delete it with:
+> ```
+> curl -u admin:... -X DELETE \
+>   https://dev389292.service-now.com/api/now/table/sys_script/<dup-sys-id>
+> ```
 
 ### 3.5 HashiCorp Vault
 
@@ -180,17 +264,21 @@ Two KV v2 paths the playbooks read at runtime via the AppRole the
 
 | Path | Shape | Read by | Used for |
 |------|-------|---------|---------|
-| `secrets/servicenow/dev` | `{ username, password }` | `snow_drift_tickets` role | Basic-auth to SN REST API |
-| `secrets/tfc/api` | `{ token }` | `tfc_trigger_apply` role | Bearer token for HCP TF API |
+| `secrets/servicenow/dev` | `{ username, password }` | `snow_drift_tickets` role | basic auth to SN REST API |
+| `secrets/tfc/api` | `{ token }` | `tfc_trigger_apply` role | bearer token for HCP TF API |
 
-The `ansible` AppRole already has `read_kv` policy (`secrets/data/*`)
+The `ansible` AppRole has the `read_kv` policy (`secrets/data/*`)
 attached, so no policy changes were required — only populating the
 two paths.
 
 Both paths are managed by Terraform in `terraform-vsphere-vault-config`
-(see `secrets_kv.tf`) with `ignore_changes = [data_json]` so manual
-edits to the secret bodies via the Vault UI aren't reverted on the
-next workspace apply.
+(`secrets_kv.tf`) with `ignore_changes = [data_json]` so manual edits
+to the secret bodies via the Vault UI aren't reverted on the next
+workspace apply.
+
+> Vault also hosts `ldap/creds/vsphere_access` (dynamic LDAP role) for
+> the vSphere ops elsewhere in this project — not used by the drift
+> remediation flow, but lives in the same Vault instance.
 
 ### 3.6 Ansible playbooks & roles
 
@@ -198,11 +286,13 @@ In `hashi-demo-lab/ansible-rhel-post-deploy`:
 
 ```
 playbooks/
-├── drift-create-snow-tickets.yml      ← fires from EDA on drift event
-└── tfc-trigger-apply.yml              ← fires from EDA on CR approved
+├── drift-create-snow-tickets.yml      ← fires from EDA on drift event (JT 90)
+└── tfc-trigger-apply.yml              ← fires from EDA on CR approved (JT 91)
 roles/
 ├── snow_drift_tickets/                ← opens incident + CR in SN
 └── tfc_trigger_apply/                 ← creates TFC run, polls, comments
+ansible.cfg                            ← contains [galaxy] ignore_certs = true (see § 7.2)
+requirements.yml                       ← hashicorp.terraform 2.0.0 (currently unused — see § 9.1)
 ```
 
 In `tfo-apj-demos/terraform-eda-example`:
@@ -215,14 +305,13 @@ rulebooks/
 
 ## 4. End-to-end flow walkthrough
 
-### Step 1 — Drift detection
+### Step 1 — drift detection
 
 HCP Terraform runs a health assessment on the workspace (configurable
-interval). When the assessment diff > 0 resources, TFC sends a
-notification with `message == "Drift Detected"` to the configured
-URL (cloudflare tunnel #1).
+interval). When the assessment diff > 0, TFC POSTs an HMAC-signed
+notification to cloudflare tunnel #1 with `message == "Drift Detected"`.
 
-**Payload sample (only the fields we consume):**
+Sample payload (only the fields we consume):
 ```json
 {
   "message": "Drift Detected",
@@ -238,239 +327,184 @@ URL (cloudflare tunnel #1).
 }
 ```
 
-### Step 2 — EDA receives, fires drift-create-snow-tickets JT
+### Step 2 — EDA receives, fires drift-create-snow-tickets (JT 90)
 
 `tfc-notification-rules.yaml` listens on port 5004 with HMAC validation
-(secret `tf_hmac_notification` is on activation 17 as an extra_var).
+(secret `tf_hmac_notification` is on activation 17 as extra_var).
 
 When the `Drift Detected` rule matches, it calls
 `run_job_template name: drift-create-snow-tickets` and passes the
-workspace_id/name/etc. through `job_args.extra_vars`.
+workspace_id / name / etc. through `job_args.extra_vars`.
 
 ### Step 3 — drift-create-snow-tickets opens incident + CR
 
-The playbook (`hosts: localhost`, `connection: local`) does, in order:
+The playbook (`hosts: localhost`, `connection: local`) does:
 
-1. `community.hashi_vault.vault_kv2_get` on `secrets/servicenow/dev`
-   to fetch SN admin credentials.
-2. `POST /api/now/table/incident` with the workspace context in the
-   description and `correlation_id = workspace_id`.
-3. `POST /api/now/table/change_request` similarly. `type: normal`
-   (so it goes through CAB approval), `correlation_id = workspace_id`,
-   `correlation_display = "HCP Terraform workspace <name>"`.
-
-The job logs the incident + CR numbers + SN URLs in its output for
-demo visibility.
+1. `community.hashi_vault.vault_kv2_get` on `secrets/servicenow/dev`.
+2. `POST /api/now/table/incident` with workspace context + `correlation_id = workspace_id`.
+3. `POST /api/now/table/change_request` similarly. Key fields:
+   - `type: normal` (full CAB approval)
+   - `correlation_id = workspace_id`
+   - `correlation_display = "HCP Terraform workspace <name>"`
+   - **`assignment_group = Software`** (pre-populated)
+   - **`assigned_to = david.loo`** (pre-populated)
 
 ### Step 4 — CAB approval in ServiceNow
 
-The CR appears in SN at `state=New`, `approval=Not Yet Requested`.
-When the operator clicks **Request Approval** (or moves State →
-Authorize), the OOTB Normal change model creates ~11 approval records
-in `sysapproval_approver`. Most resolve to `not_required` based on
-conditions; two would normally need a human approval:
+The CR appears at `state=New`, `approval=Not Yet Requested`.
 
-- **Change Manager** (`david.loo` in OOTB dev389292) — single user
+> Because `assignment_group` and `assigned_to` are pre-populated, the
+> operator can immediately click **Request Approval** with no manual
+> form-filling.
+
+When the operator clicks **Request Approval**, SN creates ~11 approval
+records in `sysapproval_approver`. Two normally need a human approval:
+
+- **Change Manager** (`david.loo`) — single user
 - **CAB Approval group** — one randomly-selected member of the group
 
 The `AAP drift remediation - auto-approve secondary approvers`
 business rule fires on each `sysapproval_approver` insert/update,
 checks if the approver is in the **CAB Approval** group AND if the
-CR's `correlation_id` starts with `ws-` (our drift remediation
-marker), and if so auto-approves that record with a comment trail.
+CR's `correlation_id` starts with `ws-`, and if so auto-approves with
+a comment trail.
 
 Net result: the operator sees **one** pending approval (Change
-Manager) in *My Approvals*. They click Approve. The CR's `approval`
-field flips to `approved`.
+Manager / david.loo). One click → CR's `approval` field flips to
+`approved`.
 
-### Step 5 — SN business rule fires Outbound REST Message
+### Step 5 — SN business rule fires Outbound REST
 
-The `Notify EDA on CR approval` business rule (table:
-`change_request`, when: `after update`, filter:
-`approvalCHANGESTOapproved`) builds the payload via
-`sn_ws.RESTMessageV2('AAP EDA - CR approval', 'post')`:
-
-```javascript
-r.setStringParameterNoEscape('cr_number',      current.number.toString());
-r.setStringParameterNoEscape('cr_sys_id',      current.sys_id.toString());
-r.setStringParameterNoEscape('correlation_id', current.correlation_id.toString());
-r.setStringParameterNoEscape('workspace_name', current.correlation_display.toString());
-r.setStringParameterNoEscape('approver',       gs.getUserName());
-```
-
-The `${...}` placeholders in the Outbound REST Message body template
-get substituted, and SN POSTs:
+The `Notify EDA on CR approval` business rule (filter
+`approvalCHANGESTOapproved`) runs the script in § 5.1. After both
+guards pass, it POSTs to cloudflare tunnel #2:
 
 ```json
 {
-  "cr_number"       : "CHG0030xxx",
-  "cr_sys_id"       : "...",
-  "correlation_id"  : "ws-JxUw2w1CoWwCRwZe",
-  "workspace_name"  : "HCP Terraform workspace better-together-vm-lifecycle-dev",
-  "approver"        : "admin",
-  "approval_state"  : "approved"
+  "cr_number":         "CHG0030xxx",
+  "cr_sys_id":         "...",
+  "correlation_id":    "ws-JxUw2w1CoWwCRwZe",
+  "workspace_name":    "HCP Terraform workspace better-together-vm-lifecycle-dev",
+  "approver":          "david.loo",
+  "approver_display":  "David Loo",
+  "approval_state":    "approved"
 }
 ```
 
-to the cloudflare tunnel #2 URL.
+### Step 6 — EDA receives, fires tfc-trigger-apply (JT 91)
 
-### Step 6 — EDA receives, fires tfc-trigger-apply JT
-
-`snow-cr-approval-rules.yaml` listens on port 5005, no auth (dev only
-— in prod use HMAC or basic auth). Rule condition:
+`snow-cr-approval-rules.yaml` listens on port 5005, no auth (dev only).
+Rule condition:
 
 ```yaml
 condition: event.payload.approval_state == "approved" and event.payload.correlation_id is defined
 ```
 
-On match, the rule fires `run_job_template name: tfc-trigger-apply`
-with `tfc_workspace_id`, `tfc_run_message`, `tfc_approver`,
-`tfc_cr_number` lifted from `event.payload`.
+On match, fires `run_job_template name: tfc-trigger-apply` with:
+- `tfc_workspace_id` ← `event.payload.correlation_id`
+- `tfc_run_message` ← interpolated with cr_number + approver_display
+- `tfc_approver` ← `event.payload.approver_display | default(event.payload.approver)`
+- `tfc_cr_number` ← `event.payload.cr_number`
 
 ### Step 7 — tfc-trigger-apply queues the TFC run
 
-The playbook:
+The playbook (using direct `ansible.builtin.uri` — see § 9.1):
 
-1. Reads `secrets/tfc/api` from Vault for the TFC API token.
-2. `POST /api/v2/runs` to create a new run on the workspace identified
-   by `tfc_workspace_id` (= the CR's `correlation_id`).
-3. `POST /api/v2/runs/{id}/comments` to write the audit comment
-   showing CR number + approver — this surfaces who authorised it
-   on the run's Comments tab in the TFC UI.
-4. Polls `GET /runs/{id}` until status leaves the planning phase
-   (i.e., not in `[pending, fetching, fetching_completed, queuing,
-   managed_queued, plan_queued, planning, cost_estimating,
-   policy_checking]`).
-5. If the run is at a confirmable state (`planned`, `cost_estimated`,
-   `policy_checked`) AND auto-apply is on the workspace (which
-   produces a 409 from the confirm endpoint, handled), posts
-   `/runs/{id}/actions/apply` with a comment naming the approver.
-6. Polls until the run reaches a terminal status (`applied`,
-   `planned_and_finished`, `errored`, `canceled`, `discarded`,
-   `policy_hard_failed`, `policy_soft_failed`).
-7. Fails the Ansible job iff the final status is not `applied` or
-   `planned_and_finished` — so a failed remediation is visible in
-   AAP's job audit, not silently swallowed.
+1. Reads `secrets/tfc/api` from Vault.
+2. `POST /api/v2/runs` with `attributes.message = tfc_run_message`.
+3. `POST /api/v2/runs/{id}/comments` with structured audit comment.
+4. Polls until plan completes.
+5. Confirms apply if needed (auto-apply workspaces just return 409).
+6. Polls until terminal status.
+7. Fails the Ansible job iff final status isn't `applied` /
+   `planned_and_finished`.
 
 ### Step 8 — TFC applies, drift reconciled
 
-The workspace has `auto-apply = true`, so after the plan succeeds
-the run auto-confirms and applies. The VM module re-applies the
-declared CPU/memory/tags over whatever drifted, restoring the
-declared state. End of loop.
+Workspace has `auto-apply = true` → run auto-confirms and applies →
+VM module re-applies declared CPU/memory/tags over the drift. End of
+loop.
 
-## 5. Demo dry-run
+## 5. ServiceNow side — detailed reference
 
-Pre-flight (one-time, already done):
+### 5.1 `Notify EDA on CR approval` business rule
 
-- Vault paths `secrets/servicenow/dev` and `secrets/tfc/api`
-  populated with real credentials.
-- Both cloudflared quick tunnels running.
-- AAP project 57 + EDA project 1 synced; activations 17 + 18 running.
+| | |
+|---|---|
+| sys_id | `611c66f8938583105e8930018bba101f` |
+| table | `change_request` |
+| when | `after` |
+| action_update | `true` |
+| filter | `approvalCHANGESTOapproved` |
 
-Demo path:
+Script:
 
-1. **Trigger drift**: change a VM's `num_cpus` directly in vCenter
-   (or any out-of-band edit Terraform manages). Wait for the next
-   workspace health assessment (interval is workspace-configurable).
-2. TFC sends `Drift Detected` to cloudflare tunnel #1.
-3. **AAP — drift-create-snow-tickets job** appears in
-   *Automation Execution → Jobs*. Tail the output to see incident
-   + CR numbers + their SN URLs printed.
-4. **ServiceNow — open the CR** at the URL from the job output.
-   `Reconcile VM compute drift via Terraform — <workspace>`.
-5. Click **Request Approval** → SN creates approval tasks. The
-   auto-approve business rule resolves the CAB ones; you see **one**
-   pending approval (Change Manager).
-6. Click **Approve** on that single approval. CR's `approval` field
-   flips to `approved`.
-7. **AAP — tfc-trigger-apply job** appears almost immediately.
-   The job log shows the run id, then the audit comment posted,
-   then plan polling, then apply polling, then a final status line
-   reporting `applied` or the failure mode.
-8. **HCP TF UI** — the workspace shows a new run titled
-   *"Drift remediation — ServiceNow CHGxxxxxxx approved by admin"*
-   with the audit comment visible on the run's Comments tab. The
-   apply reconciles the drift.
+```javascript
+(function executeRule(current, previous) {
+  // Guard 1: wait for all approvals on this CR to be resolved.
+  // OOTB SN's approval engine flips CR.approval multiple times
+  // during the cascade — without this guard the rule fires twice,
+  // once with admin/empty and once with the real approver.
+  var pending = new GlideRecord('sysapproval_approver');
+  pending.addQuery('document_id', current.sys_id);
+  pending.addQuery('state', 'requested');
+  pending.query();
+  if (pending.hasNext()) return;
 
-## 6. Operational notes
+  // Guard 2: identify the human-actioned approver. CAB-group records
+  // are auto-resolved by the other business rule, so the relevant
+  // approver is the most recent state=approved sysapproval_approver
+  // whose user is NOT in the CAB Approval group.
+  var approverName = '', approverDisplay = '';
+  var ap = new GlideRecord('sysapproval_approver');
+  ap.addQuery('document_id', current.sys_id);
+  ap.addQuery('state', 'approved');
+  ap.orderByDesc('sys_updated_on');
+  ap.query();
+  while (ap.next()) {
+    var inCab = new GlideRecord('sys_user_grmember');
+    inCab.addQuery('user', ap.approver.toString());
+    inCab.addQuery('group.name', 'CAB Approval');
+    inCab.query();
+    if (inCab.hasNext()) continue;
+    approverName    = ap.approver.user_name.toString();
+    approverDisplay = ap.approver.name.toString();
+    break;
+  }
+  if (!approverName) return;
 
-### 6.1 Tunnel fragility
-
-The two `trycloudflare.com` quick tunnels are ephemeral. If either
-`cloudflared` process or the `oc port-forward` it sits behind dies,
-the corresponding webhook hits return HTTP 502 and the chain is
-broken at that step.
-
-| If broken | What you see | Fix |
-|-----------|--------------|-----|
-| Tunnel #1 (TFC → EDA) | TFC notification config shows failed deliveries; no `drift-create-snow-tickets` job in AAP | restart `cloudflared` + port-forward for activation 17 (port 5004) and update the TFC notification config URL |
-| Tunnel #2 (SN → EDA) | SN `syslog` shows `AAP EDA webhook fired … status=502`; no `tfc-trigger-apply` job | restart `cloudflared` + port-forward for activation 18 (port 5005) and update the Outbound REST Message endpoint |
-
-For a stable demo, replace quick tunnels with named tunnels on a
-Cloudflare account, or expose the EDA event-stream URLs via an
-OpenShift Route in front of `aap-eda-event-stream` and skip
-cloudflared entirely.
-
-### 6.2 Activation restarts change the pod name
-
-`oc port-forward` binds to a specific pod. When the activation
-restarts (e.g., after a rulebook update), the activation-job pod is
-re-created with a new name and the existing port-forward dies. Find
-the current pod and re-run port-forward:
-
-```bash
-POD=$(oc get pods -n aap -o name | grep activation-job-18)
-oc -n aap port-forward $POD 5005:5005 &
+  // Fire the Outbound REST Message
+  var r = new sn_ws.RESTMessageV2('AAP EDA - CR approval', 'post');
+  r.setStringParameterNoEscape('cr_number',         current.number.toString());
+  r.setStringParameterNoEscape('cr_sys_id',         current.sys_id.toString());
+  r.setStringParameterNoEscape('correlation_id',    current.correlation_id.toString());
+  r.setStringParameterNoEscape('workspace_name',    current.correlation_display.toString());
+  r.setStringParameterNoEscape('approver',          approverName);
+  r.setStringParameterNoEscape('approver_display',  approverDisplay);
+  r.execute();
+})(current, previous);
 ```
 
-### 6.3 Approval gate is a real human decision
+### 5.2 `AAP drift remediation - auto-approve secondary approvers`
 
-The auto-approval business rule only resolves the CAB group approvals
-on drift CRs. The Change Manager approval — currently configured to
-fire to `david.loo` on dev389292 — remains a manual click. If you
-want the demo to require approval by a specific bank role (e.g.,
-"Platform Engineering Manager"), update the Change Manager rule on
-the chg_model `007c4001c343101035ae3f52c1d3aeb2` accordingly.
+| | |
+|---|---|
+| sys_id | `e15213f4938983105e8930018bba101b` |
+| table | `sysapproval_approver` |
+| when | `after` |
+| action_insert, action_update | `true` |
+| filter | `state=requested` |
 
-### 6.4 Filter scoping
+Auto-approves any sysapproval_approver record where:
+- The approver is in the `CAB Approval` group, AND
+- The parent CR's `correlation_id` starts with `ws-` (= our drift remediation marker).
 
-Both the auto-approval business rule and the EDA-notify business rule
-are filtered:
+That leaves the Change Manager approval task (assigned to a non-CAB
+user — david.loo on dev389292) as the **single human click**.
 
-- Auto-approve rule: `state=requested` AND in-script check
-  `cr.correlation_id startswith 'ws-'` AND approver is in `CAB Approval`.
-- Outbound REST rule: `approvalCHANGESTOapproved` on `change_request`.
+### 5.3 Outbound REST Message body template
 
-The first rule's correlation_id filter is what stops it from
-auto-approving any other change request on the dev instance — only
-ones our pipeline created carry a `ws-…` correlation_id.
-
-### 6.5 No secrets in JT extra_vars
-
-Neither the SN admin password nor the HCP TF token live in
-JT-level extra_vars. Both come from Vault via the existing AppRole
-(`secrets/data/*` read access via the `read_kv` policy). To rotate,
-update the values in Vault — no AAP changes needed.
-
-### 6.6 Audit trail surfaces in three places
-
-| System | Audit artefact |
-|--------|----------------|
-| ServiceNow | Incident + CR with linked `correlation_id`, plus auto-approval comments on each pre-resolved approval task |
-| HCP Terraform | The run's `message` field shows "Drift remediation — ServiceNow CHG… approved by admin"; the Comments tab carries a structured comment with CR + approver + JT + activation |
-| AAP | Job output from `drift-create-snow-tickets` shows the incident + CR numbers; job output from `tfc-trigger-apply` shows the run id + run states + final status |
-
-## 7. Configuration reference (quick lookup)
-
-**Vault paths**
-
-```
-secrets/servicenow/dev   { username, password }
-secrets/tfc/api          { token }
-```
-
-**ServiceNow Outbound REST body template**
+Defined on `sys_rest_message_fn` `46db6e3c938583105e8930018bba103f`:
 
 ```json
 {
@@ -479,12 +513,248 @@ secrets/tfc/api          { token }
   "correlation_id": "${correlation_id}",
   "workspace_name": "${workspace_name}",
   "approver":       "${approver}",
+  "approver_display": "${approver_display}",
+  "approval_state": "approved"
+}
+```
+
+## 6. AAP local Automation Hub — collection install
+
+The `hashicorp.terraform` collection is in `requirements.yml` even
+though the role currently uses direct API calls (see § 9.1). The
+install path was non-trivial because the collection is NOT on the
+public Galaxy NG.
+
+### 6.1 What's in the local AH
+
+| | |
+|---|---|
+| Local AH root | `https://aap-aap.apps.openshift-01.hashicorp.local/api/galaxy/` |
+| Distribution used | `published` (base_path `published`) |
+| Namespace | `hashicorp` (created manually for this demo) |
+| Collection | `hashicorp.terraform == 2.0.0` (built from `github.com/hashicorp/terraform-ansible-collection` tag 2.0.0) |
+
+### 6.2 How it got there
+
+```bash
+# 1. Clone + build the tarball locally
+git clone --depth 1 --branch 2.0.0 \
+  https://github.com/hashicorp/terraform-ansible-collection.git
+cd terraform-ansible-collection
+ansible-galaxy collection build --output-path /tmp/ah-build/
+
+# 2. Create the hashicorp namespace in the local AH
+curl -k -X POST -H "Authorization: Bearer <aap-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"hashicorp","description":"HashiCorp collections"}' \
+  https://aap-aap.apps.openshift-01.hashicorp.local/api/galaxy/_ui/v1/my-namespaces/
+
+# 3. Upload tarball → lands in staging
+curl -k -H "Authorization: Bearer <aap-token>" \
+  -F "file=@/tmp/ah-build/hashicorp-terraform-2.0.0.tar.gz" \
+  https://aap-aap.apps.openshift-01.hashicorp.local/api/galaxy/v3/plugin/ansible/content/published/collections/artifacts/
+
+# 4. Approve via the AH UI (or POST /move/staging/published/)
+```
+
+### 6.3 AAP cred + org wiring
+
+For AAP project sync to FIND collections in the local AH, the
+following must be in place:
+
+1. **AAP credential** `Local Automation Hub` (id 27), type
+   `Ansible Galaxy/Automation Hub API Token`, with:
+   - url: `https://aap-aap.apps.openshift-01.hashicorp.local/api/galaxy/content/published/`
+   - token: a Galaxy NG token from `POST /api/galaxy/v3/auth/token/`
+     (NOT an AAP bearer token — see § 7.3)
+
+2. **Attached to org 1** `galaxy_credentials`:
+   ```bash
+   curl -k -X POST -H "Authorization: Bearer <aap-token>" \
+     -H "Content-Type: application/json" \
+     -d '{"id":27}' \
+     .../api/controller/v2/organizations/1/galaxy_credentials/
+   ```
+
+3. **`[galaxy] ignore_certs = true`** in the project's `ansible.cfg`
+   (the cluster uses a self-signed cert — see § 7.2).
+
+## 7. Operational notes / gotchas
+
+### 7.1 Cloudflare tunnel fragility
+
+Both quick tunnels (`*.trycloudflare.com`) survive only while the
+`cloudflared` (and the `oc port-forward` it sits behind for #2) is
+running. If either dies:
+
+| Broken tunnel | Symptom | Fix |
+|---------------|---------|-----|
+| #1 (TFC → EDA) | TFC notification delivery failures; no `drift-create-snow-tickets` job in AAP | restart `cloudflared` for port 5004; update the TFC notification config URL via `PATCH /api/v2/notification-configurations/nc-2Q8Lhk54ahNRVoRd` |
+| #2 (SN → EDA) | SN syslog shows `AAP EDA webhook fired … status=502`; no `tfc-trigger-apply` job | (a) re-find the activation-18 pod (changes when activation restarts), (b) `oc port-forward` it on 5005, (c) `cloudflared tunnel --url http://localhost:5005`, (d) update the SN Outbound REST Message endpoint via `PATCH /api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b` |
+
+### 7.2 Self-signed cluster cert + ansible-galaxy
+
+The AAP cluster uses a self-signed cert. `ansible-galaxy install`
+(invoked by project sync) refuses to talk to the local AH with
+`CERTIFICATE_VERIFY_FAILED` unless TLS validation is relaxed. The
+project's `ansible.cfg` has:
+
+```ini
+[galaxy]
+ignore_certs = true
+```
+
+That's enough — no per-server override needed.
+
+### 7.3 Galaxy NG token vs AAP bearer token
+
+When configuring the `Local Automation Hub` credential's `token`
+field, **use a Galaxy NG token** (obtained from
+`POST /api/galaxy/v3/auth/token/`), not an AAP bearer token. The
+bearer token authenticates against the controller; the Galaxy NG
+token authenticates against the AH service. Different auth backends.
+
+### 7.4 Activation restarts change the pod name
+
+`oc port-forward` binds to a specific pod. When activation 18 restarts
+(e.g., after a rulebook update or a manual restart), the
+activation-job pod is re-created with a new name, the existing
+port-forward dies, and tunnel #2 starts returning 502. Find the
+current pod and re-run the port-forward:
+
+```bash
+POD=$(oc -n aap get pods -o name | grep activation-job-18 | head -1 | sed 's|pod/||')
+pkill -f 'port-forward.*5005'
+oc -n aap port-forward pod/$POD 5005:5005 &
+```
+
+### 7.5 Audit trail surfaces in three places
+
+| System | Audit artefact |
+|--------|----------------|
+| ServiceNow | Incident + CR with linked `correlation_id`, plus auto-approval comments on each pre-resolved approval task, plus the `gs.info` log entries the business rules emit to `syslog` |
+| HCP Terraform | The run's `message` field shows "Drift remediation — ServiceNow CHG… approved by David Loo"; the **Comments** tab carries a structured comment with CR + approver + JT + activation |
+| AAP | Job 90 stdout shows the incident + CR numbers; job 91 stdout shows the run id + states + final status |
+
+## 8. Demo dry-run
+
+Pre-flight: TL;DR checklist at the top of this doc ✓
+
+Demo path:
+
+1. **Trigger drift** — change a VM's `num_cpus` directly in vCenter
+   (or any out-of-band edit Terraform manages). Wait for the next
+   workspace health assessment.
+2. TFC POSTs to cloudflare tunnel #1.
+3. **AAP — drift-create-snow-tickets job** appears in
+   *Automation Execution → Jobs*. Tail the output to see incident
+   + CR numbers + their SN URLs printed.
+4. **ServiceNow — open the CR** at the URL from the job output.
+   `Reconcile VM compute drift via Terraform — <workspace>`,
+   `assignment_group = Software`, `assigned_to = david.loo`.
+5. Click **Request Approval** → SN creates approval tasks. The
+   auto-approve business rule resolves the CAB ones; you see **one**
+   pending approval (Change Manager / david.loo).
+6. Click **Approve** on that single approval. CR's `approval` field
+   flips to `approved`.
+7. **AAP — tfc-trigger-apply job** fires almost immediately.
+   The job log shows the run id, then the audit comment posted, then
+   plan polling, then apply polling, then a final status line.
+8. **HCP TF UI** — the workspace shows a new run titled
+   *"Drift remediation — ServiceNow CHGxxxxxxx approved by David Loo"*
+   with the audit comment visible on the run's Comments tab. The
+   apply reconciles the drift.
+
+## 9. Known bugs / workarounds
+
+### 9.1 `hashicorp.terraform.run` silently drops `run_message`
+
+`pytfe.models.RunCreateOptions` has a `message` field with no
+`run_message` alias. The Ansible module's argument_spec accepts
+`run_message` as a kwarg, builds a dict, and calls
+`RunCreateOptions.model_validate(data)`. Pydantic's default
+`extra='ignore'` silently drops the unknown kwarg. Result: every run
+the module creates lands in TFC with the default `"Triggered via API"`
+message — useless for an audit-focused demo.
+
+**Workaround**: the `tfc_trigger_apply` role uses
+`ansible.builtin.uri` directly (`POST /runs` with `attributes.message`
+in the body). The collection is still in `requirements.yml` so we can
+flip back as soon as a release fixes the alias. Issue to be filed
+against `github.com/hashicorp/terraform-ansible-collection`.
+
+### 9.2 OOTB approval cascade fires `Notify EDA` multiple times
+
+OOTB SN's approval engine updates the CR's `approval` field multiple
+times during the approval cascade (as each approver record resolves).
+Each transition matches the `approvalCHANGESTOapproved` filter and
+would fire the rule again if unguarded.
+
+**Workaround**: Guard 1 in the notify business rule (§ 5.1) — skip
+firing while any sysapproval_approver is still in `requested` state.
+
+### 9.3 Duplicate business rule trap
+
+A previous create attempt left TWO active `Notify EDA on CR approval`
+rules (V1 + V3). Both fired on every approval → 4 EDA payloads per
+CR. Always check for duplicates after any rule edit:
+
+```bash
+curl -u admin:... \
+  "https://dev389292.service-now.com/api/now/table/sys_script?sysparm_query=name=Notify%20EDA%20on%20CR%20approval&sysparm_fields=sys_id,active,sys_updated_on" \
+  | python3 -m json.tool
+# Should return exactly one result (sys_id 611c66f8…)
+```
+
+### 9.4 First-fire empty-approver fallback
+
+The very first cascade fire can land before the auto-approve rule has
+resolved the secondary CAB approvers. In that window, the loop in the
+notify rule finds no non-CAB approver and would otherwise fall through
+to a `gs.getUserName()` fallback (returning `admin` / empty display).
+
+**Workaround**: Guard 2 in § 5.1 — start with `approverName = ''`,
+walk approvals, and `return` if none is non-CAB. Defers firing until
+a second cascade trigger when the data is present.
+
+### 9.5 OOTB Normal change model blocks `Request Approval` without routing fields
+
+Without `assignment_group` and `assigned_to`, the **Request Approval**
+UI transition is blocked.
+
+**Workaround**: `snow_drift_tickets` role pre-populates both fields
+on CR creation (`Software` group, `david.loo` user). Overridable via
+extra_vars.
+
+### 9.6 trycloudflare URLs are ephemeral
+
+Quick tunnel URLs are regenerated on every `cloudflared` restart.
+For a persistent demo, set up a named Cloudflare tunnel (free with
+an account) or expose the EDA event-stream URLs via an OpenShift
+Route and skip cloudflared.
+
+## 10. Quick-lookup configuration reference
+
+**Vault paths**
+```
+secrets/servicenow/dev   { username, password }
+secrets/tfc/api          { token }
+```
+
+**ServiceNow Outbound REST body template**
+```json
+{
+  "cr_number":      "${cr_number}",
+  "cr_sys_id":      "${cr_sys_id}",
+  "correlation_id": "${correlation_id}",
+  "workspace_name": "${workspace_name}",
+  "approver":       "${approver}",
+  "approver_display": "${approver_display}",
   "approval_state": "approved"
 }
 ```
 
 **EDA rulebook conditions**
-
 ```yaml
 # tfc-notification-rules.yaml
 condition: event.payload.message == "Drift Detected" and event.payload.details.new_assessment_result.resources_drifted > 0
@@ -494,19 +764,24 @@ condition: event.payload.approval_state == "approved" and event.payload.correlat
 ```
 
 **AAP JT inventory**
+Both JTs use inventory **363** (`Better Together Demo - …`) so the
+launch endpoint accepts the request. The playbooks themselves target
+`hosts: localhost` and don't read the inventory's host list.
 
-Both JTs use AAP inventory id **363** (`Better Together Demo - …`) so
-the launch endpoint accepts the request. The playbooks themselves
-target `hosts: localhost` and don't read the inventory's host list.
+**Default org galaxy credentials**
+```
+id=2   Ansible Galaxy        https://galaxy.ansible.com/
+id=27  Local Automation Hub  https://aap-aap.apps.openshift-01.hashicorp.local/api/galaxy/content/published/
+```
 
-## 8. Known limitations / next steps
+## 11. Backlog / next steps
 
 | Topic | Status | Notes |
 |-------|--------|-------|
 | Public ingress | Demo-grade (cloudflared quick tunnels) | Replace with named Cloudflare tunnels or OpenShift Routes for production |
 | Webhook auth | None on activation 18 | Add basic-auth or HMAC on the `ansible.eda.webhook` source + corresponding profile/headers on the SN Outbound REST Message |
-| Approval gate | Single human click after auto-CAB-resolve | Switch to a custom Change Model with a single Flow Designer approval step if the auto-resolve hack is too clever for prod |
+| `hashicorp.terraform.run` adoption | Blocked on upstream `run_message` alias bug | File issue at `github.com/hashicorp/terraform-ansible-collection`; flip role back to module the moment it's fixed |
+| Approval gate | Single human click after auto-CAB-resolve | Replace with custom Change Model + single Flow Designer approval step if the auto-resolve hack feels too clever for prod |
 | Multi-workspace | Works as-is | `correlation_id = workspace_id` makes the SN→TFC step workspace-agnostic — pointing the TFC notification at the same EDA tunnel from a different workspace just works |
-| Run failures | Job fails loudly | `tfc-trigger-apply` exits non-zero on apply failure → visible in AAP. Consider piping that back to SN to reopen the CR with the failure context |
-| Multi-CR concurrency | Untested | If two drifts trigger near-simultaneously two distinct CRs are created; both flow independently. Sensible behaviour but not load-tested |
-| `before_destroy` / `after_destroy` actions | Not in Terraform 1.14 | When they land, hook a `cmdb-close-change` JT into `after_destroy` to close out the CR automatically once the apply succeeds |
+| Run failures | Job fails loudly | `tfc-trigger-apply` exits non-zero on apply failure → visible in AAP. Consider piping that back to SN to re-open the CR with the failure context |
+| `before_destroy` / `after_destroy` actions | Not in Terraform 1.14 yet | When they land, hook a `cmdb-close-change` JT into `after_destroy` to close out the CR automatically once the apply succeeds |
