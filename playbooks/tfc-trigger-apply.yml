@@ -1,0 +1,15 @@
+---
+# Fires when EDA receives a CR-approved event from ServiceNow. Calls
+# the HCP Terraform API to queue a new run against the workspace
+# identified in the CR's correlation data, then watches it through to
+# applied (or fails the job if the run errors).
+- name: Trigger HCP Terraform apply for an approved drift remediation
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - tfc_trigger_apply

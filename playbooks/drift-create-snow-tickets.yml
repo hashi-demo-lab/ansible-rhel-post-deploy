@@ -1,0 +1,15 @@
+---
+# Fires when EDA detects a TFC drift event. Opens an incident + change
+# request in ServiceNow, embedding the originating workspace ID/name so
+# the CR-approval webhook (separate flow) can correlate back to the
+# right workspace when triggering the remediation apply.
+- name: Open ServiceNow incident + change request for TFC drift
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - snow_drift_tickets

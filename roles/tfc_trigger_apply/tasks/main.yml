@@ -1,0 +1,129 @@
+---
+- name: Sanity-check inputs
+  ansible.builtin.assert:
+    that:
+      - tfc_token | length > 0
+      - tfc_workspace_id | length > 0
+    fail_msg: "tfc_token and tfc_workspace_id must both be set (extra_vars from EDA)"
+
+# ─── Create the run ──────────────────────────────────────────────────────
+- name: Create a new HCP Terraform run on workspace {{ tfc_workspace_id }}
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ tfc_token }}"
+      Content-Type: "application/vnd.api+json"
+    body_format: json
+    body:
+      data:
+        type: "runs"
+        attributes:
+          message: "{{ tfc_run_message }}"
+        relationships:
+          workspace:
+            data:
+              type: "workspaces"
+              id: "{{ tfc_workspace_id }}"
+    status_code: 201
+    return_content: true
+  register: run_response
+  no_log: true
+
+- name: Show the new run (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "HCP Terraform run queued"
+      - "  run_id    : {{ run_response.json.data.id }}"
+      - "  workspace : {{ tfc_workspace_id }}"
+      - "  status    : {{ run_response.json.data.attributes.status }}"
+      - "  message   : {{ tfc_run_message }}"
+
+- name: Capture run id for later
+  ansible.builtin.set_fact:
+    _tfc_run_id: "{{ run_response.json.data.id }}"
+
+# ─── Poll until planned (or errored) ────────────────────────────────────
+- name: Wait for plan to complete
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ tfc_token }}"
+  register: run_poll
+  retries: "{{ tfc_poll_max_attempts }}"
+  delay: "{{ tfc_poll_interval_seconds }}"
+  until: run_poll.json.data.attributes.status in [
+           'planned',
+           'planned_and_finished',
+           'errored',
+           'canceled',
+           'discarded',
+           'cost_estimated'
+         ]
+  no_log: true
+
+- name: Show plan outcome (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Plan finished"
+      - "  run_id : {{ _tfc_run_id }}"
+      - "  status : {{ run_poll.json.data.attributes.status }}"
+
+- name: Fail if plan errored
+  ansible.builtin.fail:
+    msg: "TFC run {{ _tfc_run_id }} errored at plan — see {{ tfc_api_url | regex_replace('/api/v2$', '') }}/app/{{ run_poll.json.data.attributes['organization'] | default('?') }}/runs/{{ _tfc_run_id }}"
+  when: run_poll.json.data.attributes.status in ['errored', 'canceled', 'discarded']
+
+# ─── Confirm apply (skipped if workspace has auto-apply on) ─────────────
+- name: Confirm the apply
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/actions/apply"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ tfc_token }}"
+      Content-Type: "application/vnd.api+json"
+    body_format: json
+    body:
+      comment: "Confirmed by AAP/EDA after ServiceNow CR approval"
+    status_code: [202, 409]   # 409 = run already applying (auto-apply workspaces)
+  register: apply_confirm
+  when:
+    - tfc_auto_confirm_apply
+    - run_poll.json.data.attributes.status in ['planned', 'cost_estimated']
+  no_log: true
+
+- name: Note auto-apply state
+  ansible.builtin.debug:
+    msg: "Apply {{ 'confirmed' if (apply_confirm.status | default(0)) == 202 else ('already auto-applying' if (apply_confirm.status | default(0)) == 409 else 'skipped — not in confirmable state') }}"
+
+# ─── Poll until applied (or errored) ────────────────────────────────────
+- name: Wait for apply to complete
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ tfc_token }}"
+  register: apply_poll
+  retries: "{{ tfc_poll_max_attempts }}"
+  delay: "{{ tfc_poll_interval_seconds }}"
+  until: apply_poll.json.data.attributes.status in [
+           'applied',
+           'errored',
+           'canceled',
+           'discarded'
+         ]
+  no_log: true
+
+- name: Show final result (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "TFC apply finished"
+      - "  run_id : {{ _tfc_run_id }}"
+      - "  status : {{ apply_poll.json.data.attributes.status }}"
+      - "  drift remediation: {{ 'COMPLETE' if apply_poll.json.data.attributes.status == 'applied' else 'FAILED' }}"
+
+- name: Fail if apply errored
+  ansible.builtin.fail:
+    msg: "TFC apply for run {{ _tfc_run_id }} ended in {{ apply_poll.json.data.attributes.status }} — drift NOT remediated"
+  when: apply_poll.json.data.attributes.status != 'applied'

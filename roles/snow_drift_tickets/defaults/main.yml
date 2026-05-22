@@ -1,0 +1,24 @@
+---
+# ServiceNow target. Override at the JT level for any other instance.
+servicenow_instance_url: "https://dev389292.service-now.com"
+
+# Auth — for the dev instance we use a basic auth admin user. In a real
+# bank rollout these come from Vault (KV or OAuth client credentials).
+# Setting them as `survey` or extra_vars on the JT lets you mark the
+# password sensitive in the AAP UI.
+servicenow_username: "admin"
+servicenow_password: ""        # MUST be supplied via JT extra_vars (sensitive)
+
+# CR / incident defaults — match the dev instance's available choices.
+servicenow_assignment_group: ""             # left blank for dev
+servicenow_category: "Other"
+servicenow_change_type: "normal"            # goes through full CAB approval
+servicenow_change_risk: "moderate"
+servicenow_change_impact: "3"
+
+# Drift context, injected by EDA when it fires the JT
+tfc_workspace_id: ""
+tfc_workspace_name: ""
+tfc_organization_name: ""
+tfc_assessment_result_url: ""
+tfc_resources_drifted: 0

@@ -1,0 +1,19 @@
+---
+# HCP Terraform endpoint
+tfc_api_url: "https://app.terraform.io/api/v2"
+
+# Token used to create the run. Set as a sensitive extra_var on the JT,
+# or wire an AAP credential — never commit a real token.
+tfc_token: ""
+
+# Workspace identification — populated by the EDA action_args when the
+# rulebook fires this JT (extra_vars). The CR carries u_tfc_workspace_id
+# in its custom field, the SN business rule posts that to EDA, and EDA
+# passes it through here.
+tfc_workspace_id: ""
+
+# Run config
+tfc_run_message: "Drift remediation — triggered by AAP/EDA after ServiceNow CR approval"
+tfc_auto_confirm_apply: true       # confirm-apply the run after a successful plan
+tfc_poll_interval_seconds: 10
+tfc_poll_max_attempts: 60          # 10 minutes default
