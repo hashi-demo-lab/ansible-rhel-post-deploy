@@ -720,8 +720,28 @@ times during the approval cascade (as each approver record resolves).
 Each transition matches the `approvalCHANGESTOapproved` filter and
 would fire the rule again if unguarded.
 
-**Workaround**: Guard 1 in the notify business rule (§ 5.1) — skip
-firing while any sysapproval_approver is still in `requested` state.
+**Layer 1 — Guard inside the business rule** (§ 5.1, Guard 1): skip
+firing while any `sysapproval_approver` is still in `requested` state.
+This catches the cascade fires that happen WHILE approvals are still
+being resolved.
+
+**Layer 2 — Throttle at the EDA rulebook** (added in
+`tfo-apj-demos/terraform-eda-example#3`): once all approvers resolve,
+SN still emits two `approvalCHANGESTOapproved` transitions ~1-2s apart
+(the engine "settles" the field twice). Guard 1 lets both through;
+without dedup, EDA fires the rule twice → two duplicate JT-91 runs →
+two duplicate TFC apply runs. The CR-Approved rule now carries:
+
+```yaml
+throttle:
+  group_by_attributes:
+    - event.payload.cr_number
+  once_within: 5 minutes
+```
+
+So the second event (within 5 minutes for the same `cr_number`) is
+suppressed at the EDA layer. SN syslog will still show two BR fires
+per approval — that's expected; the impact is contained downstream.
 
 ### 9.3 Duplicate business rule trap
 
