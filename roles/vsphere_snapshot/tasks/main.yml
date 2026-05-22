@@ -5,10 +5,8 @@
 
 # Single Vault lease shared across all hosts in the play. Each call to
 # ldap/creds/vsphere_access creates a fresh dynamic AD account; running
-# it once stops two parallel hosts colliding on the same templated
-# username (problem 6005 ENTRY_EXISTS in AD when the LDAP dynamic-role
-# username_template hashes to the same string).
-- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
+# it once stops parallel hosts colliding on the templated username.
+- name: Lease a vCenter service account from Vault (LDAP dynamic role)
   community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
@@ -19,18 +17,24 @@
   register: vsphere_creds_raw
   run_once: true
   delegate_to: localhost
-  no_log: false  # TEMP: diagnose Vault read failure on run-RX1LXVUjd3ZutwJa
-  when: not vsphere_simulate
+  no_log: true   # raw module dump is noisy — clean summary follows
 
-# Extract once + propagate to every host so the per-host snapshot task
-# can reference the same lease.
+- name: Show what Vault just leased (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Vault leased a fresh dynamic AD account from {{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
+      - "  username       : {{ vsphere_creds_raw.data.data.username }}"
+      - "  lease_id       : {{ vsphere_creds_raw.data.lease_id }}"
+      - "  lease_duration : {{ vsphere_creds_raw.data.lease_duration }}s (auto-revoked + AD account deleted on expiry)"
+      - "  AD groups      : {{ vsphere_creds_raw.data.data.distinguished_names | map('regex_replace', '^CN=([^,]+),.*$', '\\1') | list }}"
+  run_once: true
+
 - name: Extract vSphere username/password from the lease
   ansible.builtin.set_fact:
-    _vsphere_user: "{{ (vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username)) ~ '@' ~ ad_domain | default('hashicorp.local') }}"
+    _vsphere_user: "{{ (vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username)) ~ '@' ~ (ad_domain | default('hashicorp.local')) }}"
     _vsphere_pass: "{{ vsphere_creds_raw.data.data.password | default(vsphere_creds_raw.data.password) }}"
   run_once: true
-  no_log: true
-  when: not vsphere_simulate
+  no_log: true   # don't dump the password
 
 - name: Take vSphere snapshot of {{ inventory_hostname }}
   community.vmware.vmware_guest_snapshot:
@@ -46,9 +50,21 @@
     description: "{{ snapshot_description }} (TTL {{ snapshot_ttl_hours }}h)"
     memory_dump: "{{ snapshot_include_memory }}"
     quiesce: "{{ snapshot_quiesce }}"
-  no_log: true
+  register: snapshot_result
+  no_log: true   # the resolved password parameter shouldn't end up in the log
   when: not vsphere_simulate
   delegate_to: localhost
+
+- name: Show snapshot details (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Snapshot taken on {{ inventory_hostname }}:"
+      - "  name      : {{ snapshot_result.snapshot_results.current_snapshot.name }}"
+      - "  id        : {{ snapshot_result.snapshot_results.current_snapshot.id }}"
+      - "  created   : {{ snapshot_result.snapshot_results.current_snapshot.creation_time }}"
+      - "  quiesced  : {{ snapshot_result.snapshot_results.current_snapshot.quiesced }}"
+      - "  vm state  : {{ snapshot_result.snapshot_results.current_snapshot.state }}"
+  when: not vsphere_simulate
 
 - name: Take vSphere snapshot (simulated)
   ansible.builtin.debug:
@@ -57,7 +73,3 @@
       - "vCenter={{ vsphere_hostname }}  datacenter={{ vsphere_datacenter }}"
       - "snapshot_name={{ _snapshot_name }}  quiesce={{ snapshot_quiesce }}  ttl={{ snapshot_ttl_hours }}h"
   when: vsphere_simulate
-
-- name: Summary
-  ansible.builtin.debug:
-    msg: "Snapshot {{ _snapshot_name }} {{ 'simulated' if vsphere_simulate else 'taken' }} for {{ inventory_hostname }}"

@@ -1,5 +1,5 @@
 ---
-- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
+- name: Lease a vCenter service account from Vault (LDAP dynamic role)
   community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
@@ -11,6 +11,16 @@
   run_once: true
   delegate_to: localhost
   no_log: true
+
+- name: Show what Vault just leased (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Vault leased a fresh dynamic AD account from {{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
+      - "  username       : {{ vsphere_creds_raw.data.data.username }}"
+      - "  lease_id       : {{ vsphere_creds_raw.data.lease_id }}"
+      - "  lease_duration : {{ vsphere_creds_raw.data.lease_duration }}s (auto-revoked + AD account deleted on expiry)"
+      - "  AD groups      : {{ vsphere_creds_raw.data.data.distinguished_names | map('regex_replace', '^CN=([^,]+),.*$', '\\1') | list }}"
+  run_once: true
 
 - name: Extract vSphere username/password from the lease
   ansible.builtin.set_fact:
@@ -30,6 +40,7 @@
     name: "{{ inventory_hostname }}"
   register: snapshot_info
   delegate_to: localhost
+  no_log: true
   when: snapshot_name | length == 0
 
 - name: Pick the most recently created snapshot
@@ -40,6 +51,10 @@
          else (snapshot_info.guest_snapshots.snapshots
                | sort(attribute='creation_time')
                | last).name }}
+
+- name: Show which snapshot will be the target (demo visibility)
+  ansible.builtin.debug:
+    msg: "Reverting {{ inventory_hostname }} to snapshot '{{ _resolved_snapshot }}'"
 
 - name: Revert {{ inventory_hostname }} to snapshot {{ _resolved_snapshot }}
   community.vmware.vmware_guest_snapshot:
@@ -52,9 +67,13 @@
     name: "{{ inventory_hostname }}"
     state: revert
     snapshot_name: "{{ _resolved_snapshot }}"
+  register: revert_result
   delegate_to: localhost
   no_log: true
 
-- name: Summary
+- name: Show revert result (demo visibility)
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} reverted to snapshot '{{ _resolved_snapshot }}'"
+    msg:
+      - "Revert complete on {{ inventory_hostname }}"
+      - "  reverted to    : {{ _resolved_snapshot }}"
+      - "  module changed : {{ revert_result.changed }}"

@@ -1,5 +1,5 @@
 ---
-- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
+- name: Lease a vCenter service account from Vault (LDAP dynamic role)
   community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
@@ -11,6 +11,16 @@
   run_once: true
   delegate_to: localhost
   no_log: true
+
+- name: Show what Vault just leased (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Vault leased a fresh dynamic AD account from {{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
+      - "  username       : {{ vsphere_creds_raw.data.data.username }}"
+      - "  lease_id       : {{ vsphere_creds_raw.data.lease_id }}"
+      - "  lease_duration : {{ vsphere_creds_raw.data.lease_duration }}s (auto-revoked + AD account deleted on expiry)"
+      - "  AD groups      : {{ vsphere_creds_raw.data.data.distinguished_names | map('regex_replace', '^CN=([^,]+),.*$', '\\1') | list }}"
+  run_once: true
 
 - name: Extract vSphere username/password from the lease
   ansible.builtin.set_fact:
@@ -31,9 +41,14 @@
     state: "{{ vsphere_power_state }}"
     force: "{{ vsphere_power_force }}"
     state_change_timeout: "{{ vsphere_state_change_timeout }}"
+  register: power_result
   delegate_to: localhost
   no_log: true
 
-- name: Summary
+- name: Show power-off result (demo visibility)
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} requested state: {{ vsphere_power_state }}"
+    msg:
+      - "Power-off requested on {{ inventory_hostname }}"
+      - "  requested state : {{ vsphere_power_state }}"
+      - "  module changed  : {{ power_result.changed }}"
+      - "  task            : graceful shutdown via VMware Tools, hard power-off on timeout ({{ vsphere_state_change_timeout }}s)"

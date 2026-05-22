@@ -1,5 +1,5 @@
 ---
-- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
+- name: Lease a vCenter service account from Vault (LDAP dynamic role)
   community.hashi_vault.vault_read:
     url: "{{ vault_addr }}"
     auth_method: approle
@@ -11,6 +11,16 @@
   run_once: true
   delegate_to: localhost
   no_log: true
+
+- name: Show what Vault just leased (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Vault leased a fresh dynamic AD account from {{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
+      - "  username       : {{ vsphere_creds_raw.data.data.username }}"
+      - "  lease_id       : {{ vsphere_creds_raw.data.lease_id }}"
+      - "  lease_duration : {{ vsphere_creds_raw.data.lease_duration }}s (auto-revoked + AD account deleted on expiry)"
+      - "  AD groups      : {{ vsphere_creds_raw.data.data.distinguished_names | map('regex_replace', '^CN=([^,]+),.*$', '\\1') | list }}"
+  run_once: true
 
 - name: Extract vSphere username/password from the lease
   ansible.builtin.set_fact:
@@ -29,9 +39,12 @@
     folder: "{{ vsphere_folder }}"
     name: "{{ inventory_hostname }}"
     state: "{{ vsphere_power_state }}"
+  register: reboot_result
   delegate_to: localhost
   no_log: true
 
-- name: Summary
+- name: Show reboot result (demo visibility)
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} guest reboot requested via VMware Tools"
+    msg:
+      - "Guest reboot requested on {{ inventory_hostname }} via VMware Tools"
+      - "  module changed  : {{ reboot_result.changed }}"
