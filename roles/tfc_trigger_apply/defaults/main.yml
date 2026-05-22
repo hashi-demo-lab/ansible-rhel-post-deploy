@@ -18,3 +18,10 @@ tfc_run_message: "Drift remediation — triggered by AAP/EDA after ServiceNow CR
 tfc_auto_confirm_apply: true       # confirm-apply the run after a successful plan
 tfc_poll_interval_seconds: 10
 tfc_poll_max_attempts: 60          # 10 minutes default
+
+# Identity of who approved the CR in ServiceNow — used to add an audit
+# comment to the HCP TF run so the run history records the human
+# decision that authorised the apply. Populated from the EDA event
+# payload (event.payload.approver, event.payload.cr_number).
+tfc_approver: ""
+tfc_cr_number: ""

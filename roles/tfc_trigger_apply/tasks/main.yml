@@ -48,21 +48,54 @@
   register: run_response
   no_log: true
 
+- name: Capture run id
+  ansible.builtin.set_fact:
+    _tfc_run_id: "{{ run_response.json.data.id }}"
+
 - name: Show the new run (demo visibility)
   ansible.builtin.debug:
     msg:
       - "HCP Terraform run queued"
-      - "  run_id    : {{ run_response.json.data.id }}"
+      - "  run_id    : {{ _tfc_run_id }}"
       - "  workspace : {{ tfc_workspace_id }}"
       - "  status    : {{ run_response.json.data.attributes.status }}"
       - "  message   : {{ tfc_run_message }}"
 
-- name: Capture run id for later
-  ansible.builtin.set_fact:
-    _tfc_run_id: "{{ run_response.json.data.id }}"
+# ─── Audit comment on the run ───────────────────────────────────────────
+- name: Post audit comment on the run with the SN approver identity
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/comments"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Content-Type: "application/vnd.api+json"
+    body_format: json
+    body:
+      data:
+        type: "comments"
+        attributes:
+          body: |
+            **Drift remediation — authorised via ServiceNow CAB approval**
 
-# ─── Poll until planned (or errored) ────────────────────────────────────
-- name: Wait for plan to complete
+            - ServiceNow CR : {{ tfc_cr_number | default('(not provided)') }}
+            - Approved by   : {{ tfc_approver | default('(unknown)') }}
+            - Triggered by  : AAP / Event-Driven Ansible (activation `snow-cr-approval`)
+            - Job template  : `tfc-trigger-apply`
+    status_code: 201
+  register: comment_response
+  no_log: true
+  when: tfc_approver | length > 0
+
+- name: Show audit comment posted (demo visibility)
+  ansible.builtin.debug:
+    msg: "Audit comment posted to run {{ _tfc_run_id }} — approver: {{ tfc_approver }}, SN CR: {{ tfc_cr_number }}"
+  when: tfc_approver | length > 0
+
+# ─── Wait for the run to leave the planning phase ────────────────────────
+# Pre-plan states (keep polling): pending, fetching, fetching_completed,
+# queuing, plan_queued, planning, cost_estimating, policy_checking,
+# managed_queued.
+- name: Wait for plan to finish (any post-plan or terminal state)
   ansible.builtin.uri:
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
     method: GET
@@ -71,13 +104,16 @@
   register: run_poll
   retries: "{{ tfc_poll_max_attempts }}"
   delay: "{{ tfc_poll_interval_seconds }}"
-  until: run_poll.json.data.attributes.status in [
-           'planned',
-           'planned_and_finished',
-           'errored',
-           'canceled',
-           'discarded',
-           'cost_estimated'
+  until: run_poll.json.data.attributes.status not in [
+           'pending',
+           'fetching',
+           'fetching_completed',
+           'queuing',
+           'managed_queued',
+           'plan_queued',
+           'planning',
+           'cost_estimating',
+           'policy_checking'
          ]
   no_log: true
 
@@ -88,12 +124,12 @@
       - "  run_id : {{ _tfc_run_id }}"
       - "  status : {{ run_poll.json.data.attributes.status }}"
 
-- name: Fail if plan errored
+- name: Fail if plan errored before apply could start
   ansible.builtin.fail:
-    msg: "TFC run {{ _tfc_run_id }} errored at plan"
-  when: run_poll.json.data.attributes.status in ['errored', 'canceled', 'discarded']
+    msg: "TFC run {{ _tfc_run_id }} ended at plan with status '{{ run_poll.json.data.attributes.status }}' — drift NOT remediated"
+  when: run_poll.json.data.attributes.status in ['errored', 'canceled', 'discarded', 'policy_hard_failed']
 
-# ─── Confirm apply (skipped if workspace has auto-apply on) ─────────────
+# ─── Confirm apply (skipped if auto-apply already moved it on) ──────────
 - name: Confirm the apply
   ansible.builtin.uri:
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/actions/apply"
@@ -103,19 +139,22 @@
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
-      comment: "Confirmed by AAP/EDA after ServiceNow CR approval"
-    status_code: [202, 409]   # 409 = run already applying (auto-apply workspaces)
+      comment: "Confirmed by AAP / EDA after ServiceNow {{ tfc_cr_number | default('CR') }} approval ({{ tfc_approver | default('unknown') }})"
+    status_code: [202, 409]   # 409 = run already past confirm (auto-apply workspaces)
   register: apply_confirm
   when:
     - tfc_auto_confirm_apply
-    - run_poll.json.data.attributes.status in ['planned', 'cost_estimated']
-  no_log: true
+    - run_poll.json.data.attributes.status in ['planned', 'cost_estimated', 'policy_checked']
 
 - name: Note auto-apply state
   ansible.builtin.debug:
-    msg: "Apply {{ 'confirmed' if (apply_confirm.status | default(0)) == 202 else ('already auto-applying' if (apply_confirm.status | default(0)) == 409 else 'skipped — not in confirmable state') }}"
+    msg: >-
+      Apply
+      {{ 'confirmed by AAP'                  if (apply_confirm.status | default(0)) == 202
+         else 'already past confirm (auto-apply)' if (apply_confirm.status | default(0)) == 409
+         else ('already at ' ~ run_poll.json.data.attributes.status) }}
 
-# ─── Poll until applied (or errored) ────────────────────────────────────
+# ─── Wait for the run to reach a terminal state ─────────────────────────
 - name: Wait for apply to complete
   ansible.builtin.uri:
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
@@ -127,21 +166,24 @@
   delay: "{{ tfc_poll_interval_seconds }}"
   until: apply_poll.json.data.attributes.status in [
            'applied',
+           'planned_and_finished',
            'errored',
            'canceled',
-           'discarded'
+           'discarded',
+           'policy_hard_failed',
+           'policy_soft_failed'
          ]
   no_log: true
 
 - name: Show final result (demo visibility)
   ansible.builtin.debug:
     msg:
-      - "TFC apply finished"
+      - "TFC run finished"
       - "  run_id : {{ _tfc_run_id }}"
       - "  status : {{ apply_poll.json.data.attributes.status }}"
-      - "  drift remediation: {{ 'COMPLETE' if apply_poll.json.data.attributes.status == 'applied' else 'FAILED' }}"
+      - "  drift remediation: {{ 'COMPLETE' if apply_poll.json.data.attributes.status in ['applied','planned_and_finished'] else 'FAILED' }}"
 
 - name: Fail if apply errored
   ansible.builtin.fail:
-    msg: "TFC apply for run {{ _tfc_run_id }} ended in {{ apply_poll.json.data.attributes.status }} — drift NOT remediated"
-  when: apply_poll.json.data.attributes.status != 'applied'
+    msg: "TFC run {{ _tfc_run_id }} ended in '{{ apply_poll.json.data.attributes.status }}' — drift NOT remediated"
+  when: apply_poll.json.data.attributes.status not in ['applied', 'planned_and_finished']
