@@ -9,7 +9,14 @@ vault_kv_mount: secrets
 vault_servicenow_secret_path: "servicenow/dev"
 
 # CR / incident defaults — match the dev instance's available choices.
-servicenow_assignment_group: ""             # left blank for dev
+# assignment_group + assigned_to need to be populated BEFORE the CR can
+# be moved to "Request Approval" in the OOTB Normal change workflow.
+# Setting these on creation removes the manual step in the demo.
+#   Software             — OOTB group, david.loo is a member
+#   david.loo            — also the Change Manager approver, so the CR
+#                          surfaces in his queue immediately
+servicenow_assignment_group: "8a4dde73c6112278017a6a4baf547aa7"   # Software
+servicenow_assigned_to: "5137153cc611227c000bbd1bd8cd2007"        # David Loo
 servicenow_category: "Other"
 servicenow_change_type: "normal"            # goes through full CAB approval
 servicenow_change_risk: "moderate"

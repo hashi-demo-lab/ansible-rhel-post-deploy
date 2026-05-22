@@ -104,6 +104,11 @@
       category: "{{ servicenow_category }}"
       risk: "{{ servicenow_change_risk }}"
       impact: "{{ servicenow_change_impact }}"
+      # Pre-populate routing so the CR is approval-ready on creation —
+      # OOTB Normal change model blocks the "Request Approval"
+      # transition unless these are set.
+      assignment_group: "{{ servicenow_assignment_group }}"
+      assigned_to: "{{ servicenow_assigned_to }}"
       # Standard SN correlation fields — the SN business rule on the
       # CR's approval transition reads these and forwards them to EDA.
       correlation_id: "{{ tfc_workspace_id }}"
