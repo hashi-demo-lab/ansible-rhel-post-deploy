@@ -20,14 +20,15 @@ the following in order:
 
 | # | Thing | Where to check | Healthy state |
 |---|-------|---------------|---------------|
-| 1 | TFC → EDA cloudflare tunnel (port 5004) | `app.terraform.io/.../notification-configurations/nc-2Q8Lhk54ahNRVoRd` | URL set, enabled = true |
-| 2 | SN → EDA cloudflare tunnel (port 5005) | local `cloudflared` + `oc port-forward` running | tunnel URL responds 200 to `POST /` |
-| 3 | EDA activation 17 (`tfc-notification-drift`) | `aap-aap…/decisions/rulebook-activations/17/details` | status `running`, git_hash matches `terraform-eda-example` HEAD |
-| 4 | EDA activation 18 (`snow-cr-approval`) | activation 18 details | status `running`, git_hash matches HEAD |
-| 5 | AAP project 57 (`ansible-rhel-post-deploy`) | controller projects UI | last sync `successful`, git_hash matches HEAD |
-| 6 | Vault paths populated | `secrets/servicenow/dev`, `secrets/tfc/api` | both have non-PLACEHOLDER values |
-| 7 | SN business rules in place | dev389292 → `sys_script` | `Notify EDA on CR approval` (single, not duplicate!) + `AAP drift remediation - auto-approve secondary approvers` both `active=true` |
-| 8 | SN Outbound REST | dev389292 → `sys_rest_message` | `AAP EDA - CR approval` exists, endpoint = current tunnel #2 URL |
+| 1 | TFC → EDA cloudflared connector | `oc -n cloudflared-tfc-eda get deploy/cloudflared` | Ready 1/1 |
+| 2 | SN → EDA cloudflared connector | `oc -n cloudflared-snow-eda get deploy/cloudflared` | Ready 1/1 |
+| 3 | TFC notification URL points at current tunnel #1 URL | TFC notif `nc-2Q8Lhk54ahNRVoRd` ↔ `oc -n cloudflared-tfc-eda logs deploy/cloudflared \| grep trycloudflare` | URLs match, notification enabled = true |
+| 4 | SN Outbound REST endpoint points at current tunnel #2 URL | SN `sys_rest_message/20cbe2f8938583105e8930018bba103b` ↔ `oc -n cloudflared-snow-eda logs deploy/cloudflared \| grep trycloudflare` | URLs match |
+| 5 | EDA activation 17 (`tfc-notification-drift`) | `aap-aap…/decisions/rulebook-activations/17/details` | status `running`, git_hash matches `terraform-eda-example` HEAD |
+| 6 | EDA activation 18 (`snow-cr-approval`) | activation 18 details | status `running`, git_hash matches HEAD |
+| 7 | AAP project 57 (`ansible-rhel-post-deploy`) | controller projects UI | last sync `successful`, git_hash matches HEAD |
+| 8 | Vault paths populated | `secrets/servicenow/dev`, `secrets/tfc/api` | both have non-PLACEHOLDER values |
+| 9 | SN business rules in place | dev389292 → `sys_script` | `Notify EDA on CR approval` (single, not duplicate!) + `AAP drift remediation - auto-approve secondary approvers` both `active=true` |
 
 If any of these is off, jump to the relevant component section.
 
@@ -59,9 +60,10 @@ Banks running RHEL workloads on vSphere need to:
                               │       webhook (HMAC-signed)
                               ▼
               ┌───────────────────────────────────────┐
-              │ cloudflare tunnel #1 (long-running)   │  https://depot-molecules-award-submit.trycloudflare.com
-              │ TFC notif config nc-2Q8Lhk54ahNRVoRd  │
-              │ tunnels →  activation 17 webhook:5004 │
+              │ cloudflare tunnel #1 (in-cluster)     │  https://<random>.trycloudflare.com
+              │ Deployment cloudflared-tfc-eda/       │  (TFC notif config nc-2Q8Lhk54ahNRVoRd)
+              │   cloudflared → Service               │
+              │   tfc-notification-drift:5004         │
               └───────────────┬───────────────────────┘
                               ▼
               ┌───────────────────────────────────────┐
@@ -127,10 +129,10 @@ Banks running RHEL workloads on vSphere need to:
                                │        approver, approver_display, …}         │
                                ▼                                               │
               ┌───────────────────────────────────────┐                        │
-              │ cloudflare tunnel #2 (manual)         │                        │
-              │  https://*.trycloudflare.com          │                        │
-              │  (URL changes on every restart!)      │                        │
-              │  tunnels → activation 18 webhook:5005 │                        │
+              │ cloudflare tunnel #2 (in-cluster)     │  https://<random>.trycloudflare.com
+              │ Deployment cloudflared-snow-eda/      │  (URL rotates only on cloudflared pod restart)
+              │   cloudflared → Service               │                        │
+              │   snow-cr-approval:5005               │                        │
               └───────────────┬───────────────────────┘                        │
                               ▼                                                │
               ┌───────────────────────────────────────┐                        │
@@ -176,40 +178,56 @@ Banks running RHEL workloads on vSphere need to:
 ### 3.2 Cloudflare tunnels (two of them)
 
 Both are `trycloudflare.com` **quick tunnels** — free, no Cloudflare
-account required, BUT **ephemeral**. The URL changes every time
-`cloudflared` is restarted.
+account required. As of `tfo-apj-demos/terraform-openshift-platform-apps`
+PR #6, **both `cloudflared` connectors run inside the cluster** as
+one-replica Deployments managed by Terraform via
+`modules/cloudflared-quick-tunnel`. No `oc port-forward`, no Mac
+dependency, no laptop in the loop.
 
-| # | Direction | Public URL (current) | Tunnels to | Used by |
-|---|-----------|----------------------|------------|---------|
-| 1 | TFC → EDA | `https://depot-molecules-award-submit.trycloudflare.com` | activation 17 webhook source, port 5004 (HMAC) | TFC workspace notification config `nc-2Q8Lhk54ahNRVoRd` |
-| 2 | SN → EDA | `https://guns-plains-main-grocery.trycloudflare.com` (will change on restart) | activation 18 webhook source, port 5005 (no auth) | SN Outbound REST Message `AAP EDA - CR approval` |
+| # | Direction | Public URL | Tunnels to | Used by |
+|---|---|---|---|---|
+| 1 | TFC → EDA | `https://<random>.trycloudflare.com` (rotates only on cloudflared pod restart — see below) | k8s Service `tfc-notification-drift.aap.svc.cluster.local:5004` → activation 17 (HMAC validated) | TFC workspace notification config `nc-2Q8Lhk54ahNRVoRd` |
+| 2 | SN → EDA | `https://<random>.trycloudflare.com` (rotates only on cloudflared pod restart) | k8s Service `snow-cr-approval.aap.svc.cluster.local:5005` → activation 18 (no auth yet — see § 11) | SN Outbound REST Message `AAP EDA - CR approval` |
 
-**How tunnel #2 is set up** (the one you'll most likely have to
-restart):
+The cloudflared connector Deployments live in dedicated namespaces
+(`cloudflared-tfc-eda` and `cloudflared-snow-eda`). Each has a sibling
+`NetworkPolicy` in the `aap` namespace
+(`aap-eda-activation-from-cloudflared-only` for 5004,
+`snow-eda-from-cloudflared-only` for 5005) restricting that port on
+`app=eda` pods to ingress from only the matching tunnel namespace — no
+in-cluster bypass to the webhook ports.
+
+**Discover the current URL**:
 
 ```bash
-# 1. Find the activation-job pod for activation 18 (pod name changes
-#    every time the activation restarts)
-POD=$(oc -n aap get pods -o name | grep activation-job-18 | head -1 | sed 's|pod/||')
-
-# 2. Port-forward 5005 from that pod (kill any existing first)
-pkill -f 'port-forward.*5005'
-oc -n aap port-forward pod/$POD 5005:5005 &
-
-# 3. Start the cloudflare quick tunnel against localhost:5005
-cloudflared tunnel --url http://localhost:5005
-
-# Note the new https://*.trycloudflare.com URL it prints, then update
-# the SN Outbound REST Message endpoint:
-curl -u "admin:pwKi%D6I9-Ja" -X PATCH \
-  https://dev389292.service-now.com/api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b \
-  -H 'Content-Type: application/json' \
-  -d "{\"rest_endpoint\": \"<new-url>\"}"
+oc -n cloudflared-tfc-eda  logs deploy/cloudflared | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1
+oc -n cloudflared-snow-eda logs deploy/cloudflared | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1
 ```
 
-Both `cloudflared` processes must stay running for the loop to work.
-For a long demo session, run them in `tmux` / `screen` or move to a
-named Cloudflare tunnel.
+**When a URL rotates** (only when the cloudflared pod itself
+restarts — activation pod restarts no longer rotate it):
+
+```bash
+# 1. discover the new URL (commands above), set NEW=...
+# 2. update the consuming side:
+
+# TFC notification config #1 — recommended path is to re-run the
+# combined HMAC+URL rotation script so the secret stays sync'd:
+TUNNEL_URL=$NEW NEW_SECRET=... ./rotate-and-wire-tfc-notification.sh
+
+# SN Outbound REST Message #2:
+curl -sk -u "admin:pwKi%D6I9-Ja" -X PATCH \
+  https://dev389292.service-now.com/api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b \
+  -H 'Content-Type: application/json' \
+  -d "{\"rest_endpoint\": \"$NEW\"}"
+```
+
+Restart the cloudflared pod intentionally (e.g. after a CF image update) with:
+
+```bash
+oc -n cloudflared-snow-eda rollout restart deploy/cloudflared
+oc -n cloudflared-snow-eda rollout status  deploy/cloudflared
+```
 
 ### 3.3 AAP / EDA — IDs
 
@@ -581,16 +599,26 @@ following must be in place:
 
 ## 7. Operational notes / gotchas
 
-### 7.1 Cloudflare tunnel fragility
+### 7.1 Cloudflare tunnel URL rotation
 
-Both quick tunnels (`*.trycloudflare.com`) survive only while the
-`cloudflared` (and the `oc port-forward` it sits behind for #2) is
-running. If either dies:
+Since both connectors moved into the cluster (see § 3.2), the only
+remaining fragility is **the URL rotates every time the cloudflared
+pod itself restarts** (image pull, node drain, manual rollout). The pod
+restart is rare — the existing `cloudflared-tfc-eda` pod has gone 4+ days
+between restarts in practice — but it isn't zero.
 
-| Broken tunnel | Symptom | Fix |
-|---------------|---------|-----|
-| #1 (TFC → EDA) | TFC notification delivery failures; no `drift-create-snow-tickets` job in AAP | restart `cloudflared` for port 5004; update the TFC notification config URL via `PATCH /api/v2/notification-configurations/nc-2Q8Lhk54ahNRVoRd` |
-| #2 (SN → EDA) | SN syslog shows `AAP EDA webhook fired … status=502`; no `tfc-trigger-apply` job | (a) re-find the activation-18 pod (changes when activation restarts), (b) `oc port-forward` it on 5005, (c) `cloudflared tunnel --url http://localhost:5005`, (d) update the SN Outbound REST Message endpoint via `PATCH /api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b` |
+| Symptom | Diagnosis | Fix |
+|---|---|---|
+| TFC notification delivery failures; no `drift-create-snow-tickets` job in AAP | `curl <tfc-tunnel-url>` returns connection refused / DNS failure; `oc -n cloudflared-tfc-eda get pods` shows new pod | re-discover URL → `rotate-and-wire-tfc-notification.sh` with `TUNNEL_URL=$NEW` to update TFC notification config (+ rotate HMAC at the same time) |
+| SN syslog shows `AAP EDA webhook fired … status=0` or `502`; no `tfc-trigger-apply` job | `curl <sn-tunnel-url>` fails; `oc -n cloudflared-snow-eda get pods` shows new pod | re-discover URL → PATCH SN Outbound REST Message endpoint `20cbe2f8938583105e8930018bba103b` |
+
+The retired Mac-side troubleshooting (`oc port-forward` / `pkill cloudflared` /
+restarting a local quick-tunnel) is **no longer applicable** — those moving
+parts were retired with PR #6. If something on the SN→EDA path looks broken,
+the failure is one of: cloudflared pod restarted (URL rotation, above),
+activation 18 pod restarted (cluster DNS routes traffic to the new pod
+automatically — no action needed), or the NetworkPolicy is denying ingress
+(check `oc -n aap describe networkpolicy snow-eda-from-cloudflared-only`).
 
 ### 7.2 Self-signed cluster cert + ansible-galaxy
 
@@ -614,19 +642,15 @@ field, **use a Galaxy NG token** (obtained from
 bearer token authenticates against the controller; the Galaxy NG
 token authenticates against the AH service. Different auth backends.
 
-### 7.4 Activation restarts change the pod name
+### 7.4 Activation restarts (no longer a tunnel problem — retired)
 
-`oc port-forward` binds to a specific pod. When activation 18 restarts
-(e.g., after a rulebook update or a manual restart), the
-activation-job pod is re-created with a new name, the existing
-port-forward dies, and tunnel #2 starts returning 502. Find the
-current pod and re-run the port-forward:
-
-```bash
-POD=$(oc -n aap get pods -o name | grep activation-job-18 | head -1 | sed 's|pod/||')
-pkill -f 'port-forward.*5005'
-oc -n aap port-forward pod/$POD 5005:5005 &
-```
+Historically, when activation 18 restarted the activation-job pod was
+re-created with a new name, breaking the laptop-side `oc port-forward
+pod/<name> 5005:5005`. With the cloudflared connector inside the cluster
+talking to the k8s Service (`snow-cr-approval.aap.svc.cluster.local:5005`)
+rather than a specific pod, cluster DNS routes traffic to the new pod
+automatically. Nothing to do on activation restart. Kept here as a
+historical pointer so older runbook screenshots make sense.
 
 ### 7.5 Audit trail surfaces in three places
 
@@ -728,10 +752,12 @@ extra_vars.
 
 ### 9.6 trycloudflare URLs are ephemeral
 
-Quick tunnel URLs are regenerated on every `cloudflared` restart.
-For a persistent demo, set up a named Cloudflare tunnel (free with
-an account) or expose the EDA event-stream URLs via an OpenShift
-Route and skip cloudflared.
+Quick tunnel URLs are regenerated on every `cloudflared` pod restart.
+The connector now runs in-cluster (see § 3.2) so the laptop-dependency
+half of this problem is gone, but the URL still rotates on pod restart
+and needs propagating to TFC + SN. Production-grade fix is a named
+Cloudflare tunnel (see § 11) — pin the hostname so even cloudflared pod
+restarts don't break the loop.
 
 ## 10. Quick-lookup configuration reference
 
@@ -776,12 +802,17 @@ id=27  Local Automation Hub  https://aap-aap.apps.openshift-01.hashicorp.local/a
 
 ## 11. Backlog / next steps
 
-| Topic | Status | Notes |
-|-------|--------|-------|
-| Public ingress | Demo-grade (cloudflared quick tunnels) | Replace with named Cloudflare tunnels or OpenShift Routes for production |
-| Webhook auth | None on activation 18 | Add basic-auth or HMAC on the `ansible.eda.webhook` source + corresponding profile/headers on the SN Outbound REST Message |
-| `hashicorp.terraform.run` adoption | Blocked on upstream `run_message` alias bug | File issue at `github.com/hashicorp/terraform-ansible-collection`; flip role back to module the moment it's fixed |
-| Approval gate | Single human click after auto-CAB-resolve | Replace with custom Change Model + single Flow Designer approval step if the auto-resolve hack feels too clever for prod |
-| Multi-workspace | Works as-is | `correlation_id = workspace_id` makes the SN→TFC step workspace-agnostic — pointing the TFC notification at the same EDA tunnel from a different workspace just works |
-| Run failures | Job fails loudly | `tfc-trigger-apply` exits non-zero on apply failure → visible in AAP. Consider piping that back to SN to re-open the CR with the failure context |
-| `before_destroy` / `after_destroy` actions | Not in Terraform 1.14 yet | When they land, hook a `cmdb-close-change` JT into `after_destroy` to close out the CR automatically once the apply succeeds |
+Ordered roughly by impact-per-effort. The first three are the immediate
+follow-ups that came out of the in-cluster cloudflared move.
+
+| # | Topic | Status | Notes |
+|---|---|---|---|
+| 1 | **Bearer-token auth on activation 18** + `rotate-and-wire-sn-notification.sh` | Open | activation 18 currently accepts any POST. Mirror the activation-17 HMAC pattern with a simpler bearer token: SN `Notify EDA on CR approval` business rule adds `r.setRequestHeader('Authorization','Bearer ${sn_eda_token}')` before `r.execute()`; activation 18's rulebook validates with the webhook source's `password:` field or a rule-level `condition: event.meta.headers.Authorization == "Bearer ..."`. Rotation script mirrors the existing `rotate-and-wire-tfc-notification.sh` shape — generate secret → disable activation → PATCH extra_var → enable → PATCH the SN BR script with the new value. Closes the open-webhook gap that the cloudflared cluster move alone doesn't fix. |
+| 2 | **Named Cloudflare tunnel (stable URL)** | Open | Quick-tunnel URLs still rotate on cloudflared pod restart (§ 7.1). A named tunnel pins the public hostname forever. Costs: $0 if you bring an existing CF-managed domain, ~$10/yr if you register one via CF Registrar (at-cost, no markup). Implementation in `terraform-openshift-platform-apps`: extend `modules/cloudflared-quick-tunnel` (or fork to `modules/cloudflared-named-tunnel`) to provision `cloudflare_zero_trust_tunnel_cloudflared` + `_config` + `dns_record`, mount the tunnel run-token via Secret, swap `--url` for `--token`. Optional bonus: layer Cloudflare Access in front for zero-trust authn (replaces the bearer token above). |
+| 3 | **Auto-propagate cloudflared URL changes** | Open | Sidecar in each cloudflared Deployment that tails logs, extracts the new `*.trycloudflare.com` URL, and PATCHes the consuming side (TFC notification config / SN Outbound REST Message) automatically. ~3 hr engineering. Only worth doing if the named-tunnel migration (#2) isn't on the cards. |
+| 4 | OpenShift Route + public DNS instead of CF | Probably-not | Would only work if `apps.openshift-01.hashicorp.local` is internet-reachable from TFC/SN, which it isn't on this cluster (`.local`). Skip. |
+| 5 | `hashicorp.terraform.run` adoption | Blocked on upstream `run_message` alias bug | File issue at `github.com/hashicorp/terraform-ansible-collection`; flip role back to module the moment it's fixed |
+| 6 | Approval gate | Single human click after auto-CAB-resolve | Replace with custom Change Model + single Flow Designer approval step if the auto-resolve hack feels too clever for prod |
+| 7 | Multi-workspace | Works as-is | `correlation_id = workspace_id` makes the SN→TFC step workspace-agnostic — pointing the TFC notification at the same EDA tunnel from a different workspace just works |
+| 8 | Run failures | Job fails loudly | `tfc-trigger-apply` exits non-zero on apply failure → visible in AAP. Consider piping that back to SN to re-open the CR with the failure context |
+| 9 | `before_destroy` / `after_destroy` actions | Not in Terraform 1.14 yet | When they land, hook a `cmdb-close-change` JT into `after_destroy` to close out the CR automatically once the apply succeeds |
