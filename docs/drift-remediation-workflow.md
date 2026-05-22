@@ -23,7 +23,7 @@ the following in order:
 | 1 | TFC → EDA cloudflared connector | `oc -n cloudflared-tfc-eda get deploy/cloudflared` | Ready 1/1 |
 | 2 | SN → EDA cloudflared connector | `oc -n cloudflared-snow-eda get deploy/cloudflared` | Ready 1/1 |
 | 3 | TFC notification URL points at current tunnel #1 URL | TFC notif `nc-2Q8Lhk54ahNRVoRd` ↔ `oc -n cloudflared-tfc-eda logs deploy/cloudflared \| grep trycloudflare` | URLs match, notification enabled = true |
-| 4 | SN Outbound REST endpoint points at current tunnel #2 URL | SN `sys_rest_message/20cbe2f8938583105e8930018bba103b` ↔ `oc -n cloudflared-snow-eda logs deploy/cloudflared \| grep trycloudflare` | URLs match |
+| 4 | SN Outbound REST endpoint (**parent AND function**) points at current tunnel #2 URL | SN `sys_rest_message/20cbe2f8938583105e8930018bba103b` **and** `sys_rest_message_fn/46db6e3c938583105e8930018bba103f` ↔ `oc -n cloudflared-snow-eda logs deploy/cloudflared \| grep trycloudflare` | Both URLs match (the function's value is the one that hits the wire — see § 9.7) |
 | 5 | EDA activation 17 (`tfc-notification-drift`) | `aap-aap…/decisions/rulebook-activations/17/details` | status `running`, git_hash matches `terraform-eda-example` HEAD |
 | 6 | EDA activation 18 (`snow-cr-approval`) | activation 18 details | status `running`, git_hash matches HEAD |
 | 7 | AAP project 57 (`ansible-rhel-post-deploy`) | controller projects UI | last sync `successful`, git_hash matches HEAD |
@@ -215,9 +215,15 @@ restarts — activation pod restarts no longer rotate it):
 # combined HMAC+URL rotation script so the secret stays sync'd:
 TUNNEL_URL=$NEW NEW_SECRET=... ./rotate-and-wire-tfc-notification.sh
 
-# SN Outbound REST Message #2:
+# SN Outbound REST Message #2 — IMPORTANT: PATCH BOTH the parent and
+# the per-function records. The function's rest_endpoint overrides the
+# parent's at execution time (see § 9.7).
 curl -sk -u "admin:pwKi%D6I9-Ja" -X PATCH \
   https://dev389292.service-now.com/api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b \
+  -H 'Content-Type: application/json' \
+  -d "{\"rest_endpoint\": \"$NEW\"}"
+curl -sk -u "admin:pwKi%D6I9-Ja" -X PATCH \
+  https://dev389292.service-now.com/api/now/table/sys_rest_message_fn/46db6e3c938583105e8930018bba103f \
   -H 'Content-Type: application/json' \
   -d "{\"rest_endpoint\": \"$NEW\"}"
 ```
@@ -255,7 +261,7 @@ Admin login: `admin / pwKi%D6I9-Ja` (dev only — public PDI)
 | Object | Type | sys_id | Notes |
 |--------|------|--------|----|
 | `AAP EDA - CR approval` | Outbound REST Message | `20cbe2f8938583105e8930018bba103b` | endpoint = tunnel #2 URL |
-| POST function | sys_rest_message_fn | `46db6e3c938583105e8930018bba103f` | body sends `cr_number`, `cr_sys_id`, `correlation_id`, `workspace_name`, `approver`, `approver_display`, `approval_state` |
+| POST function | sys_rest_message_fn | `46db6e3c938583105e8930018bba103f` | body sends `cr_number`, `cr_sys_id`, `correlation_id`, `workspace_name`, `approver`, `approver_display`, `approval_state`. **Has its own `rest_endpoint` field that overrides the parent's** — see § 9.7 |
 | `Content-Type: application/json` header | sys_rest_message_fn_headers | `12db6e3c938583105e8930018bba1048` | on the POST function |
 | **`Notify EDA on CR approval`** | Business Rule (sys_script) | `611c66f8938583105e8930018bba101f` | table `change_request`, `when: after`, `action_update: true`, filter `approvalCHANGESTOapproved`. Body has TWO guards (see § 5.1) |
 | **`AAP drift remediation - auto-approve secondary approvers`** | Business Rule (sys_script) | `e15213f4938983105e8930018bba101b` | table `sysapproval_approver`, when `after`, filter `state=requested`. Auto-approves CAB-group approvers on drift CRs |
@@ -758,6 +764,39 @@ half of this problem is gone, but the URL still rotates on pod restart
 and needs propagating to TFC + SN. Production-grade fix is a named
 Cloudflare tunnel (see § 11) — pin the hostname so even cloudflared pod
 restarts don't break the loop.
+
+### 9.7 ServiceNow REST Message function endpoint overrides parent
+
+`sn_ws.RESTMessageV2('AAP EDA - CR approval', 'post')` resolves to **two**
+records: the parent `sys_rest_message` and the per-HTTP-method
+`sys_rest_message_fn`. Each has its own `rest_endpoint` field. When the
+function's `rest_endpoint` is set, it **wins** — the parent's value is
+ignored at execution time.
+
+This trap has bitten the demo at least three times. When you rotate the
+tunnel URL, **PATCH both**:
+
+```bash
+NEW=https://<new>.trycloudflare.com
+
+# Parent (sys_rest_message)
+curl -sk -u "admin:..." -X PATCH \
+  "https://dev389292.service-now.com/api/now/table/sys_rest_message/20cbe2f8938583105e8930018bba103b" \
+  -H 'Content-Type: application/json' \
+  -d "{\"rest_endpoint\":\"$NEW\"}"
+
+# Function (sys_rest_message_fn) — the one that ACTUALLY ends up on the wire
+curl -sk -u "admin:..." -X PATCH \
+  "https://dev389292.service-now.com/api/now/table/sys_rest_message_fn/46db6e3c938583105e8930018bba103f" \
+  -H 'Content-Type: application/json' \
+  -d "{\"rest_endpoint\":\"$NEW\"}"
+```
+
+How to spot this failure mode in SN syslog: the BR log line shows
+`status=0 haveError=true errorMsg=Request not sent to uri= https://<OLD>... : java.net.UnknownHostException`.
+The `<OLD>` URL is the function's stale endpoint — that's the dead
+giveaway. The BR's status-line logging in § 5.1 captures
+`getErrorMessage()` precisely so this is one log query away next time.
 
 ## 10. Quick-lookup configuration reference
 
