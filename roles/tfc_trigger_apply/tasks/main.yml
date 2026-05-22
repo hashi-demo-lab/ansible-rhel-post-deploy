@@ -1,4 +1,19 @@
 ---
+# NOTE — why this role uses ansible.builtin.uri directly instead of
+# hashicorp.terraform.run:
+#
+# The hashicorp.terraform.run module (v2.0.0, github.com/hashicorp/
+# terraform-ansible-collection) accepts a `run_message` parameter, but
+# pytfe's RunCreateOptions Pydantic model has the field named `message`
+# with no `run_message` alias. Pydantic's default extra='ignore'
+# silently drops the kwarg, so the module submits a run with no
+# message and HCP TF labels it "Triggered via API". For an audit-
+# focused demo where the SN CR number + approver have to land on the
+# run, that's a non-starter. Upstream issue to be filed; until it's
+# fixed, the direct API call below is the reliable path. The
+# collection is still in requirements.yml so we can switch back the
+# moment the upstream bug is resolved.
+
 - name: Sanity-check workspace id
   ansible.builtin.assert:
     that:
@@ -24,49 +39,44 @@
       - "  path : {{ vault_kv_mount }}/{{ vault_tfc_secret_path }}"
       - "  api  : {{ tfc_api_url }}"
 
-# ─── Ensure the pytfe SDK is available ────────────────────────────────────
-# hashicorp.terraform depends on pytfe. If the EE image ships it this
-# task is a no-op; otherwise we install it on first run.
-- name: Ensure pytfe Python SDK is available (dependency of hashicorp.terraform)
-  ansible.builtin.pip:
-    name: pytfe
-    state: present
-  changed_when: false
-
-# ─── Create + apply the run via the official collection ─────────────────
-- name: Create + apply the HCP Terraform run via hashicorp.terraform.run
-  hashicorp.terraform.run:
-    tfe_token: "{{ tfc_creds.secret.token }}"
-    tfe_address: "{{ tfc_api_url | regex_replace('/api/v2$', '') }}"
-    workspace_id: "{{ tfc_workspace_id }}"
-    run_message: "{{ tfc_run_message }}"
-    auto_apply: true
-    poll: true
-    poll_interval: "{{ tfc_poll_interval_seconds }}"
-    poll_timeout: "{{ tfc_poll_interval_seconds * tfc_poll_max_attempts }}"
-    state: present
-  register: tfc_run
+# ─── Create the run (direct API, sends message reliably) ────────────────
+- name: Create a new HCP Terraform run on workspace {{ tfc_workspace_id }}
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Content-Type: "application/vnd.api+json"
+    body_format: json
+    body:
+      data:
+        type: "runs"
+        attributes:
+          message: "{{ tfc_run_message }}"
+        relationships:
+          workspace:
+            data:
+              type: "workspaces"
+              id: "{{ tfc_workspace_id }}"
+    status_code: 201
+    return_content: true
+  register: run_response
   no_log: true
 
-- name: Capture run id from module result
+- name: Capture run id
   ansible.builtin.set_fact:
-    _tfc_run_id: "{{ tfc_run.id | default('') }}"
-    _tfc_run_status: "{{ tfc_run.status | default('?') }}"
+    _tfc_run_id: "{{ run_response.json.data.id }}"
 
 - name: Show the new run (demo visibility)
   ansible.builtin.debug:
     msg:
-      - "HCP Terraform run via hashicorp.terraform.run"
+      - "HCP Terraform run queued"
       - "  run_id    : {{ _tfc_run_id }}"
       - "  workspace : {{ tfc_workspace_id }}"
-      - "  status    : {{ _tfc_run_status }}"
+      - "  status    : {{ run_response.json.data.attributes.status }}"
       - "  message   : {{ tfc_run_message }}"
-      - "  drift remediation: {{ 'COMPLETE' if _tfc_run_status in ['applied','planned_and_finished'] else 'FAILED' }}"
 
-# ─── Audit comment on the run ────────────────────────────────────────────
-# No module in hashicorp.terraform covers run comments, so we fall back
-# to a direct API call. Always posted (no `when` gate) with sensible
-# fallbacks so the run history always shows what triggered it.
+# ─── Audit comment on the run ───────────────────────────────────────────
 - name: Post audit comment on the run
   ansible.builtin.uri:
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/comments"
@@ -86,18 +96,103 @@
             - Approved by   : {{ tfc_approver | default('(unknown)') }}
             - Triggered by  : AAP / Event-Driven Ansible (activation `snow-cr-approval`)
             - Job template  : `tfc-trigger-apply`
-            - Collection    : `hashicorp.terraform.run` 2.0.0
-            - Final status  : {{ _tfc_run_status }}
     status_code: 201
   no_log: true
-  when: _tfc_run_id | length > 0
 
 - name: Show audit comment posted (demo visibility)
   ansible.builtin.debug:
     msg: "Audit comment posted to run {{ _tfc_run_id }} — approver: {{ tfc_approver | default('(unknown)') }}, SN CR: {{ tfc_cr_number | default('(none)') }}"
-  when: _tfc_run_id | length > 0
 
-- name: Fail if run did not reach a successful terminal state
+# ─── Wait for the run to leave the planning phase ───────────────────────
+- name: Wait for plan to finish (any post-plan or terminal state)
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+  register: run_poll
+  retries: "{{ tfc_poll_max_attempts }}"
+  delay: "{{ tfc_poll_interval_seconds }}"
+  until: run_poll.json.data.attributes.status not in [
+           'pending',
+           'fetching',
+           'fetching_completed',
+           'queuing',
+           'managed_queued',
+           'plan_queued',
+           'planning',
+           'cost_estimating',
+           'policy_checking'
+         ]
+  no_log: true
+
+- name: Show plan outcome (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "Plan finished"
+      - "  run_id : {{ _tfc_run_id }}"
+      - "  status : {{ run_poll.json.data.attributes.status }}"
+
+- name: Fail if plan errored before apply could start
   ansible.builtin.fail:
-    msg: "TFC run {{ _tfc_run_id }} ended in '{{ _tfc_run_status }}' — drift NOT remediated"
-  when: _tfc_run_status not in ['applied', 'planned_and_finished']
+    msg: "TFC run {{ _tfc_run_id }} ended at plan with status '{{ run_poll.json.data.attributes.status }}' — drift NOT remediated"
+  when: run_poll.json.data.attributes.status in ['errored', 'canceled', 'discarded', 'policy_hard_failed']
+
+# ─── Confirm apply (skipped if auto-apply already moved it on) ─────────
+- name: Confirm the apply
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/actions/apply"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Content-Type: "application/vnd.api+json"
+    body_format: json
+    body:
+      comment: "Confirmed by AAP / EDA after ServiceNow {{ tfc_cr_number | default('CR') }} approval ({{ tfc_approver | default('unknown') }})"
+    status_code: [202, 409]
+  register: apply_confirm
+  when:
+    - tfc_auto_confirm_apply
+    - run_poll.json.data.attributes.status in ['planned', 'cost_estimated', 'policy_checked']
+
+- name: Note auto-apply state
+  ansible.builtin.debug:
+    msg: >-
+      Apply
+      {{ 'confirmed by AAP'                  if (apply_confirm.status | default(0)) == 202
+         else 'already past confirm (auto-apply)' if (apply_confirm.status | default(0)) == 409
+         else ('already at ' ~ run_poll.json.data.attributes.status) }}
+
+# ─── Wait for the run to reach a terminal state ─────────────────────────
+- name: Wait for apply to complete
+  ansible.builtin.uri:
+    url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+  register: apply_poll
+  retries: "{{ tfc_poll_max_attempts }}"
+  delay: "{{ tfc_poll_interval_seconds }}"
+  until: apply_poll.json.data.attributes.status in [
+           'applied',
+           'planned_and_finished',
+           'errored',
+           'canceled',
+           'discarded',
+           'policy_hard_failed',
+           'policy_soft_failed'
+         ]
+  no_log: true
+
+- name: Show final result (demo visibility)
+  ansible.builtin.debug:
+    msg:
+      - "TFC run finished"
+      - "  run_id : {{ _tfc_run_id }}"
+      - "  status : {{ apply_poll.json.data.attributes.status }}"
+      - "  drift remediation: {{ 'COMPLETE' if apply_poll.json.data.attributes.status in ['applied','planned_and_finished'] else 'FAILED' }}"
+
+- name: Fail if apply errored
+  ansible.builtin.fail:
+    msg: "TFC run {{ _tfc_run_id }} ended in '{{ apply_poll.json.data.attributes.status }}' — drift NOT remediated"
+  when: apply_poll.json.data.attributes.status not in ['applied', 'planned_and_finished']
