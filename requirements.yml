@@ -8,14 +8,9 @@ collections:
     version: ">=6.0.0"
   - name: community.vmware
     version: ">=4.0.0"
-  # NOTE: hashicorp.terraform (Red Hat-certified collection at
-  # catalog.redhat.com/en/software/collection/hashicorp/terraform) is
-  # NOT on the public Ansible Galaxy NG — it's distributed via Red Hat
-  # Automation Hub, which requires a subscription token. Until an
-  # Automation Hub credential is wired into this AAP, the
-  # tfc_trigger_apply role keeps using ansible.builtin.uri direct API
-  # calls. Re-introduce this collection here once the AH token is
-  # available:
-  #
-  #   - name: hashicorp.terraform
-  #     version: "2.0.0"
+  # Resolved from the local AAP Automation Hub (published repo).
+  # The collection was uploaded as hashicorp-terraform-2.0.0.tar.gz
+  # (built from github.com/hashicorp/terraform-ansible-collection
+  # tag 2.0.0) and moved staging -> published.
+  - name: hashicorp.terraform
+    version: "2.0.0"
