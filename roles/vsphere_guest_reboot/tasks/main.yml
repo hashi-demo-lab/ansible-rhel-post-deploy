@@ -1,0 +1,37 @@
+---
+- name: Read vCenter LDAP dynamic credentials from Vault (once for the play)
+  community.hashi_vault.vault_read:
+    url: "{{ vault_addr }}"
+    auth_method: approle
+    role_id: "{{ role_id }}"
+    secret_id: "{{ secret_id }}"
+    path: "{{ vault_ldap_mount }}/creds/{{ vault_vsphere_ldap_role }}"
+    validate_certs: false
+  register: vsphere_creds_raw
+  run_once: true
+  delegate_to: localhost
+  no_log: true
+
+- name: Extract vSphere username/password from the lease
+  ansible.builtin.set_fact:
+    _vsphere_user: "{{ (vsphere_creds_raw.data.data.username | default(vsphere_creds_raw.data.username)) ~ '@' ~ (ad_domain | default('hashicorp.local')) }}"
+    _vsphere_pass: "{{ vsphere_creds_raw.data.data.password | default(vsphere_creds_raw.data.password) }}"
+  run_once: true
+  no_log: true
+
+- name: Reboot guest on {{ inventory_hostname }}
+  community.vmware.vmware_guest_powerstate:
+    hostname: "{{ vsphere_hostname }}"
+    username: "{{ _vsphere_user }}"
+    password: "{{ _vsphere_pass }}"
+    validate_certs: false
+    datacenter: "{{ vsphere_datacenter }}"
+    folder: "{{ vsphere_folder }}"
+    name: "{{ inventory_hostname }}"
+    state: "{{ vsphere_power_state }}"
+  delegate_to: localhost
+  no_log: true
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} guest reboot requested via VMware Tools"

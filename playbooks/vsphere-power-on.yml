@@ -1,0 +1,12 @@
+---
+# Powers on each VM in inventory via vCenter.
+- name: Power on VMs via vCenter
+  hosts: all
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_power_on

@@ -1,0 +1,13 @@
+---
+vsphere_hostname: "vcsa-98975.fe9dbbb3.asia-southeast1.gve.goog"
+vsphere_datacenter: "Datacenter"
+vsphere_folder: "Demo Workloads"
+
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_ldap_mount: "ldap"
+vault_vsphere_ldap_role: "vsphere_access"
+
+# If snapshot_name is left empty the role lists snapshots and picks the
+# most recently created one. Override via AAP job extra_vars to revert
+# to a specific named snapshot (e.g. one a previous before_update took).
+snapshot_name: ""

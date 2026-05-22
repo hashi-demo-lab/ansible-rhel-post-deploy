@@ -1,0 +1,13 @@
+---
+# Removes ALL snapshots from each VM. Cleanup after a change window
+# closes — vSphere consolidates the disk chain after this.
+- name: Remove all snapshots from VMs
+  hosts: all
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_remove_all_snapshots

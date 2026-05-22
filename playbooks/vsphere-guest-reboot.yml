@@ -1,0 +1,12 @@
+---
+# Reboots each VM via VMware Tools (graceful, in-guest reboot).
+- name: Reboot VMs via VMware Tools
+  hosts: all
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_guest_reboot

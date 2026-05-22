@@ -1,0 +1,8 @@
+---
+vsphere_hostname: "vcsa-98975.fe9dbbb3.asia-southeast1.gve.goog"
+vsphere_datacenter: "Datacenter"
+vsphere_folder: "Demo Workloads"
+
+vault_addr: "https://vault.hashicorp.local:8200"
+vault_ldap_mount: "ldap"
+vault_vsphere_ldap_role: "vsphere_access"

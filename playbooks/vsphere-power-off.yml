@@ -1,0 +1,14 @@
+---
+# Gracefully powers off each VM in inventory via VMware Tools.
+# Localhost-delegated; pulls vCenter creds from Vault's LDAP dynamic
+# secrets engine.
+- name: Power off VMs via vCenter
+  hosts: all
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_power_off

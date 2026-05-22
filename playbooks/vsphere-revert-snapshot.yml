@@ -1,0 +1,13 @@
+---
+# Reverts each VM to a named snapshot (or the most recently created one
+# if no name supplied). Pairs with pre-vsphere-snapshot for rollback.
+- name: Revert VMs to a snapshot
+  hosts: all
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_revert_snapshot
