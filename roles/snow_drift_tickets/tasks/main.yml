@@ -34,22 +34,28 @@
     body:
       short_description: "VM configuration drift — {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
       description: |
-        AUTOMATED INCIDENT — opened by Ansible Automation Platform via
-        Event-Driven Ansible after HCP Terraform detected drift on a
-        managed VM workload.
+        ================================================================
+          AUTOMATED INCIDENT — VM Configuration Drift Detected
+        ================================================================
 
-        Likely drift category : VM compute / size / configuration change
-                                (e.g. someone resized vCPU or memory
-                                directly in vCenter outside Terraform)
+        Source        : HCP Terraform — drift detection assessment
+        Trigger       : Event-Driven Ansible -> Ansible Automation Platform
+        Drift type    : VM compute / size / configuration change
+                        (e.g. vCPU or memory resized directly in vCenter,
+                        outside of Terraform's declared state)
 
-        HCP Terraform workspace : {{ tfc_workspace_name }}
-        Workspace ID            : {{ tfc_workspace_id }}
-        Organization            : {{ tfc_organization_name }}
-        Resources drifted       : {{ tfc_resources_drifted }}
-        Assessment result       : {{ tfc_assessment_result_url }}
+        ---- HCP Terraform Context -------------------------------------
+
+        Workspace     : {{ tfc_workspace_name }}
+        Workspace ID  : {{ tfc_workspace_id }}
+        Organization  : {{ tfc_organization_name }}
+        Drifted       : {{ tfc_resources_drifted }} resource(s)
+        Assessment    : {{ tfc_assessment_result_url }}
+
+        ---- Next Action -----------------------------------------------
 
         A related Change Request will be opened for CAB approval.
-        Once approved, AAP will fire the remediation `terraform apply`
+        On approval, AAP will execute the remediation `terraform apply`
         against the workspace above.
       category: "{{ servicenow_category }}"
       impact: "{{ servicenow_change_impact }}"
@@ -76,30 +82,40 @@
     body:
       short_description: "Reconcile VM compute drift via Terraform — {{ tfc_workspace_name }}"
       description: |
-        REMEDIATION CHANGE REQUEST — created by AAP / EDA in response to
-        a drift event from HCP Terraform.
+        ================================================================
+          REMEDIATION CHANGE REQUEST — Terraform Drift Reconciliation
+        ================================================================
 
-        Scope          : Re-apply the declared VM configuration in
-                         HCP Terraform to reverse any out-of-band changes
-                         (e.g. CPU / memory / tags edited directly in
-                         vCenter, or via vMotion / a console operator).
-        Method         : On approval, AAP fires `terraform apply` against
-                         workspace {{ tfc_workspace_name }} via the
-                         HCP Terraform API. Sentinel policy still gates
-                         the apply.
-        Reversibility  : Snapshot taken automatically on the previous
-                         lifecycle change (see linked incident notes).
+        Created by    : Ansible Automation Platform / Event-Driven Ansible
+        Trigger       : Drift event from HCP Terraform
 
-        HCP Terraform workspace : {{ tfc_workspace_name }}
-        Workspace ID            : {{ tfc_workspace_id }}
-        Organization            : {{ tfc_organization_name }}
-        Resources drifted       : {{ tfc_resources_drifted }}
-        Assessment result       : {{ tfc_assessment_result_url }}
-        Linked incident         : {{ incident_response.json.result.number }}
+        ---- Change Plan -----------------------------------------------
 
-        CAB approver action: open this CR in ServiceNow and click
-        "Approve" — the SN business rule will then post the approval
-        event back to AAP/EDA, which will trigger the remediation apply.
+        Scope         : Re-apply the declared VM configuration in
+                        HCP Terraform to reverse any out-of-band changes
+                        (e.g. CPU / memory / tags edited directly in
+                        vCenter, or via vMotion / a console operator).
+        Method        : On approval, AAP fires `terraform apply` against
+                        workspace {{ tfc_workspace_name }} via the
+                        HCP Terraform API. Sentinel policy still gates
+                        the apply.
+        Reversibility : Snapshot taken automatically on the previous
+                        lifecycle change (see linked incident notes).
+
+        ---- HCP Terraform Context -------------------------------------
+
+        Workspace     : {{ tfc_workspace_name }}
+        Workspace ID  : {{ tfc_workspace_id }}
+        Organization  : {{ tfc_organization_name }}
+        Drifted       : {{ tfc_resources_drifted }} resource(s)
+        Assessment    : {{ tfc_assessment_result_url }}
+        Linked INC    : {{ incident_response.json.result.number }}
+
+        ---- CAB Approver Action ---------------------------------------
+
+        Open this CR in ServiceNow and click "Approve".
+        The SN business rule will then post the approval event back
+        to AAP / EDA, which will trigger the remediation apply.
       type: "{{ servicenow_change_type }}"
       category: "{{ servicenow_category }}"
       risk: "{{ servicenow_change_risk }}"
