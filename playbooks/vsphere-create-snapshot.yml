@@ -1,0 +1,18 @@
+---
+# Takes a vSphere snapshot of each VM on demand. Reuses the same
+# vsphere_snapshot role as pre-vsphere-snapshot.yml (which creates the
+# snapshot); this is the ad-hoc, on-demand entry point that pairs with
+# vsphere-revert-snapshot / vsphere-remove-all-snapshots.
+- name: Take a vSphere snapshot
+  # Defaults to "all" so legacy callers keep current behaviour. TFC
+  # actions wrap this with extra_vars `target_host: <hostname>` to
+  # scope to a single VM.
+  hosts: "{{ target_host | default('all') }}"
+  gather_facts: false
+  connection: local
+  become: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  roles:
+    - vsphere_snapshot
