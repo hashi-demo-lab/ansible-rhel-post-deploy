@@ -8,3 +8,6 @@
 # The authoritative deck lives in templates/index.html.j2 + templates/slides/*.html.j2
 # plus files/app.css and files/app.js.
 roles/install_nginx/templates/index.html
+
+# docs
+docs/
