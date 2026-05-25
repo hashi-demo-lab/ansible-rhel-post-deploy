@@ -3,6 +3,10 @@
   ansible.builtin.dnf:
     name: nginx
     state: present
+    # nginx ships in RHEL AppStream, so EPEL isn't needed here. Disable it
+    # for this transaction so stale/broken EPEL metadata on the base image
+    # can't abort the nginx install (dnf refreshes all enabled repos).
+    disablerepo: epel
 
 - name: Create SSL directory
   ansible.builtin.file:
