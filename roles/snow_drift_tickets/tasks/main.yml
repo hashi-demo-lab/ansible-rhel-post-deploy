@@ -1,4 +1,18 @@
 ---
+# Opens a ServiceNow incident + change request for an HCP Terraform drift
+# event, using the certified servicenow.itsm collection.
+#
+# Field mapping note (why some fields go through `other`):
+#   The incident/change_request modules enforce choice enums
+#   (impact/urgency = high|medium|low, category = lowercase words) and
+#   resolve names to sys_ids. This demo writes raw ServiceNow values
+#   instead — numeric impact "3", category "Other", and sys_ids for the
+#   group/assignee. To keep the created records byte-identical to the
+#   previous ansible.builtin.uri implementation, those raw-valued fields
+#   are passed through the modules' free-form `other` dict (which is
+#   merged straight into the table payload), while fields whose values
+#   already match a module enum (type, risk) use the typed params.
+
 - name: Read ServiceNow credentials from Vault
   community.hashi_vault.vault_kv2_get:
     url: "{{ vault_addr }}"
@@ -19,118 +33,112 @@
       - "  username : {{ snow_creds.secret.username }}"
       - "  instance : {{ servicenow_instance_url }}"
 
+- name: Build the servicenow.itsm instance connection
+  ansible.builtin.set_fact:
+    _sn_instance:
+      host: "{{ servicenow_instance_url }}"
+      username: "{{ snow_creds.secret.username }}"
+      password: "{{ snow_creds.secret.password }}"
+      validate_certs: false
+  no_log: true
+
 # ─── Incident ────────────────────────────────────────────────────────────
 - name: Open ServiceNow incident for the detected VM drift
-  ansible.builtin.uri:
-    url: "{{ servicenow_instance_url }}/api/now/table/incident"
-    method: POST
-    user: "{{ snow_creds.secret.username }}"
-    password: "{{ snow_creds.secret.password }}"
-    force_basic_auth: true
-    headers:
-      Accept: "application/json"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      short_description: "VM configuration drift — {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
-      description: |
-        ================================================================
-          AUTOMATED INCIDENT — VM Configuration Drift Detected
-        ================================================================
+  servicenow.itsm.incident:
+    instance: "{{ _sn_instance }}"
+    state: new
+    short_description: "VM configuration drift — {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
+    description: |
+      ================================================================
+        AUTOMATED INCIDENT — VM Configuration Drift Detected
+      ================================================================
 
-        Source        : HCP Terraform — drift detection assessment
-        Trigger       : Event-Driven Ansible -> Ansible Automation Platform
-        Drift type    : VM compute / size / configuration change
-                        (e.g. vCPU or memory resized directly in vCenter,
-                        outside of Terraform's declared state)
+      Source        : HCP Terraform — drift detection assessment
+      Trigger       : Event-Driven Ansible -> Ansible Automation Platform
+      Drift type    : VM compute / size / configuration change
+                      (e.g. vCPU or memory resized directly in vCenter,
+                      outside of Terraform's declared state)
 
-        ---- HCP Terraform Context -------------------------------------
+      ---- HCP Terraform Context -------------------------------------
 
-        Workspace     : {{ tfc_workspace_name }}
-        Workspace ID  : {{ tfc_workspace_id }}
-        Organization  : {{ tfc_organization_name }}
-        Drifted       : {{ tfc_resources_drifted }} resource(s)
-        Assessment    : {{ tfc_assessment_result_url }}
+      Workspace     : {{ tfc_workspace_name }}
+      Workspace ID  : {{ tfc_workspace_id }}
+      Organization  : {{ tfc_organization_name }}
+      Drifted       : {{ tfc_resources_drifted }} resource(s)
+      Assessment    : {{ tfc_assessment_result_url }}
 
-        ---- Next Action -----------------------------------------------
+      ---- Next Action -----------------------------------------------
 
-        A related Change Request will be opened for CAB approval.
-        On approval, AAP will execute the remediation `terraform apply`
-        against the workspace above.
+      A related Change Request will be opened for CAB approval.
+      On approval, AAP will execute the remediation `terraform apply`
+      against the workspace above.
+    # Raw-valued fields preserved exactly via free-form passthrough.
+    other:
       category: "{{ servicenow_category }}"
       impact: "{{ servicenow_change_impact }}"
       urgency: "{{ servicenow_change_impact }}"
       correlation_id: "{{ tfc_workspace_id }}"
       correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
-    status_code: 201
-    return_content: true
   register: incident_response
   no_log: true
 
 # ─── Change Request ──────────────────────────────────────────────────────
 - name: Open ServiceNow change request for the remediation
-  ansible.builtin.uri:
-    url: "{{ servicenow_instance_url }}/api/now/table/change_request"
-    method: POST
-    user: "{{ snow_creds.secret.username }}"
-    password: "{{ snow_creds.secret.password }}"
-    force_basic_auth: true
-    headers:
-      Accept: "application/json"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      short_description: "Reconcile VM compute drift via Terraform — {{ tfc_workspace_name }}"
-      description: |
-        ================================================================
-          REMEDIATION CHANGE REQUEST — Terraform Drift Reconciliation
-        ================================================================
+  servicenow.itsm.change_request:
+    instance: "{{ _sn_instance }}"
+    state: new
+    # type + risk already match the module enums (normal / moderate).
+    type: "{{ servicenow_change_type }}"
+    risk: "{{ servicenow_change_risk }}"
+    # assignment_group default is a sys_id, so use the *_id param.
+    assignment_group_id: "{{ servicenow_assignment_group }}"
+    short_description: "Reconcile VM compute drift via Terraform — {{ tfc_workspace_name }}"
+    description: |
+      ================================================================
+        REMEDIATION CHANGE REQUEST — Terraform Drift Reconciliation
+      ================================================================
 
-        Created by    : Ansible Automation Platform / Event-Driven Ansible
-        Trigger       : Drift event from HCP Terraform
+      Created by    : Ansible Automation Platform / Event-Driven Ansible
+      Trigger       : Drift event from HCP Terraform
 
-        ---- Change Plan -----------------------------------------------
+      ---- Change Plan -----------------------------------------------
 
-        Scope         : Re-apply the declared VM configuration in
-                        HCP Terraform to reverse any out-of-band changes
-                        (e.g. CPU / memory / tags edited directly in
-                        vCenter, or via vMotion / a console operator).
-        Method        : On approval, AAP fires `terraform apply` against
-                        workspace {{ tfc_workspace_name }} via the
-                        HCP Terraform API. Sentinel policy still gates
-                        the apply.
-        Reversibility : Snapshot taken automatically on the previous
-                        lifecycle change (see linked incident notes).
+      Scope         : Re-apply the declared VM configuration in
+                      HCP Terraform to reverse any out-of-band changes
+                      (e.g. CPU / memory / tags edited directly in
+                      vCenter, or via vMotion / a console operator).
+      Method        : On approval, AAP fires `terraform apply` against
+                      workspace {{ tfc_workspace_name }} via the
+                      HCP Terraform API. Sentinel policy still gates
+                      the apply.
+      Reversibility : Snapshot taken automatically on the previous
+                      lifecycle change (see linked incident notes).
 
-        ---- HCP Terraform Context -------------------------------------
+      ---- HCP Terraform Context -------------------------------------
 
-        Workspace     : {{ tfc_workspace_name }}
-        Workspace ID  : {{ tfc_workspace_id }}
-        Organization  : {{ tfc_organization_name }}
-        Drifted       : {{ tfc_resources_drifted }} resource(s)
-        Assessment    : {{ tfc_assessment_result_url }}
-        Linked INC    : {{ incident_response.json.result.number }}
+      Workspace     : {{ tfc_workspace_name }}
+      Workspace ID  : {{ tfc_workspace_id }}
+      Organization  : {{ tfc_organization_name }}
+      Drifted       : {{ tfc_resources_drifted }} resource(s)
+      Assessment    : {{ tfc_assessment_result_url }}
+      Linked INC    : {{ incident_response.record.number }}
 
-        ---- CAB Approver Action ---------------------------------------
+      ---- CAB Approver Action ---------------------------------------
 
-        Open this CR in ServiceNow and click "Approve".
-        The SN business rule will then post the approval event back
-        to AAP / EDA, which will trigger the remediation apply.
-      type: "{{ servicenow_change_type }}"
+      Open this CR in ServiceNow and click "Approve".
+      The SN business rule will then post the approval event back
+      to AAP / EDA, which will trigger the remediation apply.
+    # Raw-valued / non-param fields preserved exactly via passthrough.
+    # assigned_to + correlation_* have no typed param; category + impact
+    # carry raw values, so they go here too. assignment_group_id removes
+    # the manual routing step before "Request Approval" (OOTB Normal
+    # change model needs the group set on creation).
+    other:
       category: "{{ servicenow_category }}"
-      risk: "{{ servicenow_change_risk }}"
       impact: "{{ servicenow_change_impact }}"
-      # Pre-populate routing so the CR is approval-ready on creation —
-      # OOTB Normal change model blocks the "Request Approval"
-      # transition unless these are set.
-      assignment_group: "{{ servicenow_assignment_group }}"
       assigned_to: "{{ servicenow_assigned_to }}"
-      # Standard SN correlation fields — the SN business rule on the
-      # CR's approval transition reads these and forwards them to EDA.
       correlation_id: "{{ tfc_workspace_id }}"
       correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
-    status_code: 201
-    return_content: true
   register: cr_response
   no_log: true
 
@@ -138,8 +146,8 @@
   ansible.builtin.debug:
     msg:
       - "ServiceNow tickets opened for {{ tfc_workspace_name }} drift:"
-      - "  Incident : {{ incident_response.json.result.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ incident_response.json.result.sys_id }})"
-      - "  Change   : {{ cr_response.json.result.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ cr_response.json.result.sys_id }})"
-      - "  Approval : {{ cr_response.json.result.approval }}  (waiting for CAB)"
+      - "  Incident : {{ incident_response.record.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ incident_response.record.sys_id }})"
+      - "  Change   : {{ cr_response.record.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ cr_response.record.sys_id }})"
+      - "  Approval : {{ cr_response.record.approval }}  (waiting for CAB)"
       - "  correlation_id: {{ tfc_workspace_id }}"
       - "  Next step : approve the CR in ServiceNow — SN business rule fires the EDA webhook back to AAP"
