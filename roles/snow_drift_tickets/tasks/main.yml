@@ -26,7 +26,7 @@
     engine_mount_point: "{{ vault_kv_mount }}"
     path: "{{ vault_servicenow_secret_path }}"
     validate_certs: false
-  register: snow_creds
+  register: snow_drift_tickets_creds
   no_log: true
 
 - name: Show what Vault returned (demo visibility — no secrets)
@@ -34,22 +34,22 @@
     msg:
       - "ServiceNow credentials read from Vault"
       - "  path     : {{ vault_kv_mount }}/{{ vault_servicenow_secret_path }}"
-      - "  username : {{ snow_creds.secret.username }}"
+      - "  username : {{ snow_drift_tickets_creds.secret.username }}"
       - "  instance : {{ servicenow_instance_url }}"
 
 - name: Build the servicenow.itsm instance connection
   ansible.builtin.set_fact:
-    _sn_instance:
+    snow_drift_tickets_instance:
       host: "{{ servicenow_instance_url }}"
-      username: "{{ snow_creds.secret.username }}"
-      password: "{{ snow_creds.secret.password }}"
+      username: "{{ snow_drift_tickets_creds.secret.username }}"
+      password: "{{ snow_drift_tickets_creds.secret.password }}"
       validate_certs: false
   no_log: true
 
 # ─── Incident ────────────────────────────────────────────────────────────
 - name: Open ServiceNow incident for the detected VM drift
   servicenow.itsm.incident:
-    instance: "{{ _sn_instance }}"
+    instance: "{{ snow_drift_tickets_instance }}"
     state: new
     short_description: "VM configuration drift — {{ tfc_workspace_name }} ({{ tfc_resources_drifted }} resource(s))"
     description: |
@@ -83,13 +83,13 @@
       urgency: "{{ servicenow_change_impact }}"
       correlation_id: "{{ tfc_workspace_id }}"
       correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
-  register: incident_response
+  register: snow_drift_tickets_incident
   no_log: true
 
 # ─── Change Request ──────────────────────────────────────────────────────
 - name: Open ServiceNow change request for the remediation
   servicenow.itsm.change_request:
-    instance: "{{ _sn_instance }}"
+    instance: "{{ snow_drift_tickets_instance }}"
     state: new
     # assignment_group default is a sys_id; assignment_group_id maps
     # straight to the wire `assignment_group` field (no enum remap, no
@@ -124,7 +124,7 @@
       Organization  : {{ tfc_organization_name }}
       Drifted       : {{ tfc_resources_drifted }} resource(s)
       Assessment    : {{ tfc_assessment_result_url }}
-      Linked INC    : {{ incident_response.record.number }}
+      Linked INC    : {{ snow_drift_tickets_incident.record.number }}
 
       ---- CAB Approver Action ---------------------------------------
 
@@ -148,15 +148,17 @@
       assigned_to: "{{ servicenow_assigned_to }}"
       correlation_id: "{{ tfc_workspace_id }}"
       correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
-  register: cr_response
+  register: snow_drift_tickets_cr
   no_log: true
 
 - name: Show ticket details (demo visibility)
   ansible.builtin.debug:
     msg:
       - "ServiceNow tickets opened for {{ tfc_workspace_name }} drift:"
-      - "  Incident : {{ incident_response.record.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ incident_response.record.sys_id }})"
-      - "  Change   : {{ cr_response.record.number }}  ({{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ cr_response.record.sys_id }})"
-      - "  Approval : {{ cr_response.record.approval }}  (waiting for CAB)"
+      - "  Incident : {{ snow_drift_tickets_incident.record.number }}"
+      - "    link   : {{ servicenow_instance_url }}/nav_to.do?uri=incident.do?sys_id={{ snow_drift_tickets_incident.record.sys_id }}"
+      - "  Change   : {{ snow_drift_tickets_cr.record.number }}"
+      - "    link   : {{ servicenow_instance_url }}/nav_to.do?uri=change_request.do?sys_id={{ snow_drift_tickets_cr.record.sys_id }}"
+      - "  Approval : {{ snow_drift_tickets_cr.record.approval }}  (waiting for CAB)"
       - "  correlation_id: {{ tfc_workspace_id }}"
       - "  Next step : approve the CR in ServiceNow — SN business rule fires the EDA webhook back to AAP"
