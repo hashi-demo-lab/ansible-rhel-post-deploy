@@ -8,6 +8,12 @@ collections:
     version: ">=6.0.0"
   - name: community.vmware
     version: ">=4.0.0"
+  # Certified collection for ServiceNow ITSM (incident/change_request),
+  # used by the snow_drift_tickets role. The execution environment that
+  # runs the drift-create-snow-tickets JT must bundle this collection and
+  # its Python deps (requests).
+  - name: servicenow.itsm
+    version: ">=2.6.0"
   # Resolved from the local AAP Automation Hub (published repo).
   # The collection was uploaded as hashicorp-terraform-2.0.0.tar.gz
   # (built from github.com/hashicorp/terraform-ansible-collection
