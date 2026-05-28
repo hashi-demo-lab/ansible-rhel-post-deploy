@@ -10,8 +10,12 @@
 #   group/assignee. To keep the created records byte-identical to the
 #   previous ansible.builtin.uri implementation, those raw-valued fields
 #   are passed through the modules' free-form `other` dict (which is
-#   merged straight into the table payload), while fields whose values
-#   already match a module enum (type, risk) use the typed params.
+#   merged straight into the table payload). type/risk go through `other`
+#   too: the typed `type` param would also inject chg_model="normal"
+#   (altering the CR's state model) and the typed `risk` would remap
+#   "moderate"->"3", so passing them raw keeps the wire payload identical
+#   to the uri insert. Only assignment_group_id stays a typed param,
+#   because it maps cleanly to the same wire field with no remap.
 
 - name: Read ServiceNow credentials from Vault
   community.hashi_vault.vault_kv2_get:
@@ -87,10 +91,9 @@
   servicenow.itsm.change_request:
     instance: "{{ _sn_instance }}"
     state: new
-    # type + risk already match the module enums (normal / moderate).
-    type: "{{ servicenow_change_type }}"
-    risk: "{{ servicenow_change_risk }}"
-    # assignment_group default is a sys_id, so use the *_id param.
+    # assignment_group default is a sys_id; assignment_group_id maps
+    # straight to the wire `assignment_group` field (no enum remap, no
+    # name->sys_id lookup), so it stays a typed param.
     assignment_group_id: "{{ servicenow_assignment_group }}"
     short_description: "Reconcile VM compute drift via Terraform — {{ tfc_workspace_name }}"
     description: |
@@ -128,14 +131,20 @@
       Open this CR in ServiceNow and click "Approve".
       The SN business rule will then post the approval event back
       to AAP / EDA, which will trigger the remediation apply.
-    # Raw-valued / non-param fields preserved exactly via passthrough.
-    # assigned_to + correlation_* have no typed param; category + impact
-    # carry raw values, so they go here too. assignment_group_id removes
-    # the manual routing step before "Request Approval" (OOTB Normal
-    # change model needs the group set on creation).
+    # Everything below is merged verbatim into the table payload (no enum
+    # remap, no name->sys_id lookup, no chg_model), so the record is
+    # byte-identical to the old ansible.builtin.uri insert:
+    #   - category "Other" / impact "3" / assigned_to sys_id: literal
+    #     values the enum-typed params would reject or rewrite.
+    #   - type/risk: kept raw to avoid the typed `type` -> chg_model
+    #     side-effect and the typed `risk` "moderate"->"3" remap.
+    # (assignment_group_id stays typed above — it removes the manual
+    # routing step before "Request Approval" in the OOTB Normal model.)
     other:
       category: "{{ servicenow_category }}"
       impact: "{{ servicenow_change_impact }}"
+      type: "{{ servicenow_change_type }}"
+      risk: "{{ servicenow_change_risk }}"
       assigned_to: "{{ servicenow_assigned_to }}"
       correlation_id: "{{ tfc_workspace_id }}"
       correlation_display: "HCP Terraform workspace {{ tfc_workspace_name }}"
