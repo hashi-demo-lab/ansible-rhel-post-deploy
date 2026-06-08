@@ -32,20 +32,10 @@
     disable_gpg_check: true
   when: not splunk_simulate
 
-- name: Read Splunk credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_splunk_secret_path }}"
-    validate_certs: false
-  register: splunk_creds
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: not splunk_simulate
+# OIDC migration: the Splunk admin password is looked up server-side by the
+# "GCVE Vault Splunk UF (OIDC)" credential (jwt-aap/aap-kv-reader) and injected
+# as the `splunk_admin_password` extra_var — no in-playbook Vault auth. Attach
+# that injector credential to the job template.
 
 - name: Seed user-seed.conf for first start
   ansible.builtin.copy:
@@ -56,7 +46,7 @@
     content: |
       [user_info]
       USERNAME = admin
-      PASSWORD = {{ splunk_creds.secret.admin_password }}
+      PASSWORD = {{ splunk_admin_password }}
   no_log: true
   when: not splunk_simulate
 

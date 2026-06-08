@@ -26,26 +26,16 @@
   when: _needs_registration | bool and rhsm_status.rc == 0
   changed_when: true
 
-- name: Read RHEL subscription credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_rhel_secret_path }}"
-    validate_certs: false
-  register: rhel_creds
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: _needs_registration | bool
+# OIDC migration: the RHSM username/password are looked up server-side by the
+# "GCVE Vault RHEL Subscription (OIDC)" credential (jwt-aap/aap-kv-reader) and
+# injected as `rhel_rhn_username` / `rhel_rhn_password` extra_vars — no
+# in-playbook Vault auth. Attach that injector credential to the job template.
 
 - name: Register with RHSM
   community.general.redhat_subscription:
     state: present
-    username: "{{ rhel_creds.secret.rhn_username }}"
-    password: "{{ rhel_creds.secret.rhn_password }}"
+    username: "{{ rhel_rhn_username }}"
+    password: "{{ rhel_rhn_password }}"
     auto_attach: "{{ rhsm_auto_attach }}"
     force_register: "{{ rhsm_status.rc == 0 }}"
   when: _needs_registration | bool

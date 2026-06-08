@@ -17,32 +17,23 @@
 #   to the uri insert. Only assignment_group_id stays a typed param,
 #   because it maps cleanly to the same wire field with no remap.
 
-- name: Read ServiceNow credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_servicenow_secret_path }}"
-    validate_certs: false
-  register: snow_drift_tickets_creds
-  no_log: true
-
-- name: Show what Vault returned (demo visibility — no secrets)
+# OIDC migration: the ServiceNow username/password are looked up server-side by
+# the "GCVE Vault ServiceNow Drift (OIDC)" credential (jwt-aap/aap-kv-reader)
+# and injected as `snow_username` / `snow_password` extra_vars — no in-playbook
+# Vault auth. Attach that injector credential to the job template.
+- name: Show ServiceNow connection target (demo visibility — no secrets)
   ansible.builtin.debug:
     msg:
-      - "ServiceNow credentials read from Vault"
-      - "  path     : {{ vault_kv_mount }}/{{ vault_servicenow_secret_path }}"
-      - "  username : {{ snow_drift_tickets_creds.secret.username }}"
+      - "ServiceNow credentials injected via OIDC lookup"
+      - "  username : {{ snow_username }}"
       - "  instance : {{ servicenow_instance_url }}"
 
 - name: Build the servicenow.itsm instance connection
   ansible.builtin.set_fact:
     snow_drift_tickets_instance:
       host: "{{ servicenow_instance_url }}"
-      username: "{{ snow_drift_tickets_creds.secret.username }}"
-      password: "{{ snow_drift_tickets_creds.secret.password }}"
+      username: "{{ snow_username }}"
+      password: "{{ snow_password }}"
       validate_certs: false
   no_log: true
 

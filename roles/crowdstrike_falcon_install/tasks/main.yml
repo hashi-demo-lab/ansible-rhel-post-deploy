@@ -15,24 +15,26 @@
     disable_gpg_check: true
   when: not falcon_simulate
 
-- name: Read Falcon CID from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_falcon_secret_path }}"
-    validate_certs: false
-  register: falcon_creds
-  delegate_to: localhost
-  become: false
-  no_log: true
+# OIDC migration: the Falcon CID is no longer read here via AppRole. AAP performs
+# the Vault lookup server-side at job launch using the "HashiCorp Vault Secret
+# Lookup (OIDC)" credential (jwt-aap/aap-kv-reader role) and injects the value as
+# the `falcon_cid` extra_var. The workload-identity JWT is never exposed to this
+# playbook, so an in-playbook vault_login is neither possible nor needed.
+# Attach the "GCVE Vault Falcon CID (OIDC)" injector credential to the JT.
+- name: Assert Falcon CID was injected by the OIDC lookup credential
+  ansible.builtin.assert:
+    that:
+      - falcon_cid is defined
+      - falcon_cid | length > 0
+    fail_msg: >-
+      falcon_cid was not injected. Attach the "GCVE Vault Falcon CID (OIDC)"
+      credential to this job template (replaces the old "HashiCorp Vault Access"
+      AppRole credential for this role).
   when: not falcon_simulate
 
 - name: Set Falcon CID
   ansible.builtin.command:
-    cmd: "/opt/CrowdStrike/falconctl -s --cid={{ falcon_creds.secret.cid }}"
+    cmd: "/opt/CrowdStrike/falconctl -s --cid={{ falcon_cid }}"
   changed_when: true
   no_log: true
   when: not falcon_simulate

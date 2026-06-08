@@ -17,25 +17,17 @@
       type: "{{ servicenow_change_type }}"
       u_terraform_run_id: "{{ tfc_run_id | default('n/a') }}"
 
-- name: Read ServiceNow OAuth credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_servicenow_secret_path }}"
-    validate_certs: false
-  register: snow_creds
-  no_log: true
-  when: not servicenow_simulate
+# OIDC migration: the ServiceNow OAuth token is looked up server-side by the
+# "GCVE Vault ServiceNow OAuth (OIDC)" credential (jwt-aap/aap-kv-reader) and
+# injected as the `snow_oauth_access_token` extra_var — no in-playbook Vault
+# auth. Attach that injector credential to the job template.
 
 - name: Open change record (real)
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/{{ servicenow_change_table }}"
     method: POST
     headers:
-      Authorization: "Bearer {{ snow_creds.secret.access_token }}"
+      Authorization: "Bearer {{ snow_oauth_access_token }}"
       Content-Type: "application/json"
     body_format: json
     body: "{{ _snow_payload }}"

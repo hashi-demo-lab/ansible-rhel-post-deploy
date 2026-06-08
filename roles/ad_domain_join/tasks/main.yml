@@ -35,28 +35,16 @@
   changed_when: false
   when: not ad_join_simulate
 
-- name: Read AD service account credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_ad_secret_path }}"
-    validate_certs: false
-  register: ad_creds
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when:
-    - not ad_join_simulate
-    - ad_domain_target not in realm_list.stdout
+# OIDC migration: the AD join-account username/password are looked up
+# server-side by the "GCVE Vault AD Join (OIDC)" credential (jwt-aap/
+# aap-kv-reader) and injected as `ad_username` / `ad_password` extra_vars — no
+# in-playbook Vault auth. Attach that injector credential to the job template.
 
 - name: Join Active Directory domain
   ansible.builtin.expect:
-    command: "realm join --user={{ ad_creds.secret.username }} --computer-ou='{{ ad_ou }}' {{ ad_domain_target }}"
+    command: "realm join --user={{ ad_username }} --computer-ou='{{ ad_ou }}' {{ ad_domain_target }}"
     responses:
-      "Password.*": "{{ ad_creds.secret.password }}"
+      "Password.*": "{{ ad_password }}"
   no_log: true
   when:
     - not ad_join_simulate

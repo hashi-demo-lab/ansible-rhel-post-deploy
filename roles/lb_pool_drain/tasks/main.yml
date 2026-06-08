@@ -9,25 +9,17 @@
     _lb_pool: "{{ lb_pool_map[security_profile | default('web-server')] | default(lb_pool_map['web-server']) }}"
     _lb_member: "{{ inventory_hostname }}:80"
 
-- name: Read F5 credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_f5_secret_path }}"
-    validate_certs: false
-  register: f5_creds
-  no_log: true
-  when: not lb_simulate
+# OIDC migration: the F5 username/password are looked up server-side by the
+# "GCVE Vault F5 API (OIDC)" credential (jwt-aap/aap-kv-reader) and injected as
+# `f5_username` / `f5_password` extra_vars — no in-playbook Vault auth. Attach
+# that injector credential to the job template.
 
 - name: Set pool member to forced-offline (drain) (real)
   ansible.builtin.uri:
     url: "https://{{ f5_host }}/mgmt/tm/ltm/pool/{{ _lb_pool | replace('/', '~') }}/members/~Common~{{ _lb_member }}"
     method: PATCH
-    user: "{{ f5_creds.secret.username }}"
-    password: "{{ f5_creds.secret.password }}"
+    user: "{{ f5_username }}"
+    password: "{{ f5_password }}"
     force_basic_auth: true
     body_format: json
     body:

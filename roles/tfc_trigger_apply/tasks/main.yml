@@ -20,23 +20,15 @@
       - tfc_workspace_id | length > 0
     fail_msg: "tfc_workspace_id must be set (extra_var from EDA)"
 
-- name: Read HCP Terraform API token from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_tfc_secret_path }}"
-    validate_certs: false
-  register: tfc_creds
-  no_log: true
-
+# OIDC migration: the HCP Terraform API token + ServiceNow username/password are
+# looked up server-side by the "GCVE Vault TFC+ServiceNow (OIDC)" credential
+# (jwt-aap/aap-kv-reader) and injected as `tfc_token` + `snow_username` /
+# `snow_password` extra_vars — no in-playbook Vault auth. Attach that injector
+# credential to the job template.
 - name: Note we have the token (demo visibility — no secret printed)
   ansible.builtin.debug:
     msg:
-      - "HCP Terraform token read from Vault"
-      - "  path : {{ vault_kv_mount }}/{{ vault_tfc_secret_path }}"
+      - "HCP Terraform token injected via OIDC lookup"
       - "  api  : {{ tfc_api_url }}"
 
 # ─── ServiceNow incident lookup (for the audit comment) ─────────────────
@@ -44,25 +36,12 @@
 # CR — both records share the workspace_id in their correlation_id. Best
 # effort: any failure here is logged and ignored, so a SN outage doesn't
 # block the TFC apply.
-- name: Read ServiceNow credentials from Vault (for incident lookup)
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_servicenow_secret_path }}"
-    validate_certs: false
-  register: sn_creds
-  no_log: true
-  failed_when: false
-
 - name: Look up the related incident on ServiceNow (best-effort)
   ansible.builtin.uri:
     url: "{{ servicenow_instance_url }}/api/now/table/incident?sysparm_query=correlation_id={{ tfc_workspace_id }}&sysparm_limit=1&sysparm_fields=number,sys_id"
     method: GET
-    user: "{{ sn_creds.secret.username }}"
-    password: "{{ sn_creds.secret.password }}"
+    user: "{{ snow_username }}"
+    password: "{{ snow_password }}"
     force_basic_auth: true
     headers:
       Accept: "application/json"
@@ -73,7 +52,7 @@
   failed_when: false
   no_log: true
   when:
-    - sn_creds.secret is defined
+    - snow_username | length > 0
     - servicenow_instance_url | length > 0
     - tfc_workspace_id | length > 0
 
@@ -99,7 +78,7 @@
     url: "{{ tfc_api_url }}/runs"
     method: POST
     headers:
-      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Authorization: "Bearer {{ tfc_token }}"
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
@@ -156,7 +135,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/comments"
     method: POST
     headers:
-      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Authorization: "Bearer {{ tfc_token }}"
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
@@ -184,7 +163,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
     method: GET
     headers:
-      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Authorization: "Bearer {{ tfc_token }}"
   register: run_poll
   retries: "{{ tfc_poll_max_attempts }}"
   delay: "{{ tfc_poll_interval_seconds }}"
@@ -219,7 +198,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}/actions/apply"
     method: POST
     headers:
-      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Authorization: "Bearer {{ tfc_token }}"
       Content-Type: "application/vnd.api+json"
     body_format: json
     body:
@@ -244,7 +223,7 @@
     url: "{{ tfc_api_url }}/runs/{{ _tfc_run_id }}"
     method: GET
     headers:
-      Authorization: "Bearer {{ tfc_creds.secret.token }}"
+      Authorization: "Bearer {{ tfc_token }}"
   register: apply_poll
   retries: "{{ tfc_poll_max_attempts }}"
   delay: "{{ tfc_poll_interval_seconds }}"

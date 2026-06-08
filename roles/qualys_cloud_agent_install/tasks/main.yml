@@ -14,27 +14,17 @@
     disable_gpg_check: true
   when: not qualys_simulate
 
-- name: Read Qualys activation credentials from Vault
-  community.hashi_vault.vault_kv2_get:
-    url: "{{ vault_addr }}"
-    auth_method: approle
-    role_id: "{{ role_id }}"
-    secret_id: "{{ secret_id }}"
-    engine_mount_point: "{{ vault_kv_mount }}"
-    path: "{{ vault_qualys_secret_path }}"
-    validate_certs: false
-  register: qualys_creds
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: not qualys_simulate
+# OIDC migration: the Qualys activation/customer IDs are looked up server-side
+# by the "GCVE Vault Qualys Activation (OIDC)" credential (jwt-aap/aap-kv-reader)
+# and injected as `qualys_activation_id` / `qualys_customer_id` extra_vars — no
+# in-playbook Vault auth. Attach that injector credential to the job template.
 
 - name: Activate Qualys Cloud Agent
   ansible.builtin.command:
     cmd: >-
       /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh
-      ActivationId={{ qualys_creds.secret.activation_id }}
-      CustomerId={{ qualys_creds.secret.customer_id }}
+      ActivationId={{ qualys_activation_id }}
+      CustomerId={{ qualys_customer_id }}
       ServerUri={{ qualys_server_uri }}
     creates: /etc/qualys/cloud-agent/qagent-log.conf
   no_log: true
