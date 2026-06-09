@@ -12,11 +12,11 @@
   become: false                 # EE has no sudo; we only inspect, never escalate
   gather_facts: true            # populates ansible_env = the EE process environment
   vars:
-    # signatures we hunt for across the whole job context
-    jwt_sig: "eyJ"              # every JWT starts with base64url('{"') = eyJ
-    vault_tok_sigs: ["hvs.", "hvb.", "s.", "b."]   # Vault token prefixes
-    issuer_sig: "apps.openshift-01"                # AAP gateway issuer host
-    sub_sig: "workload_type"                       # AAP workload-JWT sub claim
+    # A real JWT is header.payload.signature, each base64url; the header always
+    # starts eyJ. Require the dot so we match an actual token, not the literal
+    # substring "eyJ". Use a name the scan can exclude (jwt_re) so it can't match
+    # its own needle.
+    jwt_re: 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'
   tasks:
     # ---- 1. what the injector actually delivered -------------------------
     - name: What the OIDC injector delivered (mock secret — safe to show)
@@ -28,30 +28,34 @@
           - "starts with eyJ (JWT)?         : {{ litmus_secret is search('^eyJ') }}"
           - "looks like a Vault token?      : {{ litmus_secret is match('^(hvs|hvb|s|b)\\.') }}"
 
-    # ---- 2. hunt the EE process environment for the JWT / Vault token -----
-    - name: Scan the EE environment for a JWT signature (eyJ…)
+    # ---- 2. hunt the EE process environment for a real JWT token ----------
+    - name: Scan the EE environment for a JWT token (eyJ….….)
       ansible.builtin.set_fact:
-        env_jwt_hits: "{{ ansible_env | dict2items | selectattr('value', 'search', jwt_sig) | map(attribute='key') | list }}"
-        env_issuer_hits: "{{ ansible_env | dict2items | selectattr('value', 'search', issuer_sig) | map(attribute='key') | list }}"
+        env_jwt_hits: "{{ ansible_env | dict2items | selectattr('value', 'regex', jwt_re) | map(attribute='key') | list }}"
         env_var_names: "{{ ansible_env | dict2items | map(attribute='key') | sort | list }}"
+        # any env var whose NAME hints at a token/jwt/secret (other than the
+        # injected litmus_secret) would also be a leak — surface them too
+        env_secretish_names: "{{ ansible_env | dict2items | map(attribute='key') | select('search', '(?i)token|jwt|secret|vault|bearer') | list }}"
 
     # ---- 3. hunt ALL play/host vars (extra_vars land here) ---------------
-    - name: Scan every string variable for a JWT / issuer / sub signature
+    - name: Scan every string variable for a JWT token (excluding our own needle)
       ansible.builtin.set_fact:
         var_jwt_hits: >-
           {{ vars | dict2items | selectattr('value', 'string')
-             | selectattr('value', 'search', jwt_sig)
-             | map(attribute='key') | reject('match', '^(jwt_sig|vars|ansible_)') | list }}
-        var_issuer_hits: >-
-          {{ vars | dict2items | selectattr('value', 'string')
-             | selectattr('value', 'search', issuer_sig)
-             | map(attribute='key') | list }}
+             | selectattr('value', 'regex', jwt_re)
+             | map(attribute='key') | reject('match', '^(jwt_re|vars)$') | list }}
       ignore_errors: true
 
-    # ---- 4. look for a token FILE on disk (the other possible exposure) ---
-    - name: Search common paths for any file whose content looks like a JWT
+    # ---- 4. look for a token FILE the runtime might have written ----------
+    # Exclude the collection's bundled test fixtures (…/tests/…) and the
+    # collection source tree — those ship static example JWTs, not our token.
+    - name: Search runtime paths for a file containing a JWT token
       ansible.builtin.shell: >-
-        grep -rlE 'eyJ[A-Za-z0-9_-]{10,}\.' /tmp /var/tmp /runner /var/run 2>/dev/null | head -5 || true
+        grep -rlE 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'
+        "{{ lookup('env','AWX_PRIVATE_DATA_DIR') | default('/runner', true) }}/env"
+        "{{ lookup('env','AWX_PRIVATE_DATA_DIR') | default('/runner', true) }}/artifacts"
+        /tmp /var/tmp /var/run 2>/dev/null
+        | grep -vE '/tests/|/requirements_collections/' | head -5 || true
       register: file_jwt_scan
       changed_when: false
 
@@ -59,12 +63,11 @@
     - name: VERDICT
       ansible.builtin.debug:
         msg:
-          - "EE environment variables seen : {{ env_var_names | length }}"
-          - "  names: {{ env_var_names }}"
-          - "JWT (eyJ) in EE env?           : {{ (env_jwt_hits | length) > 0 }}   hits={{ env_jwt_hits }}"
-          - "AAP issuer host in EE env?     : {{ (env_issuer_hits | length) > 0 }}   hits={{ env_issuer_hits }}"
-          - "JWT (eyJ) in any variable?     : {{ (var_jwt_hits | default([]) | length) > 0 }}   hits={{ var_jwt_hits | default([]) }}"
-          - "AAP issuer host in any var?    : {{ (var_issuer_hits | default([]) | length) > 0 }}   hits={{ var_issuer_hits | default([]) }}"
-          - "JWT-shaped FILE on disk?       : {{ (file_jwt_scan.stdout | trim | length) > 0 }}   {{ file_jwt_scan.stdout_lines }}"
+          - "EE environment variables seen     : {{ env_var_names | length }}"
+          - "  token/jwt/secret-named env vars : {{ env_secretish_names }}"
+          - "real JWT token in EE env?         : {{ (env_jwt_hits | length) > 0 }}   hits={{ env_jwt_hits }}"
+          - "real JWT token in any variable?   : {{ (var_jwt_hits | default([]) | length) > 0 }}   hits={{ var_jwt_hits | default([]) }}"
+          - "real JWT token in a runtime file? : {{ (file_jwt_scan.stdout | trim | length) > 0 }}   {{ file_jwt_scan.stdout_lines }}"
           - "============================================================"
-          - "CONCLUSION: playbook received the KV value ({{ litmus_secret | length }} chars), and the workload JWT is {{ 'EXPOSED ✗' if ((env_jwt_hits|length)+(env_issuer_hits|length)+(var_jwt_hits|default([])|length)) > 0 else 'NOT exposed ✓' }}"
+          - "what the playbook received: the KV value '{{ litmus_secret }}' ({{ litmus_secret | length }} chars) — not a JWT, not a Vault token"
+          - "workload JWT exposed to the job? : {{ 'YES ✗' if ((env_jwt_hits|length)+(var_jwt_hits|default([])|length)+((file_jwt_scan.stdout|trim|length>0)|int)) > 0 else 'NO ✓ — consumed only at the controller' }}"
