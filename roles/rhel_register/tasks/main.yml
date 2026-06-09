@@ -27,9 +27,31 @@
   changed_when: true
 
 # OIDC migration: the RHSM username/password are looked up server-side by the
-# "GCVE Vault RHEL Subscription (OIDC)" credential (jwt-aap/aap-kv-reader) and
-# injected as `rhel_rhn_username` / `rhel_rhn_password` extra_vars — no
-# in-playbook Vault auth. Attach that injector credential to the job template.
+# "HashiCorp Vault Secret Lookup (OIDC)" credential via AAP workload identity
+# (JWT → Vault jwt auth → KV read) and injected as `rhel_rhn_username` /
+# `rhel_rhn_password` extra_vars — no AppRole, no in-playbook Vault login.
+
+# Always-on demo visibility: surfaces the OIDC credential in every run, even
+# when registration itself is skipped (host already subscribed). Shows lengths,
+# not values, so a real RHN username isn't leaked into the job log.
+- name: Show RHSM credential source (OIDC workload identity)
+  ansible.builtin.debug:
+    msg:
+      - "RHSM credentials provided by the 'HashiCorp Vault Secret Lookup (OIDC)' credential"
+      - "  flow : AAP workload-identity JWT → Vault jwt auth → KV read (server-side, at job launch)"
+      - "  how  : injected as extra_vars at runtime — no AppRole, no in-playbook Vault login"
+      - "  rhn_username : received ({{ (rhel_rhn_username | default('')) | length }} chars)"
+      - "  rhn_password : received ({{ (rhel_rhn_password | default('')) | length }} chars)"
+
+- name: Assert the OIDC credential is attached
+  ansible.builtin.assert:
+    that:
+      - rhel_rhn_username | default('') | length > 0
+      - rhel_rhn_password | default('') | length > 0
+    fail_msg: >-
+      RHSM credentials were not injected — attach the
+      "GCVE Vault RHEL Subscription (OIDC)" credential to this job template.
+    success_msg: "OIDC credential present — RHSM username/password injected as extra_vars."
 
 - name: Register with RHSM
   community.general.redhat_subscription:
