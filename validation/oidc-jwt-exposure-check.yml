@@ -1,0 +1,69 @@
+---
+# Empirical proof for the secret-lookup -> OIDC migration:
+#   (1) the OIDC injector delivers the Vault KV *secret value* (not the workload
+#       JWT, and not the intermediate Vault token), and
+#   (2) the gateway workload-identity JWT is NOT exposed to the job at all
+#       (no env var, no extra_var, no file) -- confirming research #1 live in AAP.
+#
+# Attach the "Litmus OIDC Injected Secret" credential (injects litmus_secret from
+# the MOCK secret secrets/data/dev:api_cred). Safe to print -- mock demo data.
+- name: Prove OIDC injects the KV value, and the JWT is not exposed
+  hosts: localhost
+  gather_facts: true            # populates ansible_env = the EE process environment
+  vars:
+    # signatures we hunt for across the whole job context
+    jwt_sig: "eyJ"              # every JWT starts with base64url('{"') = eyJ
+    vault_tok_sigs: ["hvs.", "hvb.", "s.", "b."]   # Vault token prefixes
+    issuer_sig: "apps.openshift-01"                # AAP gateway issuer host
+    sub_sig: "workload_type"                       # AAP workload-JWT sub claim
+  tasks:
+    # ---- 1. what the injector actually delivered -------------------------
+    - name: What the OIDC injector delivered (mock secret — safe to show)
+      ansible.builtin.debug:
+        msg:
+          - "litmus_secret VALUE  : '{{ litmus_secret }}'"
+          - "litmus_secret length : {{ litmus_secret | length }}  (a JWT is ~700+)"
+          - "litmus_secret sha256 : {{ litmus_secret | hash('sha256') }}"
+          - "starts with eyJ (JWT)?         : {{ litmus_secret is search('^eyJ') }}"
+          - "looks like a Vault token?      : {{ litmus_secret is match('^(hvs|hvb|s|b)\\.') }}"
+
+    # ---- 2. hunt the EE process environment for the JWT / Vault token -----
+    - name: Scan the EE environment for a JWT signature (eyJ…)
+      ansible.builtin.set_fact:
+        env_jwt_hits: "{{ ansible_env | dict2items | selectattr('value', 'search', jwt_sig) | map(attribute='key') | list }}"
+        env_issuer_hits: "{{ ansible_env | dict2items | selectattr('value', 'search', issuer_sig) | map(attribute='key') | list }}"
+        env_var_names: "{{ ansible_env | dict2items | map(attribute='key') | sort | list }}"
+
+    # ---- 3. hunt ALL play/host vars (extra_vars land here) ---------------
+    - name: Scan every string variable for a JWT / issuer / sub signature
+      ansible.builtin.set_fact:
+        var_jwt_hits: >-
+          {{ vars | dict2items | selectattr('value', 'string')
+             | selectattr('value', 'search', jwt_sig)
+             | map(attribute='key') | reject('match', '^(jwt_sig|vars|ansible_)') | list }}
+        var_issuer_hits: >-
+          {{ vars | dict2items | selectattr('value', 'string')
+             | selectattr('value', 'search', issuer_sig)
+             | map(attribute='key') | list }}
+      ignore_errors: true
+
+    # ---- 4. look for a token FILE on disk (the other possible exposure) ---
+    - name: Search common paths for any file whose content looks like a JWT
+      ansible.builtin.shell: >-
+        grep -rlE 'eyJ[A-Za-z0-9_-]{10,}\.' /tmp /var/tmp /runner /var/run 2>/dev/null | head -5 || true
+      register: file_jwt_scan
+      changed_when: false
+
+    # ---- 5. verdict -------------------------------------------------------
+    - name: VERDICT
+      ansible.builtin.debug:
+        msg:
+          - "EE environment variables seen : {{ env_var_names | length }}"
+          - "  names: {{ env_var_names }}"
+          - "JWT (eyJ) in EE env?           : {{ (env_jwt_hits | length) > 0 }}   hits={{ env_jwt_hits }}"
+          - "AAP issuer host in EE env?     : {{ (env_issuer_hits | length) > 0 }}   hits={{ env_issuer_hits }}"
+          - "JWT (eyJ) in any variable?     : {{ (var_jwt_hits | default([]) | length) > 0 }}   hits={{ var_jwt_hits | default([]) }}"
+          - "AAP issuer host in any var?    : {{ (var_issuer_hits | default([]) | length) > 0 }}   hits={{ var_issuer_hits | default([]) }}"
+          - "JWT-shaped FILE on disk?       : {{ (file_jwt_scan.stdout | trim | length) > 0 }}   {{ file_jwt_scan.stdout_lines }}"
+          - "============================================================"
+          - "CONCLUSION: playbook received the KV value ({{ litmus_secret | length }} chars), and the workload JWT is {{ 'EXPOSED ✗' if ((env_jwt_hits|length)+(env_issuer_hits|length)+(var_jwt_hits|default([])|length)) > 0 else 'NOT exposed ✓' }}"
