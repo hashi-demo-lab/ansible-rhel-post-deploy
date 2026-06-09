@@ -9,6 +9,7 @@
 # the MOCK secret secrets/data/dev:api_cred). Safe to print -- mock demo data.
 - name: Prove OIDC injects the KV value, and the JWT is not exposed
   hosts: localhost
+  become: false                 # EE has no sudo; we only inspect, never escalate
   gather_facts: true            # populates ansible_env = the EE process environment
   vars:
     # signatures we hunt for across the whole job context
